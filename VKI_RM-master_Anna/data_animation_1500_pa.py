@@ -32,7 +32,7 @@ t_fine = np.arange(0, (len(disp)/500)-(refinement_factor-1)*0.002/refinement_fac
 pres_real = 100000 + pressure * 208.74 - 11.82
 
 
-filterparameter =105
+filterparameter =55
 smoothingpolynome = 3
 #smooth all the data
 pres_fil_real = savgol_filter(pres_real, 25, 3, axis =0)
@@ -51,7 +51,8 @@ lca_fine = f_lca(t_fine)
 f_rca = interpolate.interp1d(t, rca_filter)
 rca_fine = f_rca(t_fine)
 
-
+plt.plot(t, pres_real)
+"""
 end = 10
 start = 0
 disp_cl = (disp_cl_l + disp_cl_r) / 2
@@ -62,7 +63,7 @@ plt.scatter(t[start:end], disp_cl[start:end])
 f_pres = interpolate.splrep(t, disp_cl)
 disp_of_time = interpolate.splev(t, f_pres)
 plt.plot(t, disp_of_time)
-"""
+
 #Plot the pressure 
 fig, ax = plt.subplots(figsize = (8, 5))
 plt.title('Pressure over time')

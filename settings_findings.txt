@@ -1,0 +1,9 @@
+For the sensitivity of the values see offline notes
+
+Circular vs Linear
+Increasing the amount of passes does not have a squared correlation
+Linear and Circular don't increase by the same amount the more passes are done
+For the most useful one (2 passes) linear is takes about 1.5 times as long
+The more iterations are done, the more simliar the calculation times are
+
+

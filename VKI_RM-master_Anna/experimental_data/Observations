@@ -1,0 +1,31 @@
+The initial conditions play a huge role when calculating the model prediction
+
+It is not possible to calculate the ODE from t = 0 because the data of the contact line is only known after ~113 frames
+
+For a step response and the continous pressure signal a shift in frequency can be observed
+
+All of the measured heights have a second peak that is almost as high as the next peak. This makes no sense -> check whether the average height does the same thing
+
+The measured frequency is also not constant but gets smaller over time
+
+The 1000 Pascal measurement is not really useable as the height continues to oscillate even after a long period of time when it should have been sufficiently dampened
+
+The measured pressure peak is approx 2/3 of the given pressure, this appears to be somewhat consistent
+
+ODEint has some kind of smoothing built in because the interpolation still is noisy but the results of Odeint are not
+
+The average height of the interface is lower than the height of the contact line. This is consistent with the contact angle always being between 0 and 90 deg Sometimes there are unusual deformations.
+This is because the contact angle spikes and causes the average height to go up
+
+The sensor measures the pressure difference, so fluctuation of the atmospheric pressure should not be an issue
+
+There is no difference for different settings of the savatzky golay filter, they are all the same
+
+Filtering the pressure signal doesn't do anything for the solving of Odeint
+
+The acceleration of the pressure term is responsible for the curve not the pressure itself. This will never change as the Pressure is inversly proportional to the height of the fluid. In the beginning
+the U**2 term can compensate this acceleration which is why the curve fits well for the beginning
+
+Eliminating the contact angle eliminates the increase for larger t's
+
+

@@ -12,13 +12,13 @@ plt.rc('ytick', labelsize=20)
 # Load the Data files and process so they have the same length and correct scaling
 #=============================================================================
 
-FOLDER = 'experimental_data' + os.sep + '1250_pascal'
-disp_cl_l = np.genfromtxt(FOLDER + os.sep + 'cl_l_1250.txt')
-disp_cl_r = np.genfromtxt(FOLDER + os.sep + 'cl_r_1250.txt')
-lca = np.genfromtxt(FOLDER + os.sep + 'lca_1250.txt')
-rca = np.genfromtxt(FOLDER + os.sep + 'rca_1250.txt')
-pressure = np.genfromtxt(FOLDER + os.sep + 'pressure_1250.txt')
-h_avg = np.genfromtxt(FOLDER + os.sep + 'avg_height_1250.txt')
+FOLDER = 'experimental_data' + os.sep + '1000_pascal'
+disp_cl_l = np.genfromtxt(FOLDER + os.sep + 'cl_l_1000.txt')
+disp_cl_r = np.genfromtxt(FOLDER + os.sep + 'cl_r_1000.txt')
+lca = np.genfromtxt(FOLDER + os.sep + 'lca_1000.txt')
+rca = np.genfromtxt(FOLDER + os.sep + 'rca_1000.txt')
+pressure = np.genfromtxt(FOLDER + os.sep + 'pressure_1000.txt')
+h_avg = np.genfromtxt(FOLDER + os.sep + 'avg_height_1000.txt')
 
 #shift the arrays to have the same starting point not equal to zero
 shift = np.argmax(lca > 0)
@@ -43,5 +43,5 @@ plt.plot(t, h_avg, label = 'average height')
 #ax.set_xlim([0, 2.5])
 ax.axes.yaxis.set_visible(False)
 plt.grid()
-plt.plot(t, (lca + rca)/100+0.05, label = 'contact angle')
+plt.plot(t, (lca + rca)/100+0.04, label = 'contact angle')
 plt.legend()

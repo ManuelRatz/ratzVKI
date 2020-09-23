@@ -14,12 +14,12 @@ plt.rc('ytick', labelsize=20)
 # Load the Data files and process so they have the same length and correct scaling
 #=============================================================================
 
-FOLDER = 'experimental_data' + os.sep + '1250_pascal'
-disp_cl_l = np.genfromtxt(FOLDER + os.sep + 'cl_l_1250.txt')
-disp_cl_r = np.genfromtxt(FOLDER + os.sep + 'cl_r_1250.txt')
-lca = np.genfromtxt(FOLDER + os.sep + 'lca_1250.txt')
-rca = np.genfromtxt(FOLDER + os.sep + 'rca_1250.txt')
-pressure = np.genfromtxt(FOLDER + os.sep + 'pressure_1250.txt')
+FOLDER = '..' + os.sep + 'experimental_data' + os.sep + '1500_pascal'
+disp_cl_l = np.genfromtxt(FOLDER + os.sep + 'Displacement_CLsx.txt')
+disp_cl_r = np.genfromtxt(FOLDER + os.sep + 'Displacement_CLdx.txt')
+lca = np.genfromtxt(FOLDER + os.sep + 'LCA.txt')
+rca = np.genfromtxt(FOLDER + os.sep + 'RCA.txt')
+pressure = np.genfromtxt(FOLDER + os.sep + 'Pressure_signal.txt')
 
 #shift the arrays to have the same starting point not equal to zero
 shift = np.argmax(lca > 0)
@@ -29,9 +29,8 @@ lca = lca[shift:]
 rca = rca[shift:]
 pressure = pressure[shift:len(disp_cl_l)+shift]
 
-#offset = 0 * np.pi / 180
 #smooth all the data
-pres_filter = savgol_filter(pressure, 151, 2, axis =0)
+pres_filter = savgol_filter(pressure, 51, 2, axis =0)
 lca_filter = savgol_filter(lca, 55, 3, axis = 0)
 rca_filter = savgol_filter(rca, 55, 3, axis = 0)
 disp_cl_r_filter = savgol_filter(disp_cl_r, 105, 3, axis = 0)
@@ -39,12 +38,12 @@ disp_cl_l_filter = savgol_filter(disp_cl_l, 105, 3, axis = 0)
 #calculate the mean contact angle and height
 ca_filter = (lca_filter + rca_filter) / 2
 disp_cl_filter = (disp_cl_r_filter + disp_cl_l_filter) / 2
-#ca_filter = ca_filter - offset
 #convert pressure signal to actual pressure
-pressure = 100000 + pres_filter
+pressure = 100000 + pres_filter * 208.74 - 11.82
 
 #set up the timesteps
 t = np.arange(0, len(lca)/500, 0.002)
+
 
 #interpolate the pressure
 f_pres = interpolate.splrep(t, pressure)
@@ -79,8 +78,8 @@ C1     = 2*(n/(n+1))  # corrective factor for parallel plates
 # p is the pressure in the tank
 # y is the rise
 
-h0 = disp_cl_filter[0] #the offset is already included in the data
-dh0 = (disp_cl_filter[1] - disp_cl_filter[0])/(0.002)
+h0 = 0.074 + disp_cl_filter[0]/1000
+dh0 = (disp_cl_filter[1] - disp_cl_filter[0])/(0.002*1000)
 
 
 Xzero = np.array([dh0, h0])
@@ -123,18 +122,6 @@ plt.plot(t, corr_term_1, label = 'Correction term, $\mu$')
 plt.plot(t, corr_term_2, label = 'Correction term, $U^2$')
 plt.legend()
 
-#plot comparisons
-fig, ax = plt.subplots(figsize=(8,5))
-plt.rc('text', usetex=True)
-plt.rc('font', family='serif')
-plt.rc('xtick', labelsize=20)
-plt.rc('ytick', labelsize=20)
-plt.plot(t, (pressure_term + gravity_term), label = 'Gravity and pressure')
-plt.plot(t, total, label = 'Total acceleration')
-plt.legend(fontsize = 20)
-plt.savefig('Comparison of the different transient heights')
-
-
 #plot the heights
 fig, ax = plt.subplots(figsize=(8,5))
 plt.rc('text', usetex=True)
@@ -143,11 +130,15 @@ plt.rc('xtick', labelsize=20)
 plt.rc('ytick', labelsize=20)
 ax.set_xlabel('$t[s]$', fontsize=20)
 ax.set_ylabel('$h[mm]$', fontsize=20)
+ax.set_xlim([0, 4])
+ax.set_ylim([77, 120])
 plt.plot(t, solvS[:, 1]*1000, label = 'Model prediction')
-plt.plot(t, (disp_cl_l_filter)*1000, label='Experimental Data')
-plt.legend(fontsize = 20)
+#account for the shift in the experimental data
+plt.plot(t, (disp_cl_l_filter+74), label='Experimental Data')
+plt.legend(fontsize = 20, loc = 'lower right')
+plt.grid()
 plt.title('Height comparison over time', fontsize = 20)
-plt.savefig('Comparison of the different transient heights')
+plt.savefig('Comparison of the different transient heights.png', dpi = 100)
 
 
 

@@ -19,22 +19,24 @@ path = 'experimental_data' + os.sep
 
 time, height, cl_l, cl_r, lca_deg, rca_deg, pres = readResultsFile(path + '2020-08-25-1000Pa_A.txt')
 
-np.savetxt(path + os.sep + 'cl_l_1000.txt', cl_l)
-np.savetxt(path + os.sep + 'cl_r_1000.txt', cl_r)
+np.savetxt(path + os.sep + '1000_pascal' + os.sep + 'cl_l_1000.txt', cl_l)
+np.savetxt(path + os.sep + '1000_pascal' + os.sep + 'cl_r_1000.txt', cl_r)
 lca_rad = lca_deg * np.pi/180
 rca_rad = rca_deg * np.pi/180
-np.savetxt(path + os.sep + 'lca_1000.txt', lca_rad)
-np.savetxt(path + os.sep + 'rca_1000.txt', rca_rad)
-np.savetxt(path + os.sep + 'pressure_1000.txt', pres)
+np.savetxt(path + os.sep + '1000_pascal' + os.sep + 'lca_1000.txt', lca_rad)
+np.savetxt(path + os.sep + '1000_pascal' + os.sep + 'rca_1000.txt', rca_rad)
+np.savetxt(path + os.sep + '1000_pascal' + os.sep + 'pressure_1000.txt', pres)
+np.savetxt(path + os.sep + '1000_pascal' + os.sep + 'avg_height_1000.txt', height)
 
 path = 'experimental_data' + os.sep
 
 time, height, cl_l, cl_r, lca_deg, rca_deg, pres = readResultsFile(path + '2020-08-25-1250Pa_A.txt')
 
-np.savetxt(path + os.sep +  'cl_l_1250.txt', cl_l)
-np.savetxt(path + os.sep + 'cl_r_1250.txt', cl_r)
+np.savetxt(path + os.sep + '1250_pascal' + os.sep + 'cl_l_1250.txt', cl_l)
+np.savetxt(path + os.sep + '1250_pascal' + os.sep + 'cl_r_1250.txt', cl_r)
 lca_rad = lca_deg * np.pi/180
 rca_rad = rca_deg * np.pi/180
-np.savetxt(path + os.sep + 'lca_1250.txt', lca_rad)
-np.savetxt(path + os.sep + 'rca_1250.txt', rca_rad)
-np.savetxt(path + os.sep + 'pressure_1250.txt', pres)
+np.savetxt(path + os.sep + '1250_pascal' + os.sep + 'lca_1250.txt', lca_rad)
+np.savetxt(path + os.sep + '1250_pascal' + os.sep + 'rca_1250.txt', rca_rad)
+np.savetxt(path + os.sep + '1250_pascal' + os.sep + 'pressure_1250.txt', pres)
+np.savetxt(path + os.sep + '1250_pascal' + os.sep + 'avg_height_1250.txt', height)

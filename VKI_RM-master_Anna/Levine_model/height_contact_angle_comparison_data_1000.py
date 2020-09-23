@@ -12,7 +12,7 @@ plt.rc('ytick', labelsize=20)
 # Load the Data files and process so they have the same length and correct scaling
 #=============================================================================
 
-FOLDER = 'experimental_data' + os.sep + '1000_pascal'
+FOLDER = '..' + os.sep + 'experimental_data' + os.sep + '1000_pascal'
 disp_cl_l = np.genfromtxt(FOLDER + os.sep + 'cl_l_1000.txt')
 disp_cl_r = np.genfromtxt(FOLDER + os.sep + 'cl_r_1000.txt')
 lca = np.genfromtxt(FOLDER + os.sep + 'lca_1000.txt')

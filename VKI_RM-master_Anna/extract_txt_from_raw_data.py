@@ -26,6 +26,7 @@ rca_rad = rca_deg * np.pi/180
 np.savetxt(path + os.sep + '1000_pascal' + os.sep + 'lca_1000.txt', lca_rad)
 np.savetxt(path + os.sep + '1000_pascal' + os.sep + 'rca_1000.txt', rca_rad)
 np.savetxt(path + os.sep + '1000_pascal' + os.sep + 'pressure_1000.txt', pres)
+np.savetxt(path + os.sep + '1000_pascal' + os.sep + 'avg_height_1000.txt', height)
 
 path = 'experimental_data' + os.sep
 
@@ -38,3 +39,4 @@ rca_rad = rca_deg * np.pi/180
 np.savetxt(path + os.sep + '1250_pascal' + os.sep + 'lca_1250.txt', lca_rad)
 np.savetxt(path + os.sep + '1250_pascal' + os.sep + 'rca_1250.txt', rca_rad)
 np.savetxt(path + os.sep + '1250_pascal' + os.sep + 'pressure_1250.txt', pres)
+np.savetxt(path + os.sep + '1250_pascal' + os.sep + 'avg_height_1250.txt', height)

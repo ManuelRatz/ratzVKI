@@ -2,6 +2,9 @@ import numpy as np
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 
+
+## Hello Manuel, this is Miguel. Put more comments plz
+
 def osci(y, t):
     ye = y[0]
     ze = y[1]

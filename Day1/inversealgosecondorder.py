@@ -2,6 +2,8 @@ import numpy as np
 from scipy.integrate import odeint
 from scipy.optimize import minimize
 
+## Hello Manuel, Miguel was here. I do not like this file, it can't work.
+
 #Load Data
 data = np.loadtxt('exportdata.csv', delimiter=',')
 

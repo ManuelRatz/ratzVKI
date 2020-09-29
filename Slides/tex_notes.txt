@@ -1,7 +1,0 @@
-\frac{\text{d}}{\text{dt}}\left(m \dot{\vec{v}}\right) = \sum_i \vec{F_i}
-\frac{\text{d}}{\text{dt}}\left(m \dot{h}\right) = \sum_i {F_i}
-m = \rho L \delta h
-\sum_i F_i = F_{St} + F_{g} + F_{\Delta p}+ F_{visc}
-F_{St} = 2 \sigma (\delta + L) \text{cos}\Theta
-F_g = - \delta L h \rho g
-F_{\Delta p} = \Delta p \delta L

@@ -2,10 +2,10 @@ import numpy as np
 import scipy.signal
 import matplotlib.pyplot as plt
 
-n=200
-t = np.arange(0, n/50, 1/50)
-data = np.cos(t*np.pi)
-data = data + np.random.random(n) * 0.2
+n=200 # amont of samples
+t = np.arange(0, n/50, 1/50) # set up the timesteps
+data = np.cos(t*np.pi) # create data
+data = data + np.random.random(n) * 0.2 # make data noisy
 
 """
 This is testing done on the different settings of firwin.
@@ -15,12 +15,13 @@ fs = 50. The frequency of our oscillation  is 2 seconds, meaning 0.5 Hz which
 is supposed to be the cutoff frequency
 """
 
-# low pass
+# make a lowpass filter
 fil = scipy.signal.firwin(20, cutoff=2, window='hanning', fs = 50)
 
-# you can also filter really easily with scipy.signal.filtfilt()
+# filter the data with filtfilt
 data_filt = scipy.signal.filtfilt(b = fil, a = [1], x = data)
 
+# create a plot to compare the filtered to the unfiltered data
 fig, ax = plt.subplots(figsize = (8,5))
 plt.plot(t, data, label = 'Unfiltered', c = 'b')
 plt.plot(t, data_filt, label = 'filtered', c = 'c')

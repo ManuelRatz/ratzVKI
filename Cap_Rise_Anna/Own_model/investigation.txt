@@ -1,0 +1,15 @@
+The 1000 Pa measurement has high frequency noise in the contact angle data, that should not be there from the expectations, so it will only be discussed very briefly
+While the Step response and advanced step response even out at some point and have a very similar course, the filtered pressure differs at certain points
+
+There is no second peak for 1500 and 1250 pa in the contact angle when there should be one from the expectations, reason for this unknown
+
+The wiggles in the pressure correspond to the peaks of the contact angle. The pressure signals for 1250 and 1000 Pa are very noisy, so finding a correlation there is very hard
+
+Video data:
+The contact line at the second peak is not symmetric, hence the differences for the left and the right contact angle (for all cases of 1500 pa and also 1250 pa)
+The contact line detection messes up a couple of times (e.g. 1250 pa, t=3.5s)
+
+The last few peaks of the contact angle seem to related to inertia as the interface is barely moving but the contact angle has big changes. This might be due to waves orthogonal to the measurement plane that are then detected
+
+Left contact angle (in the video this is the upper one) is always the fuckup
+Changing from the average ca to the left ca does not reeeeeally make a difference

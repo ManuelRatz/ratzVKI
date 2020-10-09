@@ -56,12 +56,12 @@ for i in range(0, 3):
     ca = rca_load
     h_cl = (h_cl_l_load + h_cl_r_load) / 2
     
-    # shift the data
-    shift_idx = np.argmax(ca > 0)
-    ca = ca[shift_idx:]
-    h_cl = h_cl[shift_idx:]
-    h_avg_load = h_avg_load[shift_idx:]
-    pressure_load= pressure_load[shift_idx:len(ca)+shift_idx]
+    # # shift the data
+    # shift_idx = np.argmax(ca > 0)
+    # ca = ca[shift_idx:]
+    # h_cl = h_cl[shift_idx:]
+    # h_avg_load = h_avg_load[shift_idx:]
+    # pressure_load= pressure_load[shift_idx:len(ca)+shift_idx]
     
     # smooth the data 
     ca_smoothed =  ca# savgol_filter(ca, 9, 3, axis = 0)
@@ -73,10 +73,10 @@ for i in range(0, 3):
     t = np.arange(0, len(ca)/500, 0.002)
     
     # here we set up the 4 different pressure signals
-    step_pressure = np.zeros(len(pressure_smoothed)) + pressure_step[i]
-    advanced_step_pressure = np.copy(pressure_smoothed)
-    idx = np.argmax(pressure_smoothed > pressure_step[i])
-    advanced_step_pressure[idx:] = pressure_step[i]
+    step_pressure = np.zeros(len(pressure_smoothed)) + pressure_step[i] # the constant pressure
+    advanced_step_pressure = np.copy(pressure_smoothed) # copy the pressure array
+    idx = np.argmax(pressure_smoothed > pressure_step[i]) # find the first x-value where the average is reached
+    advanced_step_pressure[idx:] = pressure_step[i] # set all the values after idx to the constant pressure
     
     #set up the interpolation functions
     pres_inter = interpolate.splrep(t, pressure_smoothed)

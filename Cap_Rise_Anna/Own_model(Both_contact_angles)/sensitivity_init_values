@@ -1,6 +1,0 @@
-Regarding the height:
-
-The nonlinear growth gets flattened a little bit, depending on the offset for the height
-The final height still does not match that because in equilibrium it does not matter what was done at the beginning
-The data would need to be shifted up by the corresponding value as well and this can result in some interesting graphs
-The equilibrium height (approximated by integrating over the last second) does not really change for different settings of the height, so at first we do one solution for the given height, no offset. Afterwards we calculate the equilibrium height and compare it to the equilibrium height of our interface and calculate the offset. We then take this offset and plug it into the initital conditions to get our 'true' solution

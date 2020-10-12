@@ -67,8 +67,9 @@ angle_all_right_adv = np.zeros([n_t+1])*np.nan
 
 images=[] 
 # for k in range(n_exp,n_t+1): 
-for k in range(n_start, n_t+1):
-    image = name + '%05d' %k + '.png'  # file name
+for k in range(0, 666):
+    idx = n_start+3*k
+    image = name + '%05d' %idx + '.png'  # file name
     # print(image)
     img=cv2.imread(image,0)  # read the image
     dst = cv2.fastNlMeansDenoising(img,10,10,7,21)
@@ -122,11 +123,11 @@ for k in range(n_start, n_t+1):
     plt.plot((X)/(pix2mm)-0.5, -mu_s+mu_s[500]+50, 'r-', linewidth=0.5)
     #plt.plot(i_x,len(grad_img[:,0])-i_y,'x')
     plt.axis('off')
-    Name=Fol_Out+ os.sep +'Step_'+str(k)+'.png'
-    MEX= 'Exporting Im '+ str(k)+' of ' + str(n_t)
+    Name=Fol_Out+ os.sep +'Step_'+str(idx)+'.png'
+    MEX= 'Exporting Im '+ str(3*k+1)+' of ' + '2000'
     print(MEX)
     # plt.grid()
-    plt.title('Image %04d' % (k+1-n_start))
+    plt.title('Image %04d' % (idx-n_start+1))
     plt.savefig(Name)   
     images.append(imageio.imread(Name))
     plt.close('all')

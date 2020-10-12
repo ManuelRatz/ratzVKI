@@ -4,12 +4,12 @@
 pressure and contact angle signal
 """
 
-import numpy as np
-import os
-from scipy.signal import savgol_filter
-import matplotlib.pyplot as plt
-from scipy import interpolate
-from scipy.integrate import odeint
+import numpy as np                      # for array operations
+import os                               # for setting up data paths
+from scipy.signal import savgol_filter  # for smoothing the data
+import matplotlib.pyplot as plt         # for plotting results
+from scipy import interpolate           # for setting up interpolation functions
+from scipy.integrate import odeint      # for solving the ode
 
 
 plt.rc('font', size=15)          # controls default text sizes
@@ -45,32 +45,16 @@ for i in range(0, 3):
     print('Calculating pressure %d of %d' %((i+1), len(pressure_case)))
     # load the data
     FOLDER = '..' + os.sep + 'experimental_data' + os.sep + '%d_pascal' %pressure_case[i] + os.sep
-    lca_load = np.genfromtxt(FOLDER + 'lca_%d.txt' %pressure_case[i])
-    rca_load = np.genfromtxt(FOLDER + 'rca_%d.txt' %pressure_case[i])
-    h_cl_l_load = np.genfromtxt(FOLDER + 'cl_l_%d.txt' %pressure_case[i])
-    h_cl_r_load = np.genfromtxt(FOLDER + 'cl_r_%d.txt' %pressure_case[i])
+    ca_load = np.genfromtxt(FOLDER + 'rca_%d.txt' %pressure_case[i])
     pressure_load = np.genfromtxt(FOLDER + 'pressure_%d.txt' %pressure_case[i])
     h_avg_load = np.genfromtxt(FOLDER + 'avg_height_%d.txt' %pressure_case[i])
     
-    # calculate the averages
-    ca = rca_load
-    h_cl = (h_cl_l_load + h_cl_r_load) / 2
-    
-    # # shift the data
-    # shift_idx = np.argmax(ca > 0)
-    # ca = ca[shift_idx:]
-    # h_cl = h_cl[shift_idx:]
-    # h_avg_load = h_avg_load[shift_idx:]
-    # pressure_load= pressure_load[shift_idx:len(ca)+shift_idx]
-    
     # smooth the data 
-    ca_smoothed =  ca# savgol_filter(ca, 9, 3, axis = 0)
-    h_cl_smoothed = savgol_filter(h_cl, 105, 3, axis = 0)
     h_smoothed = savgol_filter(h_avg_load, 9, 2, axis = 0)
     pressure_smoothed = savgol_filter(pressure_load, 55, 3, axis = 0)
     
     #set up the timesteps
-    t = np.arange(0, len(ca)/500, 0.002)
+    t = np.arange(0, len(ca_load)/500, 0.002)
     
     # here we set up the 4 different pressure signals
     step_pressure = np.zeros(len(pressure_smoothed)) + pressure_step[i] # the constant pressure
@@ -91,7 +75,7 @@ for i in range(0, 3):
     pres_step_adv_inter = interpolate.splrep(t, advanced_step_pressure)
     def pres_step_adv(t):
         return interpolate.splev(t, pres_step_adv_inter)
-    ca_inter = interpolate.splrep(t, ca_smoothed)
+    ca_inter = interpolate.splrep(t, ca_load)
     def ca(t):
         return interpolate.splev(t, ca_inter)
     
@@ -198,7 +182,7 @@ for i in range(0, 3):
     acc_filter = np.zeros((solution_normal.shape[0], 6))
     acc_step = np.zeros((solution_normal.shape[0], 6))
     acc_step_adv =np.zeros((solution_normal.shape[0], 6))
-     
+    
     #For the unfiltered pressure
     U = solution_normal[:, 0]
     Y = solution_normal[:, 1]

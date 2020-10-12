@@ -11,10 +11,10 @@ into a gif to create an animation
 Right now this is just for testing stuff, no actual data is being used (02.10.)
 """
 
-import numpy as np               # this is for mathematical stuff
-import matplotlib.pyplot as plt  # this is used for plots
+import numpy as np               # this is for array operations
+import matplotlib.pyplot as plt  # this is for plots
 import os                        # this is for setting up data paths
-import imageio                   # this is used for the animation
+import imageio                   # this is for the animation
 from scipy.signal import savgol_filter # this is for filtering signals
 
 # Settings for the plots
@@ -60,6 +60,8 @@ def create_plot_of_index(y_values1, label1, Fol_Out, abbrev, index, y_low, y_hig
     Images of the plots saved as pngs.
 
     """
+    # take every fourth image
+    index = index*3
     # create the figure
     fig, ax = plt.subplots(figsize = (4.5, 3))
     ax.set_xlim([0, 4]) # limit of the x-axis
@@ -72,7 +74,7 @@ def create_plot_of_index(y_values1, label1, Fol_Out, abbrev, index, y_low, y_hig
         ax.scatter(t[index], y_values2[index]) # plot the leading point of the second data set
     # set the title with the current image, save and close the plot
     plt.title('Image %04d' % (index+1)) # set the title as the number of the current iteration
-    plt.legend(loc = 'lower right') # set up the legend
+    plt.legend(loc = 'upper right') # set up the legend
     plt.savefig(Fol_Out + os.sep + abbrev + '_Img%04d.png' %(index+1)) # save the figure
     plt.close(fig) # close the figure to not overcrowd the plot window
  
@@ -100,7 +102,7 @@ def create_gif(Folder, abbrev, im_duration):
     GIFNAME = Folder + '.gif' # name of the gif
     images = [] # empty list to append the images
     for k in range(0, LENGHT):
-        FIG_NAME = Folder + os.sep + abbrev + '_Img%04d.png' % (k +1) # name of the image
+        FIG_NAME = Folder + os.sep + abbrev + '_Img%04d.png' % ((3*k) +1) # name of the image
         images.append(imageio.imread(FIG_NAME)) # append into the image folder
         # update the user on the status every 50 images
         if (((k+1) % 50) == 0):
@@ -123,30 +125,47 @@ vel_smooth = savgol_filter(vel, 55, 1, axis = 0) # smooth the velocity
 acc = np.gradient(vel_smooth)/0.002 # calculate the acceleration
 acc_smooth = savgol_filter(acc, 75, 1, axis = 0) # smooth the acceleration
 
-LENGHT = 2000  # amount of plots to be made and put into the gif
+# Give the constants
+mu     = 8.90*10**(-4)  # dynamic viscosity (Pa s)
+sigma  = 0.07197        # surface tension (N/m)
+delta  = 0.005          # channel width (m)
+rhoL   = 1000           # density (kg/m^3)
+
+# Calculate the Weber number and Capillary number
+We = rhoL*vel_smooth**2*delta/sigma
+Ca = mu*vel_smooth/sigma
+
+LENGHT = 666  # amount of plots to be made and put into the gif
 
 # set up the timesteps
 t = np.arange(0, len(lca_smooth)/500, 1/500)
 
-# create the 3 folders to put in the plots
-Fol_ca = create_folder('ca')
-Fol_vel = create_folder('vel')
-Fol_acc = create_folder('acc')
+# create the folders to put in the plots
+Fol_ca = create_folder('ca')    # the contact angle
+Fol_vel = create_folder('vel')  # the velocity
+Fol_acc = create_folder('acc')  # the acceleration
+Fol_we = create_folder('We')    # the Weber number (mu*u^2*rho/sigma)
+Fol_Ca = create_folder('Ca')    # the Capillary number (u*mu/sigma)
+
 
 # create a plot for each timestep by calling the function LENGTH times
 for k in range(0, LENGHT):
-    # simply comment the respective line to calculate all the plots
-    # create_plot_of_index(lca_smooth, '$\Theta_l$', Fol_ca, 'ca', k, 25, 120, rca_smooth, '$\Theta_r$')
-    # create_plot_of_index(vel_smooth, 'Smoothed', Fol_vel, 'vel', k, -0.1, 0.4)
-    # create_plot_of_index(acc_smooth, 'Smoothed', Fol_acc, 'acc', k, -2, 0.7)
+    # simply comment the respective line to calculate/not calculate a plot
+    create_plot_of_index(lca_smooth, '$\Theta_l$', Fol_ca, 'ca', k, 25, 120, rca_smooth, '$\Theta_r$')
+    create_plot_of_index(vel_smooth, 'Smoothed', Fol_vel, 'vel', k, -0.1, 0.4)
+    create_plot_of_index(acc_smooth, 'Smoothed', Fol_acc, 'acc', k, -2, 0.7)
+    create_plot_of_index(Ca, '$Ca$', Fol_Ca, 'Ca', k, -0.0014, 0.005)
+    create_plot_of_index(We, '$We$', Fol_we, 'We', k, 0, 2)
     # update the user on the status every 50 images
     if (((k+1) % 50) == 0):
         print('Finished the first %d plots' %(k+1))
 
-# create the gifs, simply comment the line to create it
-# create_gif(Fol_ca, 'ca', 0.01)
-# create_gif(Fol_vel, 'vel', 0.01)
-# create_gif(Fol_acc, 'acc', 0.01)
+# create the gifs, comment the respective line to disable/enable gif creation
+create_gif(Fol_ca, 'ca', 0.01)
+create_gif(Fol_vel, 'vel', 0.01)
+create_gif(Fol_acc, 'acc', 0.01)
+create_gif(Fol_Ca, 'Ca', 0.01)
+create_gif(Fol_we, 'We', 0.01)
 
 
 

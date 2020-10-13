@@ -35,9 +35,8 @@ pix2mm = width/(crop_indx2-crop_indx1) # pixel to mm
 
 testname = '350Pa_C'
 date_exp = '2020-08-28'
-folder = '..' + os.sep + '..' + os.sep + '..' + os.sep + 'DATA' + os.sep + \
-    'Images_Anna' + os.sep + '1500_pa'
-name = folder + os.sep + 'images' + os.sep + testname  # file name
+folder = 'test_images' + os.sep
+name = folder + os.sep + testname  # file name
 
 Fol_Out= folder + os.sep + 'images_detected/'
 if not os.path.exists(Fol_Out):
@@ -50,25 +49,23 @@ if not os.path.exists(Fol_Out):
 
 plt.close('all')
 
-# #n_exp = int(detect_triggers(folder)[0])
-# frame0, pressure_signal = imgprocess.detect_triggersHS(folder)
-# # n_exp = int(detect_triggersHS(folder)[0])
-# n_exp = int(frame0[0])
-t_exp = np.linspace(0,(n_t)/fps,(n_t+1))
+Img_amount = 5 # amount of images to process
+
+t_exp = np.linspace(0,(n_t)/fps,(Img_amount))
 
 # initialization
-h_mm_adv = np.zeros([n_t+1])*np.nan  
+h_mm_adv = np.zeros([Img_amount])*np.nan  
 
-h_cl_left_all_adv = np.zeros([n_t+1])*np.nan  
-h_cl_right_all_adv = np.zeros([n_t+1])*np.nan  
+h_cl_left_all_adv = np.zeros([Img_amount])*np.nan  
+h_cl_right_all_adv = np.zeros([Img_amount])*np.nan  
 
-angle_all_left_adv = np.zeros([n_t+1])*np.nan  
-angle_all_right_adv = np.zeros([n_t+1])*np.nan  
+angle_all_left_adv = np.zeros([Img_amount])*np.nan  
+angle_all_right_adv = np.zeros([Img_amount])*np.nan  
 
 images=[] 
 # for k in range(n_exp,n_t+1): 
-for k in range(0, 666):
-    idx = n_start+3*k
+for k in range(0,5):
+    idx = n_start+136+20*k
     image = name + '%05d' %idx + '.png'  # file name
     # print(image)
     img=cv2.imread(image,0)  # read the image
@@ -124,7 +121,7 @@ for k in range(0, 666):
     #plt.plot(i_x,len(grad_img[:,0])-i_y,'x')
     plt.axis('off')
     Name=Fol_Out+ os.sep +'Step_'+str(idx)+'.png'
-    MEX= 'Exporting Im '+ str(3*k+1)+' of ' + '2000'
+    MEX= 'Exporting Im '+ str(k+1)+' of ' + '5'
     print(MEX)
     # plt.grid()
     plt.title('Image %04d' % (idx-n_start+1))

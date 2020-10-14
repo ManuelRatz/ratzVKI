@@ -22,8 +22,7 @@ def PIV_windef(settings):
         # this line is REQUIRED for multiprocessing to work
         # always use it in your custom function
 
-        file_a, file_b, counter = args
-        counter = settings.counter
+        file_a, file_b, counter = argsr
 
         ' read images into numpy arrays'
         frame_a = tools.imread(os.path.join(settings.filepath_images, file_a))
@@ -150,10 +149,10 @@ def PIV_windef(settings):
         if settings.show_plot==True or settings.save_plot==True:
             plt.close('all')
             fig, ax = tools_patch.display_vector_field_windef(os.path.join(save_path, 'field_A%03d.txt' % counter), scaling_factor=settings.scale_plot)
-            Name = os.path.join(save_path, 'Image_A%03d.png' % (counter-1))
+            Name = os.path.join(save_path, 'Image_A%03d.png' % (counter))
             #Name = os.path.join(save_path, settings.field_name)
             if settings.save_plot==True:
-                plt.savefig(Name, dpi=100)
+                fig.savefig(Name, dpi=100)
             if settings.show_plot==True:
                 plt.show()
             

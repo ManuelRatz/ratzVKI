@@ -15,7 +15,7 @@ from OpenPIV_windef_func import PIV_windef
 
 class Settings(object):
     pass  
-#start_time = time.time()
+
 settings = Settings()
 
 'Data related settings'
@@ -111,5 +111,4 @@ settings.save_plot = True
 settings.show_plot = True
 settings.scale_plot = 20000 # select a value to scale the quiver plot of the vectorfield
 # run the script with the given settings
-
 PIV_windef(settings)    

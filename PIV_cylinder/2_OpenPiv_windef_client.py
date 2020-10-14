@@ -108,12 +108,4 @@ settings.scale_plot = 200 # select a value to scale the quiver plot of the vecto
 # run the script with the given settings
 settings.counter = 0
 
-i = 1
-for i in range(1, 21):
-    settings.frame_pattern_a = 'Cyl_R_150_k7_%03da.tif' % i
-    settings.frame_pattern_b = 'Cyl_R_150_k7_%03db.tif' % i
-    settings.counter = i
-    PIV_windef(settings)
-
-#end_time = time.time()
-#print('Calculationtime: %.3f' % (end_time-start_time))
+PIV_windef(settings)

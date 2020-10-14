@@ -23,7 +23,6 @@ def PIV_windef(settings):
         # always use it in your custom function
 
         file_a, file_b, counter = args
-        counter = settings.counter
 
         ' read images into numpy arrays'
         frame_a = tools.imread(os.path.join(settings.filepath_images, file_a))
@@ -153,7 +152,7 @@ def PIV_windef(settings):
             Name = os.path.join(save_path, 'Image_A%03d.png' % (counter-1))
             #Name = os.path.join(save_path, settings.field_name)
             if settings.save_plot==True:
-                plt.savefig(Name, dpi=100)
+                fig.savefig(Name, dpi=100)
             if settings.show_plot==True:
                 plt.show()
             

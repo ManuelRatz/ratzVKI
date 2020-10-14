@@ -60,7 +60,7 @@ settings.dt = 0.5  # time between to frames (in seconds)
 # It is possible to decide if the S/N should be computed (for the last pass) or not
 settings.extract_sig2noise = True  # 'True' or 'False' (only for the last pass)
 # method used to calculate the signal to noise ratio 'peak2peak' or 'peak2mean'
-settings.sig2noise_method = 'peak2mean'
+settings.sig2noise_method = 'peak2peak'
 # select the width of the masked to masked out pixels next to the main peak
 settings.sig2noise_mask = 2
 # If extract_sig2noise==False the values in the signal to noise ratio
@@ -86,9 +86,9 @@ settings.median_size = 1 #defines the size of the local median
 # Note: only available when extract_sig2noise==True and only for the last
 # pass of the interrogation
 # Enable the signal to noise ratio validation. Options: True or False
-settings.do_sig2noise_validation = False # This is time consuming
+settings.do_sig2noise_validation = True # This is time consuming
 # minmum signal to noise ratio that is need for a valid vector
-settings.sig2noise_threshold = 0.5
+settings.sig2noise_threshold = 1.1
 'Outlier replacement or Smoothing options'
 # Replacment options for vectors which are masked as invalid by the validation
 settings.replace_vectors = False # Enable the replacment. Chosse: True or False

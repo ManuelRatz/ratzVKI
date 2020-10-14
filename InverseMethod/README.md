@@ -1,2 +1,1 @@
-# PythonCodes
-Testing python codes for inverse method
+Initial tests for an inverse method for synthetic data

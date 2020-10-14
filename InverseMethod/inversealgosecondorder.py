@@ -2,8 +2,6 @@ import numpy as np
 from scipy.integrate import odeint
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
-import imageio
-import os
 
 #Load Data
 data = np.loadtxt('exportdatasecord.csv', delimiter=',')
@@ -38,7 +36,8 @@ solution = minimize(meanroot, a0)
 a_sol = solution.x
 y_sol = odeint(ode, y0, t, args=(a_sol,))
 
-plt.plot(t, y_sol[:,0])
+plt.plot(t, data[:, 1])
+# plt.plot(t, y_sol[:,0])
 """
 GIFNAME = 'animation.gif'
 images = []

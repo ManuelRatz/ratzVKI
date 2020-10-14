@@ -23,7 +23,7 @@ n_t = n_start+2000 # number of images
 
 treshold_pos = 1  # threshold for the gradient 
 
-wall_cut = 3 # Cutting pixels near the wall
+wall_cut = 0 # Cutting pixels near the wall
 
 crop_indx1 = 66  # first x coordinate to crop the image
 crop_indx2 = 210 # second x coordinate to crop the image
@@ -69,7 +69,7 @@ for k in range(0,5):
     image = name + '%05d' %idx + '.png'  # file name
     # print(image)
     img=cv2.imread(image,0)  # read the image
-    dst = cv2.fastNlMeansDenoising(img,10,10,7,21)
+    dst = cv2.fastNlMeansDenoising(img,10,1,7,21)
     dst2 = 3*dst.astype(np.float64)
     crop_img =dst2[crop_indy1:crop_indy2,crop_indx1:crop_indx2]  # crop
     
@@ -113,11 +113,11 @@ for k in range(0,5):
     # Generate temporary images with the fitted curve
     #--------------------------------------------------------------------------
     mu_s = mu_s/pix2mm
-    crop_img1 = crop_img[int(1280-mu_s[500])-50:int(1280-mu_s[500])+50,0:144]
+    crop_img1 = crop_img[int(1280-mu_s[500])-60:int(1280-mu_s[500])+60,0:144]
     
     plt.figure()
     plt.imshow(crop_img1, cmap=plt.cm.gray)
-    plt.plot((X)/(pix2mm)-0.5, -mu_s+mu_s[500]+50, 'r-', linewidth=0.5)
+    plt.plot((X)/(pix2mm)-0.5, -mu_s+mu_s[500]+60, 'r-', linewidth=0.5)
     #plt.plot(i_x,len(grad_img[:,0])-i_y,'x')
     plt.axis('off')
     Name=Fol_Out+ os.sep +'Step_'+str(idx)+'.png'
@@ -127,7 +127,7 @@ for k in range(0,5):
     plt.title('Image %04d' % (idx-n_start+1))
     plt.savefig(Name)   
     images.append(imageio.imread(Name))
-    plt.close('all')
+    # plt.close('all')
 
 #%% Generate gif
 GIFNAME='AnimationTest.gif'

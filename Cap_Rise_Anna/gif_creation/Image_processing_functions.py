@@ -59,7 +59,7 @@ def detect_triggersHS(folder):
     return frame0, pressure_signal
 
 
-def edge_detection_grad(crop_img,treshold_pos,wall_cut):
+def edge_detection_grad(crop_img,treshold_pos,wall_cut,threshold_outlier):
     """
     Function to detect horizontal edges
     :crop_img: the cropped image
@@ -69,7 +69,7 @@ def edge_detection_grad(crop_img,treshold_pos,wall_cut):
     grad_img = np.zeros(crop_img.shape)
     y_index  = (np.asarray([])) 
     
-    Profiles   = crop_img[:,wall_cut:len(crop_img[1])-wall_cut] # analyse the region where no spots from the wall disturb detection
+    Profiles   = crop_img[:,wall_cut+3:len(crop_img[1])-wall_cut] # analyse the region where no spots from the wall disturb detection
     Profiles_s = savgol_filter(Profiles, 15, 3, axis =0)        # intensity profile smoothened
     Profiles_d = np.gradient(Profiles_s, axis = 0)              # calculate gradient of smoothend intensity along the vertical direction
     idx_maxima = np.argmax(Profiles_d, axis = 0)                # find positions of all the maxima in the gradient
@@ -77,17 +77,56 @@ def edge_detection_grad(crop_img,treshold_pos,wall_cut):
     for j in range(Profiles_d.shape[1]):
         # accept only the gradient peaks that are above the threeshold (it avoids false detections lines where the interface is not visible)  
         if Profiles_d[idx_maxima[j],j] > treshold_pos:
-            grad_img[idx_maxima[j],j+wall_cut] = 1 # binarisation
+            grad_img[idx_maxima[j],j+wall_cut+3] = 1 # binarisation
+        else:
+            print('Below Threshold')
             
-    y_index, x_index = np.where(grad_img==1)
+    y_index, x_index = np.where(grad_img==1) # get coordinates of the interface
 
     # filter out outliers
     y_average  = np.median(y_index)
     for k in range(len(y_index)):
-        if np.abs(y_index[k]-y_average)/np.median(y_index)>0.1:
+        # print((y_index[k]-y_average)/np.median(y_index))
+        if np.abs(y_index[k]-y_average)/np.median(y_index)>threshold_outlier:
+            grad_img[int(y_index[k]),x_index[k]] = 0
+            print('Filtered by outlier threshold')
+        # this is a test to filter out some faulty drops on the left side
+        if(k<3 or k>(len(y_index)-3)):
+            kernel_size = 2 # amount of points to sample for median
+            y_kernel=get_kernel(k, y_index,kernel_size)
+            if np.abs(y_index[k]-np.median(y_kernel))/np.median(y_kernel) > 0.05:
                 grad_img[int(y_index[k]),x_index[k]] = 0
-    
+                print('Index %d filtered by kernel' %k)
+
     return grad_img, y_index, x_index
+
+def get_kernel(k,y_index,kernel_size):
+    """
+    Parameters
+    ----------
+    k : int
+        Index of the current iteration.
+    y_index : 1d nupmy array
+        Indices of the gradients.
+    kernel_size : int
+        Half the kernel length.
+
+    Returns
+    -------
+    y_index : 1d numpy array
+        Sliced index array of size 2*kernel_size+1.
+
+    """
+    if(k > kernel_size and k < len(y_index)-kernel_size): # points in the middle
+        return y_index[k-kernel_size:k+kernel_size+1]
+    elif(k <= kernel_size): # points at the left edge
+        return y_index[0:2*kernel_size+1] 
+    elif(k >= len(y_index)-kernel_size): # points at the right edge
+        return y_index[len(y_index)-2*kernel_size-1:len(y_index)]
+    else: # error message to be sure
+        print('Error')
+        return
+    
 
 def fitting_polynom2(grad_img,pix2mm):
     """

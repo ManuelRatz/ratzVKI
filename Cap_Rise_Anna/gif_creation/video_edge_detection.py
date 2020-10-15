@@ -15,49 +15,52 @@ from matplotlib import pyplot as plt # for plotting
 import os # for filepaths
 import Image_processing_functions as imgprocess # for interface detection
 from skimage import exposure # for greyscaling and histogramm equalisation
-    
+
 FPS = 500 # camera frame rate in frame/sec
 n_start = 1121# first image where the interface appears (check the images)
-THRESHOLD = 1  # threshold for the gradient 
-WALL_CUT = 0 # Cutting pixels near the wall
+THRESHOLD = 0.7  # threshold for the gradient 
+Outlier_threshold = 0.15 # threshold for outliers
+WALL_CUT = 3 # Cutting pixels near the wall
 crop_index = (66, 210, 0, 1280) # Pixels to keep (xmin, xmax, ymin, ymax)
-width = 5 # width of the channel
-pix2mm = width/(crop_index[1]-crop_index[0]) # pixel to mm
+WIDTH = 5 # width of the channel
+pix2mm = WIDTH/(crop_index[1]-crop_index[0]) # pixel to mm
 
 testname = '350Pa_C' # prefix of the images
-FOL = 'test_images' + os.sep # input folder
+FOL = 'test_images' +os.sep + 'raw_images' + os.sep # input folder
 name = FOL + os.sep + testname  # file name
 
 # create the output folder
-Fol_Out= FOL + os.sep + 'images_detected/'
+Fol_Out= 'test_images' + os.sep + 'images_detected/'
 if not os.path.exists(Fol_Out):
     os.mkdir(Fol_Out)
 
-IMG_AMOUNT = 1 # amount of images to process
+IMG_AMOUNT = 200 # amount of images to process
 
 # iterate over all images 
-for k in range(0,IMG_AMOUNT):
-    idx = n_start+136+20*k # get the first index, then every 20th image
+for k in range(370,401):
+    idx = n_start+3*k-1 # get the first index
     image = name + '%05d' %idx + '.png'  # file name
-
     img=cv2.imread(image,0)  # read the image
     img = img[crop_index[2]:crop_index[3],crop_index[0]:crop_index[1]]  # crop
-    dst = cv2.fastNlMeansDenoising(img,10,10,7,21) # denoise
+    dst = cv2.fastNlMeansDenoising(img,2,2,7,21) # denoise
     dst2 = 3*dst.astype(np.float64) # increase contrast
-    
-    grad_img,y_index, x_index = imgprocess.edge_detection_grad(dst2,THRESHOLD,WALL_CUT) # calculate the position of the interface
-    
-    mu_s,i_x,i_y,i_x_mm,i_y_mm,X,img_width_mm = imgprocess.fitting_advanced(grad_img,pix2mm,l=5,sigma_f=2000,sigma_y=10) # fit a gaussian
+    # for i in range(1, 20, 4):
+    grad_img,y_index, x_index = imgprocess.edge_detection_grad(dst2,THRESHOLD,WALL_CUT,Outlier_threshold) # calculate the position of the interface
+    mu_s,i_x,i_y,i_x_mm,i_y_mm,X,img_width_mm = imgprocess.fitting_advanced(grad_img,pix2mm,l=5,sigma_f=2000,sigma_y=7) # fit a gaussian
     mu_s = mu_s/pix2mm # calculate the resulting height in mm
-    final_img = dst2[int(1280-mu_s[500])-60:int(1280-mu_s[500])+60,0:144] # crop the image 60 px above and 60 px below the centerpoint
-    
-    plt.figure() # create a figure
+    # final_img = dst2[int(1280-mu_s[500])-60:int(1280-mu_s[500])+60,0:144] # crop the image 60 px above and 60 px below the centerpoint
+    final_img = img[int(1280-mu_s[500])-60:int(1280-mu_s[500])+60,0:144]
+    grad_img = grad_img[int(1280-mu_s[500])-60:int(1280-mu_s[500])+60,0:144]
+    fig, ax = plt.subplots() # create a figure
     plt.imshow(final_img, cmap=plt.cm.gray) # show the image in greyscale
+    plt.scatter(i_x, -i_y+mu_s[500]+60, marker='o', s=(73./fig.dpi)**2) # plot the detected gradient onto the image
     plt.plot((X)/(pix2mm)-0.5, -mu_s+mu_s[500]+60, 'r-', linewidth=0.5) # plot the interface fit
     plt.axis('off') # disable the showing of the axis
     Name=Fol_Out+ os.sep +'Step_'+str(idx)+'.png' # set output name
-    MEX= 'Exporting Im '+ str(k+1)+' of ' + '5' # update on progress
+    MEX= 'Exporting Im '+ str(k)+' of ' + str(IMG_AMOUNT) # update on progress
     print(MEX) 
-    plt.title('Image %04d' % (idx-n_start+1)) # set image title
-    plt.savefig(Name, dpi= 600) # save image
-    # plt.close('all') # disable or enabel depending on whether you want to see image in the plot window
+    plt.title('Image %04d' % ((idx-1121+1))) # set image title
+    plt.savefig(Name, dpi= 400) # save image
+    plt.close(fig) # disable or enabel depending on whether you want to see image in the plot window
+
+# animate the result

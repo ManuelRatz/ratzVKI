@@ -61,10 +61,10 @@ def posterior_predictive(X_s, X_train, Y_train, l=1.0, sigma_f=1.0, sigma_y=1e-8
 import matplotlib.pyplot as plt
 
 # Configuration for plots
-plt.rc('text', usetex=True)      
-plt.rc('font', family='serif')
-plt.rc('xtick',labelsize=12)
-plt.rc('ytick',labelsize=12)
+plt.rc('text', usetex=False)      
+# plt.rc('font', family='serif')
+# plt.rc('xtick',labelsize=12)
+# plt.rc('ytick',labelsize=12)
 
 def plot_gp(mu, cov, X, X_train=None, Y_train=None, samples=[]):
     X = X.ravel()

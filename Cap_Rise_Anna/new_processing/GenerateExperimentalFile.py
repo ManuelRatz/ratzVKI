@@ -16,9 +16,8 @@ import numpy as np
 
 
 #%% inputs
-folder = '..' + os.sep + '..' + os.sep + '..' + os.sep + 'DATA' + os.sep +\
-    'Images_Anna' + os.sep + '1500_pa' + os.sep
-output_file = 'files' + os.sep + 'test.txt'
+folder = 'test_images' + os.sep + 'raw_images' + os.sep
+output_file = 'test.txt'
 
 # Variables changing from experiment to another
 T         = 273.+25. # temperature 

@@ -40,7 +40,7 @@ pressure_case = np.array([1000, 1250, 1500])
 pressure_step = np.array([662.6799, 823.1328, 990.89])
 
 # set up the for loop
-for i in range(0, 3):
+for i in range(2, 3):
     # Update the user about the status
     print('Calculating pressure %d of %d' %((i+1), len(pressure_case)))
     # load the data
@@ -170,7 +170,7 @@ for i in range(0, 3):
     For ease of access and comparison they are stored in a matrix, with each column
     representing one of the acceleration terms. The order is as follows:
         0 - gravity             (this will for the current model always be -g)
-        1 - viscous term        (this is still not 100% safe, see the meeting with domenico tomorrow, delete after 23.09.)
+        1 - viscous term        
         2 - pressure term
         3 - contact angle/surface tension term
         4 - velocity squared term

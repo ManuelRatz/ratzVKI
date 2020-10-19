@@ -111,7 +111,7 @@ def create_gif(Folder, abbrev, im_duration):
 
 
 # load the contact angle and height
-Fol_In = '..' + os.sep + 'experimental_data' + os.sep + '1500_pascal' + os.sep
+Fol_In = 'experimental_data' + os.sep + '1500_pascal' + os.sep
 lca = np.genfromtxt(Fol_In + 'lca_1500.txt')
 rca = np.genfromtxt(Fol_In + 'rca_1500.txt')
 height = np.genfromtxt(Fol_In + 'avg_height_1500.txt')

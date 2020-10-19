@@ -78,8 +78,8 @@ def edge_detection_grad(crop_img,treshold_pos,wall_cut,threshold_outlier):
         # accept only the gradient peaks that are above the threeshold (it avoids false detections lines where the interface is not visible)  
         if Profiles_d[idx_maxima[j],j] > treshold_pos:
             grad_img[idx_maxima[j],j+wall_cut+3] = 1 # binarisation
-        else:
-            print('Below Threshold')
+        # else:
+            # print('Below Threshold')
             
     y_index, x_index = np.where(grad_img==1) # get coordinates of the interface
     # sort both arrays to filter out outliers at the edges
@@ -93,14 +93,14 @@ def edge_detection_grad(crop_img,treshold_pos,wall_cut,threshold_outlier):
         # print((y_index[k]-y_average)/np.median(y_index))
         if np.abs(y_index[k]-y_average)/np.median(y_index)>threshold_outlier:
             grad_img[int(y_index[k]),x_index[k]] = 0
-            print('Filtered by outlier threshold')
+            # print('Filtered by outlier threshold')
         # this is a test to filter out some faulty drops on the left side
         if(k<5 or k>(len(y_index)-6)):
             kernel_size = 3 # amount of points to sample for median
             y_kernel=get_kernel(k, y_index,kernel_size)
             if np.abs(y_index[k]-np.median(y_kernel))/np.median(y_kernel) > 0.001:
                 grad_img[int(y_index[k]),x_index[k]] = 0
-                print('Index %d filtered by kernel' %k)
+                # print('Index %d filtered by kernel' %k)
 
     return grad_img, y_index, x_index
 

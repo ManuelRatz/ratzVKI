@@ -152,7 +152,7 @@ def PIV_windef(settings):
             Name = os.path.join(save_path, 'Image_A%03d.png' % (counter))
             #Name = os.path.join(save_path, settings.field_name)
             if settings.save_plot==True:
-                fig.savefig(Name, dpi=100)
+                fig.savefig(Name, dpi=400)
             if settings.show_plot==True:
                 plt.show()
             

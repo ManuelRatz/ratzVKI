@@ -82,7 +82,11 @@ def edge_detection_grad(crop_img,treshold_pos,wall_cut,threshold_outlier):
             print('Below Threshold')
             
     y_index, x_index = np.where(grad_img==1) # get coordinates of the interface
-
+    # sort both arrays to filter out outliers at the edges
+    x_sort_index = x_index.argsort()
+    y_index = y_index[x_sort_index[:]]
+    x_index = x_index[x_sort_index[:]]
+    
     # filter out outliers
     y_average  = np.median(y_index)
     for k in range(len(y_index)):
@@ -91,10 +95,10 @@ def edge_detection_grad(crop_img,treshold_pos,wall_cut,threshold_outlier):
             grad_img[int(y_index[k]),x_index[k]] = 0
             print('Filtered by outlier threshold')
         # this is a test to filter out some faulty drops on the left side
-        if(k<3 or k>(len(y_index)-3)):
-            kernel_size = 2 # amount of points to sample for median
+        if(k<5 or k>(len(y_index)-6)):
+            kernel_size = 3 # amount of points to sample for median
             y_kernel=get_kernel(k, y_index,kernel_size)
-            if np.abs(y_index[k]-np.median(y_kernel))/np.median(y_kernel) > 0.05:
+            if np.abs(y_index[k]-np.median(y_kernel))/np.median(y_kernel) > 0.001:
                 grad_img[int(y_index[k]),x_index[k]] = 0
                 print('Index %d filtered by kernel' %k)
 

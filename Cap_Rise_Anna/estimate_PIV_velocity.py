@@ -13,7 +13,7 @@ from scipy.signal import savgol_filter # for smoothing
 
 pressure_array = (1000, 1250, 1500) # pressure measurements done
 
-for i in range(0,1):
+for i in range(0,3):
     Fol_In = 'experimental_data' + os.sep + '%d_pascal' %pressure_array[i] +\
         os.sep + 'avg_height_%d.txt' %pressure_array[i] # input folder
     height = np.genfromtxt(Fol_In) # load height
@@ -24,26 +24,32 @@ for i in range(0,1):
     # find the index of the first peak
     idx = np.argmax(height)
     # shift the velocity and time array
-    t = t[idx:]
-    vel_smooth = vel_smooth[idx:]
-    height = height[idx:]
+    # t = t[idx:] 
+    # vel_smooth = vel_smooth[idx:]
+    # height = height[idx:]
     
     # get the maximum velocity
     vel_max = np.max(np.abs(vel_smooth))
     #calculate the arithmetic mean of max and min
-    v_armean = (vel_max)/2 # as the min velocity is 0
-    v_armean_plot = np.zeros(len(vel_smooth)) + v_armean
-    v_mean = np.mean(np.abs(vel_smooth))
-    v_mean_plot = np.zeros(len(vel_smooth))+v_mean
+    # v_armean = (vel_max)/2 # as the min velocity is 0
+    # v_armean_plot = np.zeros(len(vel_smooth)) + v_armean
+    # v_mean = np.mean(np.abs(vel_smooth))
+    # v_mean_plot = np.zeros(len(vel_smooth))+v_mean
     
     # plot the result
-    fig, ax = plt.subplots() # create figure
-    ax.plot(t, vel_smooth, label = '$|u|$')
-    ax.plot(t, v_armean_plot, label = '$u_{max,min}$')
-    ax.plot(t, v_mean_plot, label = '$u_{mean}$')
-    # ax.plot(t, (height-0.074)*5)
-    ax.set_xlim(t[0], 2.5) # set xlimits, this is the first 4 peaks
-    # ax.set_ylim(0, np.max(vel_smooth)*1.05) # set y limits
-    ax.grid() # enable grid
-    ax.legend()
-    ax.set_title('Absolute velocity from first to fourth peak, %d Pa' %pressure_array[i])
+    fig, ax1 = plt.subplots() # create figure
+    
+    color = 'tab:green'
+    ax1.plot(t, np.abs(vel_smooth), color = color)
+    # ax1.set_xlabel('time (s)')
+    ax1.set_ylabel('$|u|$', color=color)
+    ax1.set_xlim(t[0], 2.5) # set xlimits, this is the first 4 peaks
+    ax1.grid()
+    
+    ax2 = ax1.twinx()
+    color = 'tab:blue'
+    ax2.plot(t, height, color=color)
+    ax2.set_ylabel('$h$[mm]')
+    fig.tight_layout()
+    
+    ax1.set_title('Absolute velocity from first to fourth peak, %d Pa' %pressure_array[i])

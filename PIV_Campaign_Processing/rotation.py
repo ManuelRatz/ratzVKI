@@ -6,10 +6,10 @@ Created on Thu Oct 29 09:52:25 2020
 @author: ratz
 """
 
-import cv2
-from scipy import ndimage
-import matplotlib.pyplot as plt
-import numpy as np
+import cv2                  # for reading the images
+from scipy import ndimage   # for rotating the images
+import numpy as np          # for array operations
+import os                   # for filepaths
 
 def rotate_image(image, wallcut = 0):
     """
@@ -110,11 +110,16 @@ def get_most_common_element(array):
     idx = np.argmax(counts)    
     return idx
 
-img = cv2.imread('R_h3_f1200_1_p15.6dcq31of.000773.tif',0) # load the image
-rot = rotate_image(img)
 
-# show the cropped rotation
-fig, ax = plt.subplots()
-plt.imshow(rot, cmap=plt.cm.gray)
-plt.axis('off')
-plt.savefig('test.jpg',dpi = 800)
+# set up the input and output folder
+Fol_In = 'Testing_images' + os.sep 
+Fol_Out = 'Rotated_images' + os.sep
+if not os.path.exists(Fol_Out):
+    os.mkdir(Fol_Out)
+    
+# iterate over all of the images
+for i in range(0, 4):
+    img_name = 'R_h1_f1000_1_p14.6dbpi5g7.%06d.tif' %(i+260) # get the image name
+    img = cv2.imread(Fol_In + img_name,0) # read the image
+    rot = rotate_image(img) # rotate and crop the image
+    cv2.imwrite(Fol_Out + img_name,rot) # write the cropped images to the output folder

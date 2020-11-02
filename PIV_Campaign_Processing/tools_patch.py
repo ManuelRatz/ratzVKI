@@ -135,3 +135,39 @@ def display_vector_field_windef( filename, on_img=False, image_name='None', wind
     pl.show()
     return fig, ax
 
+def imread(filename, flatten=0):
+    """Read an image file into a numpy array
+    using imageio.imread
+    
+    Parameters
+    ----------
+    filename :  string
+        the absolute path of the image file
+    flatten :   bool
+        True if the image is RGB color or False (default) if greyscale
+        
+    Returns
+    -------
+    frame : np.ndarray
+        a numpy array with grey levels
+        
+        
+    Examples
+    --------
+    
+    >>> image = openpiv.tools.imread( 'image.bmp' )
+    >>> print image.shape 
+        (1280, 1024)
+    
+    
+    """
+    import cv2
+    im = cv2.imread(filename,0)
+    # im = _imread(filename)
+    if np.ndim(im) > 2:
+        im = rgb2gray(im)
+
+    return im
+
+def rgb2gray(rgb):
+    return np.dot(rgb[..., :3], [0.299, 0.587, 0.144])

@@ -14,8 +14,15 @@ import numpy as np  # This is for doing math
 
 ## Step 1: Read all the files and (optional) make a video out of it.
 
-FOLDER = 'Results_PIV' + os.sep + 'Open_PIV_results_Test_1'
-n_t = 2  # number of steps.
+FOLDER = 'Results_PIV' + os.sep + 'Open_PIV_results_Inversion_24'
+Fol_Out = 'Images_postprocessed' + os.sep + 'rise_inversion_24' + os.sep
+if not os.path.exists(Fol_Out):
+    os.mkdir(Fol_Out)
+Fol_Gif = 'Images_postprocessed' + os.sep + 'Gif_images' + os.sep
+if not os.path.exists(Fol_Gif):
+    os.mkdir(Fol_Gif)
+
+n_t = 5  # number of steps.
 
 # Read file number 10 (Check the string construction)
 Name = FOLDER + os.sep + 'field_A%03d' % 1 + '.txt'  # Check it out: print(Name)
@@ -56,16 +63,10 @@ Magn = (Mod.reshape((n_x, n_y)))
 D_U = np.zeros((n_s, n_t))
 D_V = np.zeros((n_s, n_t))
 # Loop over all the files: we make a giff and create the Data Matrices
-GIFNAME = 'Giff_Velocity.gif'
-Fol_Out = 'Gif_Images'
-if not os.path.exists(Fol_Out):
-    os.mkdir(Fol_Out)
-images = []
-
 D_U = np.zeros((n_x * n_y, n_t))  # Initialize the Data matrix for U Field.
 D_V = np.zeros((n_x * n_y, n_t))  # Initialize the Data matrix for V Field.
-
-for k in range(0, n_t-1):
+# Profile_V = np.zeros((len(Xg[0,:]), n_t))
+for k in range(0, n_t):
     # Read file number 10 (Check the string construction)
     Name = FOLDER + os.sep + 'field_A%03d' % (k) + '.txt'  # Check it out: print(Name)
     # We prepare the new name for the image to export
@@ -85,13 +86,13 @@ for k in range(0, n_t-1):
     # Open the figure
     fig, ax = plt.subplots(figsize=(8, 5))  # This creates the figure
     # Or you can plot it as streamlines
-    # plt.contourf(Xg *1000 , Yg*1000 , Magn)
+    plt.contourf(Xg *1000 , Yg*1000 , Magn)
     # One possibility is to use quiver
     STEPx = 1
     STEPy = 1
     
     plt.quiver(Xg[::STEPx, ::STEPy] * 1000, Yg[::STEPx, ::STEPy] * 1000,
-               Vxg[::STEPx, ::STEPy], Vyg[::STEPx, ::STEPy], color='k', scale = 0.5)  # Create a quiver (arrows) plot
+               Vxg[::STEPx, ::STEPy], Vyg[::STEPx, ::STEPy], color='k', scale = 1000)  # Create a quiver (arrows) plot
     plt.rc('text', usetex=True)  # This is Miguel's customization
     plt.rc('font', family='serif')
     plt.rc('xtick', labelsize=16)
@@ -112,8 +113,31 @@ for k in range(0, n_t-1):
     #   ax.invert_yaxis() # Invert Axis for plotting purpose
     # Observe that the order at which you run these commands is important!
     # Important: we fix the same c axis for every image (avoid flickering)
+    plt.axis('off')
     plt.clim(0, 10)
     plt.colorbar()  # We show the colorbar
     plt.savefig(NameOUT, dpi=800)
-    # plt.close(fig)
-    print('Image n ' + str(k) + ' of ' + str(n_t))
+    plt.close(fig)
+    print('Image ' + str(k+1) + ' of ' + str(n_t))
+    
+    fig, ax = plt.subplots(figsize=(8,5))
+    plt.plot(Xg[0,:],Vyg[30,:])
+    plt.scatter(Xg[0,:],Vyg[30,:])
+    ax.set_xlim(0,260)
+    ax.set_ylim(-10,10)
+    Save_Name = Fol_Gif +'Gif_img%03d.png' %k
+    fig.savefig(Save_Name,dpi=100)
+    plt.close(fig)
+
+# import imageio
+# GIFNAME = 'Giff_Velocity.gif'
+# images = []
+
+# for k in range(0, n_t):
+#     FIG_NAME = Fol_Gif +'Gif_img%03d' %k + '.png'
+#     images.append(imageio.imread(FIG_NAME))
+    
+# # Now we can assembly the video and clean the folder of png's (optional)
+# imageio.mimsave(GIFNAME, images, duration=0.05)
+# import shutil  # nice and powerfull tool to delete a folder and its content
+# shutil.rmtree(Fol_Gif)

@@ -4,95 +4,66 @@
 Created on Thu Oct 29 09:52:25 2020
 
 @author: ratz
+@description: functions for rotating the raw PIV images
 """
 
 import cv2                  # for reading the images
 from scipy import ndimage   # for rotating the images
 import numpy as np          # for array operations
 import os                   # for filepaths
+import matplotlib.pyplot as plt # to check if the angle calculation is okay
 
-def rotate_image(image, wallcut = 0):
+def get_angle(image):
     """
-    Description:
-        This function takes the raw PIV images, calculates the angle they
-        need to be rotated by and rotates them. Afterwards the edges are cut
-        to have a rectangular channel again. The image is then cropped in the 
-        width to only show the channel
+    Function to calculate the angle of tilt
 
     Parameters
     ----------
-    image : 2d numpy array
-        2d array of the image in greyscale.
-    
-    wallcut : Integer, optional
-        Pixels to cut near the wall to filter out the plates. The default is 0.
+    image : 2d array
+        Greyscale image of the channel.
+
     Returns
     -------
-    angle
-        Calculated angle of tilt for the image.
+    angle_left : float64
+        Angle of tilt in radians.
 
     """
-    peak_left, peak_right= find_edges(image)
-    
-    # for the angle we calculate the median of 7 points at the edges to filter outliers
-    # then we use the tan to calculate the rotation in radians
-    angle_left = np.abs(np.arctan((np.median(peak_left[-7:])-np.median(peak_left[:7]))/img.shape[0]))
-    angle_right = np.abs(np.arctan((np.median(peak_right[-7:])-np.median(peak_right[:7]))/img.shape[0]))
-    
-    # filter in case the angles differ by 1 percent
-    # if(np.abs((angle_left-angle_right)/angle_left) > 0.01):
-    #     print("Angle calculation failed")
-    #     return np.nan
-    
-    # rotate the image and get the new height and width
-    rotated = ndimage.rotate(image, angle_left*180/np.pi)
-    hr, wr = rotated.shape
-    
-    # crop the rotated image to get rid of the edges
-    crop_rot =(0+int(np.rint(wr*np.tan(angle_left))), hr-int(np.rint(wr*np.tan(angle_left))),\
-           0+int(np.rint(hr*np.tan(angle_left))), wr-int(np.rint(hr*np.tan(angle_left))))
-    cropped = rotated[crop_rot[0]:crop_rot[1],crop_rot[2]:crop_rot[3]]
-    
-    # find the new coordinates of the bright lines
-    new_peak_left, new_peak_right = find_edges(cropped)
-    """
-    Get the new crop coordinates, for that we take the median of the new
-    intensity indices, the +1 is because the cropping is exclusive.
-    We also introduce a wallcut to get rid of the bright plates
-    """
-    wallcut = 7 # pixels to cut near the walls
-    x_low =  get_most_common_element(new_peak_left)
-    x_high = get_most_common_element(new_peak_right)
-    crop_fin = (0,cropped.shape[0],x_low+wallcut,x_high+1-wallcut-10)
-    final_img = cropped[crop_fin[0]:crop_fin[1],crop_fin[2]:crop_fin[3]]
-    return final_img
+    def linear(a, b, x):
+        """
+        Help function for the linear fit of the images
+        """
+        return a*x+b
+    peak_left, peak_right= find_edges(image) # get the indices of the detected edges
+    x_dummy = np.arange(1,1281,1) # set up a dummy for the fit
+    a,b = np.polyfit(x_dummy,peak_left,1) # 
+    angle_left = np.abs(np.arctan((linear(a,b,1280)-b)/1280))
+    return angle_left
 
 def find_edges(image):
     """
-    Description:
-        Takes a 2d image of the channel and gets the edges of it.
+    Function to find the edges of the channel by calculating the gradient.
 
     Parameters
     ----------
-    image : 2d array containing the image as greyscale
-        DESCRIPTION.
+    image : 2d array
+        Greyscale image of the channel.
 
     Returns
     -------
-    peak_left : 1d array
-        Index of the highest intensity on the left side.
-    peak_right : 1d array
-        Index of the highest intensity on the right side.
+    peak_left : 1d Numpy array
+        Indices of the detected wall on the left side.
+    peak_right : 1d Numpy array
+        Indices of the detected wall on the right side.
 
     """
     grad = np.gradient(image, axis = 1) # take the gradient of the rows
-    peak_left = np.argmax(grad>45, axis = 1) # find the first peak from the left side
-    peak_right = img.shape[1]-np.argmax(grad[:,::-1]>25, axis =1) # find the first peak from the right side
+    peak_left = np.argmax(image>, axis = 1) # find the first peak from the left side
+    peak_right = image.shape[1]-np.argmax(image[:,::-1]>100, axis =1) # find the first peak from the right side
     return peak_left, peak_right
 
 def get_most_common_element(array):
     """
-    Description: Get the most common element in an array
+    Function to find the most common element in a numpy array
 
     Parameters
     ----------
@@ -102,24 +73,124 @@ def get_most_common_element(array):
     Returns
     -------
     idx : Integer
-        Index of the most common value.
+        Most common element in the array. In our case this is an index.
 
     """
-    
     counts = np.bincount(array)
     idx = np.argmax(counts)    
     return idx
 
+def rotate_and_crop(image, crop_final, crop_rot, angle):
+    """
+    Rotate and crop an image
 
+    Parameters
+    ----------
+    image : 2d array
+        Greyscale image of the channel.
+    crop_final : Tuple of 4 integers
+        Contains the final crop used to get just the channel in the image.
+    crop_rot : Tuple of 4 integers
+        Contains the Crop of the rotated image to cut the edges.
+    angle : float64
+        Angle of tilt for the image.
+
+    Returns
+    -------
+    final_img : 2d array
+        Final image for PIV processing, cropped and rotated accordingly.
+
+    """
+    rotated = ndimage.rotate(image, angle*180/np.pi)
+    cropped = rotated[crop_rot[0]:crop_rot[1],crop_rot[2]:crop_rot[3]]
+    final_img = cropped[crop_final[0]:crop_final[1],crop_final[2]:crop_final[3]]
+    return final_img
+
+def get_process_params(name, idx0, wallcut=0):
+    """
+    Function to fetch the required cropping variables for ALL the images.
+    Should be checked because these values are used for every image
+
+    Parameters
+    ----------
+    name : string
+        Nomenclature of the images.
+    idx0 : Integer
+        Index for which to do the calculations.
+
+    Returns
+    -------
+    crop_final : Tuple of 4 integers
+        Contains the final crop used to get just the channel in the image.
+    crop_rot : Tuple of 4 integers
+        Contains the Crop of the rotated image to cut the edges.
+    angle : float64
+        Angle of tilt for the image.
+    name_sliced : Tuple of 3 integers
+        Indices of the "." in the name of the file
+    """
+    indices = [i for i, a in enumerate(name) if a == '.']
+    name_sliced = name[:(indices[0]+1)]
+    img_name = Fol_In + name + '%06d.tif' %idx0
+    img = cv2.imread(img_name,0)
+    # get the rotation angle and rotate
+    angle = get_angle(img)
+    rotated = ndimage.rotate(img, angle*180/np.pi)
+    hr, wr = rotated.shape
+    
+    crop_rot =(0+int(np.rint(wr*np.tan(angle))), hr-int(np.rint(wr*np.tan(angle))),\
+               0+int(np.rint(hr*np.tan(angle))), wr-int(np.rint(hr*np.tan(angle))))
+    cropped = rotated[crop_rot[0]:crop_rot[1],crop_rot[2]:crop_rot[3]]
+    
+    new_peak_left, new_peak_right = find_edges(cropped)
+    x_low =  get_most_common_element(new_peak_left)
+    x_high = get_most_common_element(new_peak_right)
+    crop_final = (0,cropped.shape[0],x_low+wallcut,x_high+1-wallcut)
+    return crop_final, crop_rot, angle, name_sliced
+    
+    
 # set up the input and output folder
-Fol_In = 'Testing_images' + os.sep 
-Fol_Out = 'Rotated_images' + os.sep
+Fol_In ='C:'+os.sep+'PIV_Campaign'+os.sep+'Rise\h1\p1000'+os.sep+'R_h1_f1000_1_p10'+os.sep
+Fol_Out ='C:'+os.sep+'PIV_Campaign'+os.sep+'Rise\h1\p1000'+os.sep+'R_h1_f1000_1_p10_rotated'+os.sep
 if not os.path.exists(Fol_Out):
     os.mkdir(Fol_Out)
-    
+
+
+# get the cropping parameters from the first image
+first_frame = 1
+name = 'R_h1_f1000_1_p10.6dbfz5ty.'
+crop_final, crop_rot, angle, name_sliced = get_process_params(name, first_frame, wallcut=5)
+img_list = os.listdir(Fol_In)
+n_t = len(img_list)-5 # amount of images to calculate, take away the lvm files
 # iterate over all of the images
-for i in range(0, 4):
-    img_name = 'R_h1_f1000_1_p14.6dbpi5g7.%06d.tif' %(i+260) # get the image name
+for i in range(0, 5):
+    img_name = name + '%06d.tif' %(i+first_frame) # get the image name
     img = cv2.imread(Fol_In + img_name,0) # read the image
-    rot = rotate_image(img) # rotate and crop the image
-    cv2.imwrite(Fol_Out + img_name,rot) # write the cropped images to the output folder
+    img_processed = rotate_and_crop(img, crop_final, crop_rot, angle) # rotate and crop the image
+    name_out = name_sliced + '%06d.tif' %(i+first_frame) # crop the name for the output
+    cv2.imwrite(Fol_Out + name_out ,img_processed) # write the cropped images to the output folder
+    MEX = 'Cropping Image ' + str(i+1) + ' of ' + str(n_t)
+    print(MEX)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    

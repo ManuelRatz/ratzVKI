@@ -8,7 +8,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from openpiv import tools, validation, filters, scaling, preprocess, windef
-import tools_patch, tools_backup
+import tools_patch
 from smoothn import smoothn
 
 def PIV_windef(settings):
@@ -25,8 +25,8 @@ def PIV_windef(settings):
         file_a, file_b, counter = args
 
         ' read images into numpy arrays'
-        frame_a = tools_backup.imread(os.path.join(settings.filepath_images, file_a))
-        frame_b = tools_backup.imread(os.path.join(settings.filepath_images, file_b))
+        frame_a = tools_patch.imread(os.path.join(settings.filepath_images, file_a))
+        frame_b = tools_patch.imread(os.path.join(settings.filepath_images, file_b))
 
         ' crop to ROI'
         if settings.ROI=='full':
@@ -153,10 +153,10 @@ def PIV_windef(settings):
             #Name = os.path.join(save_path, settings.field_name)
             if settings.save_plot==True:
                 fig.savefig(Name, dpi=400)
-            if settings.show_plot==True:
-                plt.show()
+            if settings.show_plot==False:
+                plt.close('fig')
             
-        print('Image Pair ' + str(counter))
+        print('Image Pair ' + str(counter+1))
         
     'Below is code to read files and create a folder to store the results'
     save_path=os.path.join(settings.save_path,'Open_PIV_results' + '_'+settings.save_folder_suffix)

@@ -111,7 +111,7 @@ for k in range(0, n_t):
     # plt.colorbar()  # show the colorbar
     # plt.savefig(NameOUT, dpi=400) # save the figure
     # plt.close(fig)
-    # print('Image ' + str(k+1) + ' of ' + str(n_t))
+    print('Image ' + str(k+1) + ' of ' + str(n_t))
     
     fig, ax = plt.subplots(figsize=(8,5))
     plt.plot(Xg[0,:],Vyg[20,:])

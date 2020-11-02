@@ -23,15 +23,15 @@ settings.filepath_images = 'C:\PIV_Processed\Images_Preprocessed\F_h2_f1000_1_q'
 # Folder for the outputs
 settings.save_path = 'C:\PIV_Processed\Images_Postprocessed\F_h2_f1000_1_q'
 # Root name of the output Folder for Result Files
-settings.save_folder_suffix = 'Init_test'
+settings.save_folder_suffix = 'Size_16_crop'
 # Format and Image Sequence
 settings.frame_pattern_a = 'F_h2_f1000_1_q.*.tif'
 settings.frame_pattern_b = None    
 
 'Region of interest'
 # (50,300,50,300) #Region of interest: (xmin,xmax,ymin,ymax) or 'full' for full image
-# settings.ROI = (350,1280,205,205+330)
-settings.ROI = 'full'
+settings.ROI = (350,550,0,265)
+# settings.ROI = 'full'
 
 'Image preprocessing'
 # 'None' for no masking, 'edges' for edges masking, 'intensity' for intensity masking
@@ -45,11 +45,11 @@ settings.correlation_method = 'circular'  # 'circular' or 'linear'
 settings.iterations = 3  # select the number of PIV passes
 # add the interroagtion window size for each pass. 
 # For the moment, it should be a power of 2 
-# settings.windowsizes = (64, 32, 16) # if longer than n iteration the rest is ignored
-settings.windowsizes = (48, 24 ,12)
+settings.windowsizes = (64, 32, 16) # if longer than n iteration the rest is ignored
+# settings.windowsizes = (48, 24 ,12)
 # The overlap of the interroagtion window for each pass.
-# settings.overlap = (32, 16, 8)  # This is 50% overlap
-settings.overlap = (24, 16, 8)
+settings.overlap = (32, 16, 8)  # This is 50% overlap
+# settings.overlap = (24, 16, 8)
 # Has to be a value with base two. In general window size/2 is a good choice.
 # methode used for subpixel interpolation: 'gaussian','centroid','parabolic'
 settings.subpixel_method = 'gaussian'
@@ -63,7 +63,7 @@ settings.extract_sig2noise = True  # 'True' or 'False' (only for the last pass)
 # method used to calculate the signal to noise ratio 'peak2peak' or 'peak2mean'
 settings.sig2noise_method = 'peak2peak'
 # select the width of the masked to masked out pixels next to the main peak
-settings.sig2noise_mask = 3
+settings.sig2noise_mask = 2
 # If extract_sig2noise==False the values in the signal to noise ratio
 # output column are set to NaN
 'vector validation options'
@@ -92,14 +92,14 @@ settings.do_sig2noise_validation = False # This is time consuming
 settings.sig2noise_threshold = 1.1
 'Outlier replacement or Smoothing options'
 # Replacment options for vectors which are masked as invalid by the validation
-settings.replace_vectors = False # Enable the replacment. Chosse: True or False
+settings.replace_vectors = True # Enable the replacment. Chosse: True or False
 settings.smoothn=False #Enables smoothing of the displacemenet field
 settings.smoothn_p=0.5 # This is a smoothing parameter
 # select a method to replace the outliers: 'localmean', 'disk', 'distance'
 settings.filter_method = 'localmean'
 # maximum iterations performed to replace the outliers
 settings.max_filter_iteration = 4
-settings.filter_kernel_size = 2  # kernel size for the localmean method
+settings.filter_kernel_size = 1  # kernel size for the localmean method
 'Output options'
 # Select if you want to save the plotted vectorfield: True or False
 settings.save_plot = True

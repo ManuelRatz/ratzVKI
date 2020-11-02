@@ -28,8 +28,8 @@ plt.rc('savefig', dpi = 100)     # set the dpi for saving figures
 ## Step 1: Read all the files and (optional) make a video out of it.
 
 
-Fol_In = 'C:\PIV_Processed\Images_Postprocessed\F_h2_f1000_1_q\Open_PIV_results_Init_test'+os.sep
-Fol_Out = 'C:\PIV_Processed\Velocity_fileds'+os.sep
+Fol_In = 'C:\PIV_Processed\Images_Postprocessed\F_h2_f1000_1_q\Open_PIV_results_Size_12'+os.sep
+Fol_Out = 'C:\PIV_Processed\Velocity_fileds'+os.sep+'Fall_Size_12'
 if not os.path.exists(Fol_Out):
     os.mkdir(Fol_Out)
 Fol_Gif = 'C:\PIV_Processed\Gif_Images'+os.sep
@@ -94,30 +94,34 @@ for k in range(0, n_t):
     D_U[:, k] = V_X
     D_V[:, k] = V_Y
     # Open the figure
-    fig, ax = plt.subplots(figsize=(8, 5))  # This creates the figure
-    # Or you can plot it as streamlines
-    plt.contourf(Xg *1000 , Yg*1000 , Magn)
-    # One possibility is to use quiver
-    STEPx = 1
-    STEPy = 1
+    # fig, ax = plt.subplots()  # This creates the figure
+    # # Or you can plot it as streamlines
+    # plt.contourf(Xg *1000 , Yg*1000 , Magn)
+    # # One possibility is to use quiver
+    # STEPx = 1
+    # STEPy = 1
     
-    plt.quiver(Xg[::STEPx, ::STEPy] * 1000, Yg[::STEPx, ::STEPy] * 1000,
-               Vxg[::STEPx, ::STEPy], Vyg[::STEPx, ::STEPy], color='k', scale = 100)  # Create a quiver (arrows) plot
-    ax.set_aspect('equal')  # Set equal aspect ratio
-    ax.set_xlabel('$x[mm]$', fontsize=18) # set the xlabel
-    ax.set_ylabel('$y[mm]$', fontsize=18) # set the ylabel
-    plt.axis('off') # disable the axis ticks
-    plt.clim(0, 10) # set the colorbar for the contour
-    plt.colorbar()  # show the colorbar
-    plt.savefig(NameOUT, dpi=800) # save the figure
-    plt.close(fig)
-    print('Image ' + str(k+1) + ' of ' + str(n_t))
+    # plt.quiver(Xg[::STEPx, ::STEPy] * 1000, Yg[::STEPx, ::STEPy] * 1000,
+    #            Vxg[::STEPx, ::STEPy], Vyg[::STEPx, ::STEPy], color='k', scale = 100)  # Create a quiver (arrows) plot
+    # ax.set_aspect('equal')  # Set equal aspect ratio
+    # ax.set_xlabel('$x[mm]$', fontsize=18) # set the xlabel
+    # ax.set_ylabel('$y[mm]$', fontsize=18) # set the ylabel
+    # plt.axis('off') # disable the axis ticks
+    # plt.clim(0, 10) # set the colorbar for the contour
+    # plt.colorbar()  # show the colorbar
+    # plt.savefig(NameOUT, dpi=400) # save the figure
+    # plt.close(fig)
+    # print('Image ' + str(k+1) + ' of ' + str(n_t))
     
     fig, ax = plt.subplots(figsize=(8,5))
-    plt.plot(Xg[0,:],Vyg[60,:])
-    plt.scatter(Xg[0,:],Vyg[60,:])
+    plt.plot(Xg[0,:],Vyg[20,:])
+    plt.scatter(Xg[0,:],Vyg[20,:])
+    plt.plot(Xg[0,:],Vyg[150,:])
+    plt.scatter(Xg[0,:],Vyg[150,:])
+    plt.plot(Xg[0,:],Vyg[300,:])
+    plt.scatter(Xg[0,:],Vyg[300,:])
     ax.set_xlim(Xg[0,0],Xg[0,-1])
-    ax.set_ylim(-16,0)
+    ax.set_ylim(-24,0)
     ax.invert_yaxis() # Invert Axis for plotting purpose
     Save_Name = Fol_Gif +'Gif_img%03d.png' %k
     fig.savefig(Save_Name,dpi=100)

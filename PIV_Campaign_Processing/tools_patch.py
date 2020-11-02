@@ -132,7 +132,7 @@ def display_vector_field_windef( filename, on_img=False, image_name='None', wind
     valid = ~invalid
     pl.quiver(a[invalid,0],a[invalid,1],a[invalid,2],a[invalid,3],color='r',width=0.001,headwidth=3,**kw)
     pl.quiver(a[valid,0],a[valid,1],a[valid,2],a[valid,3],color='b',width=0.001,headwidth=3,**kw)
-    pl.show()
+    # pl.show()
     return fig, ax
 
 def imread(filename, flatten=0):

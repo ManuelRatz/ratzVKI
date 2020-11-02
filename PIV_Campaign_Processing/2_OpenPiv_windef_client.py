@@ -12,22 +12,20 @@ Created on Wed Sep 18 16:42:13 2019
 
 import os
 from OpenPIV_windef_func import PIV_windef
-#import time
 
 class Settings(object):
     pass  
-#start_time = time.time()
 settings = Settings()
 
 'Data related settings'
 # Folder with the images to process
-settings.filepath_images = 'Images_preprocessed' + os.sep + 'rise_inversion'
+settings.filepath_images = 'C:\PIV_Processed\Images_Preprocessed\F_h2_f1000_1_q'
 # Folder for the outputs
-settings.save_path = './Results_PIV/'
+settings.save_path = 'C:\PIV_Processed\Images_Postprocessed\F_h2_f1000_1_q'
 # Root name of the output Folder for Result Files
-settings.save_folder_suffix = 'Inversion_24'
+settings.save_folder_suffix = 'Init_test'
 # Format and Image Sequence
-settings.frame_pattern_a = 'R_h1_f1200_1_p15.*.tif'
+settings.frame_pattern_a = 'F_h2_f1000_1_q.*.tif'
 settings.frame_pattern_b = None    
 
 'Region of interest'
@@ -44,7 +42,7 @@ settings.dynamic_masking_filter_size = 7
 
 'Processing Parameters'
 settings.correlation_method = 'circular'  # 'circular' or 'linear'
-settings.iterations = 2  # select the number of PIV passes
+settings.iterations = 3  # select the number of PIV passes
 # add the interroagtion window size for each pass. 
 # For the moment, it should be a power of 2 
 # settings.windowsizes = (64, 32, 16) # if longer than n iteration the rest is ignored
@@ -77,8 +75,8 @@ settings.validation_first_pass = False
 # The validation is done at each iteration based on three filters.
 # The first filter is based on the min/max ranges. Observe that these values are defined in
 # terms of minimum and maximum displacement in pixel/frames.
-settings.MinMax_U_disp = (-20, 20)
-settings.MinMax_V_disp = (-200, 200)
+settings.MinMax_U_disp = (-1, 1)
+settings.MinMax_V_disp = (-20, 0)
 # The second filter is based on the global STD threshold
 settings.std_threshold = 5000  # threshold of the std validation
 # The third filter is the median test (not normalized at the moment)
@@ -109,6 +107,4 @@ settings.save_plot = True
 settings.show_plot = False
 settings.scale_plot = 200 # select a value to scale the quiver plot of the vectorfield
 # run the script with the given settings
-settings.counter = 0
-
 PIV_windef(settings)

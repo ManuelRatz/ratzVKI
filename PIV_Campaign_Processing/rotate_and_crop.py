@@ -36,6 +36,9 @@ def get_angle(image):
     peak_left, peak_right= find_edges(image) # get the indices of the detected edges
     x_dummy = np.arange(1,1281,1) # set up a dummy for the fit
     a,b = np.polyfit(x_dummy,peak_left,1) # 
+    # plt.scatter(x_dummy, peak_left, marker='o', s=(73./100)**2)
+    # plt.plot(x_dummy,linear(a,b,x_dummy))
+    # plt.show()
     angle_left = np.abs(np.arctan((linear(a,b,1280)-b)/1280))
     return angle_left
 
@@ -57,8 +60,8 @@ def find_edges(image):
 
     """
     grad = np.gradient(image, axis = 1) # take the gradient of the rows
-    peak_left = np.argmax(image>, axis = 1) # find the first peak from the left side
-    peak_right = image.shape[1]-np.argmax(image[:,::-1]>100, axis =1) # find the first peak from the right side
+    peak_left = np.argmax(image>160, axis = 1) # find the first peak from the left side
+    peak_right = image.shape[1]-np.argmax(image[:,::-1]>160, axis =1) # find the first peak from the right side
     return peak_left, peak_right
 
 def get_most_common_element(array):
@@ -106,70 +109,77 @@ def rotate_and_crop(image, crop_final, crop_rot, angle):
     final_img = cropped[crop_final[0]:crop_final[1],crop_final[2]:crop_final[3]]
     return final_img
 
-def get_process_params(name, idx0, wallcut=0):
+def get_process_params(folder):
     """
-    Function to fetch the required cropping variables for ALL the images.
-    Should be checked because these values are used for every image
+    Function to get the rotation angle and crop range
 
     Parameters
     ----------
-    name : string
-        Nomenclature of the images.
-    idx0 : Integer
-        Index for which to do the calculations.
+    folder : string
+        Input folder where the images are located.
 
     Returns
     -------
-    crop_final : Tuple of 4 integers
-        Contains the final crop used to get just the channel in the image.
-    crop_rot : Tuple of 4 integers
-        Contains the Crop of the rotated image to cut the edges.
+    crop_final : integer array
+        Array containing the 4 crop parameters at the end.
+    crop_rot : integer array
+        Array containing the 4 crop parameters after the rotation.
     angle : float64
-        Angle of tilt for the image.
-    name_sliced : Tuple of 3 integers
-        Indices of the "." in the name of the file
+        Angle of tilt for the images.
+    name_sliced : string
+        Name of the images without the number.
+    img_amount : integer
+        Amount of images in the folder.
+    idx0 : integer
+        Index of the first image in the folder.
+
     """
-    indices = [i for i, a in enumerate(name) if a == '.']
-    name_sliced = name[:(indices[0]+1)]
-    img_name = Fol_In + name + '%06d.tif' %idx0
-    img = cv2.imread(img_name,0)
+    
+    file_list = os.listdir(folder) # get the files in the directory
+    img_amount = len(file_list)-5 # take away the 5 lvm files to get the amount
+    frame0 = file_list[5] # get the name of the first image
+    indices = [i for i, a in enumerate(frame0) if a == '.'] # find the '.' in the image name
+    idx0 = int(frame0[indices[0]+1:indices[1]]) # extract the first index from the image name
+    name_sliced = frame0[:(indices[0]+1)] # extract the nomenclature from the image name
+    img_name = Fol_In + frame0 # directory of the image
+    img = cv2.imread(img_name,0) # load the image
     # get the rotation angle and rotate
     angle = get_angle(img)
-    rotated = ndimage.rotate(img, angle*180/np.pi)
-    hr, wr = rotated.shape
+    rotated = ndimage.rotate(img, angle*180/np.pi) # rotate the image
+    hr, wr = rotated.shape # get the new shape
     
     crop_rot =(0+int(np.rint(wr*np.tan(angle))), hr-int(np.rint(wr*np.tan(angle))),\
                0+int(np.rint(hr*np.tan(angle))), wr-int(np.rint(hr*np.tan(angle))))
-    cropped = rotated[crop_rot[0]:crop_rot[1],crop_rot[2]:crop_rot[3]]
+        # crop coordinates to get rid of the black spots due to rotation
+    cropped = rotated[crop_rot[0]:crop_rot[1],crop_rot[2]:crop_rot[3]] # crop the image
     
-    new_peak_left, new_peak_right = find_edges(cropped)
-    x_low =  get_most_common_element(new_peak_left)
-    x_high = get_most_common_element(new_peak_right)
-    crop_final = (0,cropped.shape[0],x_low+wallcut,x_high+1-wallcut)
-    return crop_final, crop_rot, angle, name_sliced
-    
+    new_peak_left, new_peak_right = find_edges(cropped) # get the new edges
+    x_low =  get_most_common_element(new_peak_left) # get lower x bound
+    x_high = get_most_common_element(new_peak_right) # get upper x bound
+    crop_final = (0,cropped.shape[0],x_low+15,x_high+1-30) # prepare the final crop
+    return crop_final, crop_rot, angle, name_sliced, img_amount, idx0
+
     
 # set up the input and output folder
-Fol_In ='C:'+os.sep+'PIV_Campaign'+os.sep+'Rise\h1\p1000'+os.sep+'R_h1_f1000_1_p10'+os.sep
-Fol_Out ='C:'+os.sep+'PIV_Campaign'+os.sep+'Rise\h1\p1000'+os.sep+'R_h1_f1000_1_p10_rotated'+os.sep
+Fol_In = 'C:\PIV_Campaign\Fall\h2\F_h2_f1000_1_q'+os.sep
+Fol_Out = 'C:\PIV_Processed\Images_Rotated\F_h2_f1000_1_q'+os.sep
+
+# create the folder in case it doesn't exist
 if not os.path.exists(Fol_Out):
     os.mkdir(Fol_Out)
 
+# get the parameters from the images in the folder
+crop_final, crop_rot, angle, name_sliced, img_amount, idx0 = get_process_params(Fol_In)
+# img_amount = 10
 
-# get the cropping parameters from the first image
-first_frame = 1
-name = 'R_h1_f1000_1_p10.6dbfz5ty.'
-crop_final, crop_rot, angle, name_sliced = get_process_params(name, first_frame, wallcut=5)
-img_list = os.listdir(Fol_In)
-n_t = len(img_list)-5 # amount of images to calculate, take away the lvm files
-# iterate over all of the images
-for i in range(0, 5):
-    img_name = name + '%06d.tif' %(i+first_frame) # get the image name
+# iterate over all the images
+for i in range(idx0, img_amount+idx0):
+    img_name = name_sliced + '%06d.tif' %i # get the image name
     img = cv2.imread(Fol_In + img_name,0) # read the image
     img_processed = rotate_and_crop(img, crop_final, crop_rot, angle) # rotate and crop the image
-    name_out = name_sliced + '%06d.tif' %(i+first_frame) # crop the name for the output
+    name_out = name_sliced + '%06d.tif' %i # crop the name for the output
     cv2.imwrite(Fol_Out + name_out ,img_processed) # write the cropped images to the output folder
-    MEX = 'Cropping Image ' + str(i+1) + ' of ' + str(n_t)
+    MEX = 'Cropping Image ' + str(i+1-idx0) + ' of ' + str(img_amount) # update the user
     print(MEX)
     
     

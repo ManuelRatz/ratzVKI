@@ -12,6 +12,7 @@ from scipy import ndimage   # for rotating the images
 import numpy as np          # for array operations
 import os                   # for filepaths
 import matplotlib.pyplot as plt # to check if the angle calculation is okay
+import time                 # for calculating runtime
 
 def get_angle(img_avg):
     """
@@ -199,7 +200,7 @@ def rotate_and_crop(image, crop_final, crop_rot, angle):
     final_img = cropped[crop_final[0]:crop_final[1],crop_final[2]:crop_final[3]]
     return final_img
 
-def get_process_params(folder, wallcut = 7):
+def get_process_params(folder, wallcut_file):
    
     """
     Function to get the rotation angle and crop range
@@ -208,8 +209,6 @@ def get_process_params(folder, wallcut = 7):
     ----------
     folder : string
         Input folder where the images are located.
-    wallcut : integer, optional
-        Pixels to cut near the wall, default is 7.
 
     Returns
     -------
@@ -229,6 +228,8 @@ def get_process_params(folder, wallcut = 7):
         True if there are images in the folder, otherwise false
 
     """
+    run_names = wallcut_file[:,0].astype(np.str)
+    wallcuts = wallcut_file[:,1:].astype(np.float)
     # get a list of all the files in the folder
     file_list = os.listdir(folder)
     # get the amount of images by taking away the labview files
@@ -247,6 +248,15 @@ def get_process_params(folder, wallcut = 7):
     idx0 = int(frame0[indices[0]+1:indices[1]])
     # cut of the index of the file to get the sliced name
     name_sliced = frame0[:(indices[0])]
+    # search for the right wallcut
+    for j in range(0, len(run_names)):
+        if(name_sliced == run_names[j]):
+            wallcut_left, wallcut_right = wallcuts[j,:]
+    # check whether a wallcut was found
+    if (wallcut_left ==np.nan):
+        MEX = 'No wallcut was found'
+        print(MEX)
+        return 0, 0, 0, 0, 0, 0, False
     # calculate the average image
     avg = get_avg_image(folder, name_sliced, idx0)
     # calculate the angle from the average image
@@ -264,51 +274,151 @@ def get_process_params(folder, wallcut = 7):
     x_low =  get_most_common_element(new_peak_left)
     x_high = get_most_common_element(new_peak_right)
     # arange coordinates of the final crop
-    crop_final = (0,cropped.shape[0],x_low+wallcut,x_high+1-wallcut) 
+    crop_final = (0,cropped.shape[0],x_low+int(wallcut_left),x_high+1-int(wallcut_right)) 
     return crop_final, crop_rot, angle, name_sliced, img_amount, idx0, True
 
+  
+"""
+This part does the rotation for a single run, one can set the folder and how
+many images to process
+"""
    
-# set up the input and output folder    
-
-Fol_In = 'G:\PIV_Campaign\Fall\h1\F_h1_f1000_1_s'
-
+# # set up the input and output folder  
+# Fol_In = 'C:\PIV_Campaign\Rise\h4\p1500\R_h4_f1200_1_p15' + os.sep
+# Fol_Out = 'C:\PIV_Processed\Images_Rotated\R_h4_f1200_1_p15' + os.sep
+#
+# wallcut_file = np.genfromtxt('wallcuts.txt', dtype = str)
+# crop_final, crop_rot, angle, name_sliced, img_amount, idx0, images_exist =\
+#             get_process_params(Fol_In, wallcut_file)
+# if(images_exist):
+#     Fol_Out = 'C:\PIV_Processed\Images_Rotated'+os.sep+name_sliced+os.sep
+#     # create the folder in case it doesn't exist
+#     if not os.path.exists(Fol_Out):
+#         os.mkdir(Fol_Out)
+#     img_amount = 10
+#     # iterate over all the images
+#     for i in range(idx0+470, img_amount+idx0+470):
+#         img_name = name_sliced + '.%06d.tif' %i # get the image name
+#         img = cv2.imread(Fol_In + img_name,0) # read the image
+#         img_processed = rotate_and_crop(img, crop_final, crop_rot, angle) # rotate and crop the image
+#         name_out = name_sliced + '.%06d.tif' %i # crop the name for the output
+#         cv2.imwrite(Fol_Out + name_out ,img_processed) # write the cropped images to the output folder
+#         MEX = 'Cropping Image ' + str(i+1-idx0) + ' of ' + str(img_amount)\
+#             + ' for run %s' %name_sliced# update the user
+#         print(MEX)
+# else:
+#     MEX = 'No images found in directory %s' %Fol_In
+#     print(MEX)
+    
 """
-This will be used once all the wallcuts have been decided, still under development
+This part calculates the rotated images for ALL the files
+WARNING: This is a very long code ~5 hours as we are processing 180 GB of data
 """
 
-# Fol_In = 'C:'+os.sep+'PIV_Campaign'+os.sep+'Fall'+os.sep # directory containing the heights
+###############################################################################
+###                      First we calculate the Falls                       ###
+###############################################################################
+
+# folder containing all the falls
+Fol_In = 'C:'+os.sep+'PIV_Campaign'+os.sep+'Fall'+os.sep
+# load the wallcut file
+wallcut_file = np.genfromtxt('wallcuts.txt', dtype = str)
+
+
+# # get all of the heights and loop over them
 # heights = os.listdir(Fol_In)
-# for m in range(0,len(heights)): # loop over them
+# for m in range(1,4):
+#     # get all the speeds and loop over them
 #     speeds = os.listdir(Fol_In+heights[m])
 #     for j in range(0,len(speeds)):
+#         # get the start time of the run
+#         start = time.process_time()
+#         # set the current working directory
 #         current_folder = Fol_In+heights[m]+os.sep+speeds[j]+os.sep
 #         # get the parameters from the images in the folder
 #         crop_final, crop_rot, angle, name_sliced, img_amount, idx0, images_exist =\
-#             get_process_params(current_folder, wallcut = 4)
+#             get_process_params(current_folder, wallcut_file)
+#         # check whether there are images
 #         if(images_exist):
-#             Fol_Out = 'C:\PIV_Processed\Images_Rotated'+os.sep+name_sliced+os.sep
 #             # create the folder in case it doesn't exist
+#             Fol_Out = 'C:\PIV_Processed\Images_Rotated'+os.sep+name_sliced+os.sep
 #             if not os.path.exists(Fol_Out):
 #                 os.mkdir(Fol_Out)
-#             img_amount = 10
+#             # optionally set the image amount here
+#             # img_amount = 10
 #             # iterate over all the images
 #             for i in range(idx0, img_amount+idx0):
-#                 img_name = name_sliced + '.%06d.tif' %i # get the image name
-#                 img = cv2.imread(current_folder + img_name,0) # read the image
-#                 img_processed = rotate_and_crop(img, crop_final, crop_rot, angle) # rotate and crop the image
-#                 name_out = name_sliced + '.%06d.tif' %i # crop the name for the output
-#                 cv2.imwrite(Fol_Out + name_out ,img_processed) # write the cropped images to the output folder
-#                 MEX = 'Cropping Image ' + str(i+1-idx0) + ' of ' + str(img_amount)\
-#                     + ' for run %s' %name_sliced# update the user
-#                 print(MEX)
+#                 img_name = name_sliced + '.%06d.tif' %i
+#                 img = cv2.imread(current_folder + img_name,0)
+#                 img_processed = rotate_and_crop(img, crop_final, crop_rot, angle)
+#                 name_out = name_sliced + '.%06d.tif' %i
+#                 cv2.imwrite(Fol_Out + name_out ,img_processed)
+#                 if (((i-idx0+1)%100) == 0):
+#                     MEX = 'Cropping Image ' + str(i+1-idx0) + ' of ' + str(img_amount)\
+#                         + ' for run %s' %name_sliced
+#                     print(MEX)
+#         else:
+#             MEX = 'No images found in directory %s' %Fol_In
+#             print(MEX)
+#         # print the time
+#         print(time.process_time() - start)   
+  
     
-    
-    
-    
-    
-    
-    
-    
+###############################################################################
+###                          And now the Rises                              ###
+############################################################################### 
+
+# folder containing all the rises
+Fol_In = 'C:'+os.sep+'PIV_Campaign'+os.sep+'Rise'+os.sep
+# load the wallcut file
+wallcut_file = np.genfromtxt('wallcuts.txt', dtype = str)
+
+# get all of the heights and loop over them
+heights = os.listdir(Fol_In)
+# for m in range(0,len(heights)):
+for m in range(0, 1):
+    # get all the pressures and loop over them
+    pressures = os.listdir(Fol_In+heights[m])
+    # for k in range(0, len(pressures)):
+    for k in range(5, 6):
+        # get all the different runs and loop over them
+        runs = os.listdir(Fol_In+heights[m]+os.sep + pressures[k])
+        for j in range(0, len(runs)):
+            # get the start time of the run
+            start = time.process_time()
+            # set the current working directory
+            current_folder = Fol_In+heights[m]+os.sep + pressures[k]+os.sep+runs[j]+os.sep
+            # get the parameters from the images in the folder
+            crop_final, crop_rot, angle, name_sliced, img_amount, idx0, images_exist =\
+                get_process_params(current_folder, wallcut_file)
+            # check whether there are images
+            if(images_exist):
+                # create the folder in case it doesn't exist
+                Fol_Out = 'C:\PIV_Processed\Images_Rotated'+os.sep+name_sliced+os.sep
+                if not os.path.exists(Fol_Out):
+                    os.mkdir(Fol_Out)
+                # optionally set the image amount here
+                # img_amount = 3
+                # iterate over all the images
+                for i in range(idx0, img_amount+idx0):
+                    # set te image name and load it
+                    img_name = name_sliced + '.%06d.tif' %i
+                    img = cv2.imread(current_folder + img_name,0)
+                    # process the image
+                    img_processed = rotate_and_crop(img, crop_final, crop_rot, angle)
+                    # save the image
+                    name_out = name_sliced + '.%06d.tif' %i
+                    cv2.imwrite(Fol_Out + name_out ,img_processed)
+                    # update the user every 100 images
+                    if (((i-idx0+1)%100) == 0):
+                        MEX = 'Cropping Image ' + str(i+1-idx0) + ' of ' + str(img_amount)\
+                            + ' for run %s' %name_sliced
+                        print(MEX)
+            else:
+                MEX = 'No images found in directory %s' %Fol_In
+                print(MEX)
+            # print the time
+            print(time.process_time() - start)   
     
     
     

@@ -16,6 +16,7 @@ import os
 from numpy.fft import rfft2, irfft2, fftshift
 import matplotlib.pyplot as plt
 from openpiv import process, validation, filters, pyprocess, tools, preprocess,scaling
+# not modified
 def moving_window_array(array, window_size, overlap):
     """
     This is a nice numpy trick. The concept of numpy strides should be
@@ -77,7 +78,7 @@ def moving_window_array(array, window_size, overlap):
         (shape[1] - window_size) / (window_size - overlap)) + 1, window_size, window_size)
 
     return numpy.lib.stride_tricks.as_strided(array, strides=strides, shape=shape).reshape(-1, window_size, window_size)
-
+# modified
 def get_coordinates(image_size, win_width, win_height, overlap_width, overlap_height):
         """Compute the x, y coordinates of the centers of the interrogation windows.
 
@@ -241,7 +242,7 @@ def find_subpixel_peak_position(corr, subpixel_method='gaussian'):
             This function returns the displacement in u and v
             '''
         return subp_peak_position[0] - default_peak_position[0], subp_peak_position[1] - default_peak_position[1]
-    
+# modified
 def get_field_shape(image_size, win_width, win_height, overlap_width, overlap_height):
     """Compute the shape of the resulting flow field.
     Given the image size, the interrogation window size and
@@ -267,6 +268,7 @@ def get_field_shape(image_size, win_width, win_height, overlap_width, overlap_he
     return ((image_size[0] - win_height) // (win_height - overlap_height) + 1,
             (image_size[1] - win_width) // (win_width - overlap_width) + 1)
 
+# # example case for a very simple array to get the windows correctly
 # dim = 8
 # AA = np.zeros((dim,1))
 # for i in range(0, dim):
@@ -281,27 +283,27 @@ def get_field_shape(image_size, win_width, win_height, overlap_width, overlap_he
 # test = moving_window_array(b,4,2)
 # test2 = moving_window_array2(b,8,2,4,1)
 
+# set up the input folder
 Fol_In = 'C:'+os.sep+'Users'+os.sep+'manue'+os.sep+'Desktop'+os.sep+'tmp'+os.sep
+# load two images as a test
 file_a = Fol_In + 'R_h1_f1200_1_p15.000280.tif'
 file_b = Fol_In + 'R_h1_f1200_1_p15.000281.tif'
-
 frame_a = cv2.imread(file_a,0)
 frame_b = cv2.imread(file_b,0)
 
+# set a rectangular window with an aspect ratio of 2 and an overlap of 50%
 win_height = 48
 win_width = int(0.5*win_height)
 overlap_height = int(0.5*win_height)
 overlap_width = int(0.5*win_width)
 
+# calculate the correlation windows and the correlation map
 cor_win_1_new = moving_window_array2(frame_a, win_width, win_height, overlap_width, overlap_height)
 cor_win_2_new = moving_window_array2(frame_b, win_width, win_height, overlap_width, overlap_height)
-# cor_win_1_old = moving_window_array(frame_a, win_width, overlap_width)
-# cor_win_2_old = moving_window_array(frame_b, win_width, overlap_width)
-
 correlation = fftshift(irfft2(np.conj(rfft2(cor_win_1_new)) *rfft2(cor_win_2_new)).real, axes=(1, 2))
-# plt.contour(corr[0,:,:])
+# plt.contourf(corr[0,:,:])
 
-
+# this part is taken from the windef.py file and modified to suit our needs
 disp_new = np.zeros((np.size(correlation, 0), 2))#create a dummy for the loop to fill
 for i in range(0, np.size(correlation, 0)):
     ''' determine the displacment on subpixel level '''
@@ -317,13 +319,9 @@ v = -disp_new[:, 0].reshape(shapes)
 
 x, y = get_coordinates(frame_a.shape, win_width, win_height, overlap_width, overlap_height)
 
-# plt.quiver(x,y,u,v)
-# plt.plot(x[0,:],v[0,:])
-
-
 
 ##############################################################################
-# load the squares piv to compare
+# load the solution of the square piv to compare
 old = np.genfromtxt('C:\\Users\manue\Desktop\\tmp_processed\Open_PIV_results_test\\field_A000.txt')
 nxny = old.shape[0]  # is the to be doubled at the end we will have n_s=2 * n_x * n_y
 n_s = 2 * nxny
@@ -348,6 +346,7 @@ V_Y = old[:, 3]  # V component
 u_old = (V_X.reshape((n_x, n_y)))
 v_old = (V_Y.reshape((n_x, n_y)))
 
+# plot the v component of the velocity for different heights to get a comparison
 for idx in range(0, x.shape[0]):
     fig, ax = plt.subplots()
     plt.scatter(x[0,:],v[idx,:], c='b', label = 'new')

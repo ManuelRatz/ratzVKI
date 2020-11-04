@@ -376,11 +376,11 @@ wallcut_file = np.genfromtxt('wallcuts.txt', dtype = str)
 # get all of the heights and loop over them
 heights = os.listdir(Fol_In)
 # for m in range(0,len(heights)):
-for m in range(0, 1):
+for m in range(3, 4):
     # get all the pressures and loop over them
     pressures = os.listdir(Fol_In+heights[m])
-    # for k in range(0, len(pressures)):
-    for k in range(5, 6):
+    for k in range(0, len(pressures)):
+    # for k in range(0, 3):
         # get all the different runs and loop over them
         runs = os.listdir(Fol_In+heights[m]+os.sep + pressures[k])
         for j in range(0, len(runs)):

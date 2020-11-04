@@ -19,30 +19,30 @@ settings = Settings()
 
 'Data related settings'
 # Folder with the images to process
-settings.filepath_images = 'C:\PIV_Processed\Images_Preprocessed\F_h2_f1000_1_q'
+settings.filepath_images = 'C:' +os.sep+'Users\manue\Desktop'+os.sep+'tmp'
 # Folder for the outputs
-settings.save_path = 'C:\PIV_Processed\Images_Postprocessed\F_h2_f1000_1_q'
+settings.save_path = 'C:' +os.sep+'Users'+os.sep+'manue'+os.sep+'Desktop'+os.sep+'tmp_processed'
 # Root name of the output Folder for Result Files
-settings.save_folder_suffix = 'Size_16_crop'
+settings.save_folder_suffix = 'test'
 # Format and Image Sequence
-settings.frame_pattern_a = 'F_h2_f1000_1_q.*.tif'
+settings.frame_pattern_a = 'R_h1_f1200_1_p15.*.tif'
 settings.frame_pattern_b = None    
 
 'Region of interest'
 # (50,300,50,300) #Region of interest: (xmin,xmax,ymin,ymax) or 'full' for full image
-settings.ROI = (350,550,0,265)
-# settings.ROI = 'full'
+# settings.ROI = (0,200,0,500)
+settings.ROI = 'full'
 
 'Image preprocessing'
 # 'None' for no masking, 'edges' for edges masking, 'intensity' for intensity masking
 # WARNING: This part is under development so better not to use MASKS
-settings.dynamic_masking_method = 'intensity'
+settings.dynamic_masking_method = 'None'
 settings.dynamic_masking_threshold = 0.005
 settings.dynamic_masking_filter_size = 7 
 
 'Processing Parameters'
 settings.correlation_method = 'circular'  # 'circular' or 'linear'
-settings.iterations = 3  # select the number of PIV passes
+settings.iterations = 2  # select the number of PIV passes
 # add the interroagtion window size for each pass. 
 # For the moment, it should be a power of 2 
 settings.windowsizes = (64, 32, 16) # if longer than n iteration the rest is ignored
@@ -61,7 +61,7 @@ settings.dt = 1  # time between to frames (in seconds)
 # It is possible to decide if the S/N should be computed (for the last pass) or not
 settings.extract_sig2noise = True  # 'True' or 'False' (only for the last pass)
 # method used to calculate the signal to noise ratio 'peak2peak' or 'peak2mean'
-settings.sig2noise_method = 'peak2peak'
+settings.sig2noise_method = 'peak2mean'
 # select the width of the masked to masked out pixels next to the main peak
 settings.sig2noise_mask = 2
 # If extract_sig2noise==False the values in the signal to noise ratio
@@ -75,12 +75,12 @@ settings.validation_first_pass = False
 # The validation is done at each iteration based on three filters.
 # The first filter is based on the min/max ranges. Observe that these values are defined in
 # terms of minimum and maximum displacement in pixel/frames.
-settings.MinMax_U_disp = (-1, 1)
-settings.MinMax_V_disp = (-20, 0)
+settings.MinMax_U_disp = (-100, 100)
+settings.MinMax_V_disp = (-200, 200)
 # The second filter is based on the global STD threshold
 settings.std_threshold = 5000  # threshold of the std validation
 # The third filter is the median test (not normalized at the moment)
-settings.median_threshold = 5  # threshold of the median validation
+settings.median_threshold = 50  # threshold of the median validation
 # On the last iteration, an additional validation can be done based on the S/N.
 settings.median_size = 1 #defines the size of the local median
 'Validation based on the signal to noise ratio'

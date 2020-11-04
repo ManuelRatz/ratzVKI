@@ -137,7 +137,7 @@ def display_vector_field_windef( filename, on_img=False, image_name='None', wind
 
 def imread(filename, flatten=0):
     """Read an image file into a numpy array
-    using imageio.imread
+    using imageio.imread 
     
     Parameters
     ----------

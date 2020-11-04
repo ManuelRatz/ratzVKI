@@ -71,9 +71,9 @@ def export_images(matrix, folder, n_images, shape):
         cv2.imwrite(name, Im2)
 
 # Folder in
-Fol_In = 'C:\PIV_Processed\Images_Rotated\R_h1_f1200_1_p15' + os.sep
+Fol_In = 'C:\PIV_Processed\Images_Rotated\F_h4_f1200_1_q' + os.sep
 # create output folder in case it doesn't exist
-Fol_Out = 'C:\PIV_Processed\Images_Preprocessed\R_h1_f1200_1_p15' + os.sep  
+Fol_Out = 'C:\PIV_Processed\Images_Preprocessed\F_h4_f1200_1_q' + os.sep  
 if not os.path.exists(Fol_Out):
     os.mkdir(Fol_Out)
 

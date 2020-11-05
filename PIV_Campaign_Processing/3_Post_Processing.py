@@ -28,11 +28,11 @@ plt.rc('savefig', dpi = 100)     # set the dpi for saving figures
 ## Step 1: Read all the files and (optional) make a video out of it.
 
 
-Fol_In = 'C:\PIV_Processed\Images_Postprocessed\F_h2_f1000_1_q\Open_PIV_results_Size_12'+os.sep
-Fol_Out = 'C:\PIV_Processed\Velocity_fileds'+os.sep+'Fall_Size_12'
+Fol_In = 'C:\\Users\manue\Desktop\\tmp_processed\Open_PIV_results_16_64_F_h1_f1000_1_s'+os.sep
+Fol_Out = 'C:\\Users\manue\Desktop\\tmp_processed\post'+os.sep
 if not os.path.exists(Fol_Out):
     os.mkdir(Fol_Out)
-Fol_Gif = 'C:\PIV_Processed\Gif_Images'+os.sep
+Fol_Gif = 'C:\\Users\manue\Desktop\\tmp_processed\post'+os.sep
 if not os.path.exists(Fol_Gif):
     os.mkdir(Fol_Gif)
 
@@ -75,7 +75,7 @@ D_V = np.zeros((n_s, n_t))
 D_U = np.zeros((n_x * n_y, n_t))  # Initialize the Data matrix for U Field.
 D_V = np.zeros((n_x * n_y, n_t))  # Initialize the Data matrix for V Field.
 
-n_t = 144
+n_t = 1
 for k in range(0, n_t):
     # Read file number 10 (Check the string construction)
     Name = Fol_In + os.sep + 'field_A%03d' % (k) + '.txt'  # Check it out: print(Name)
@@ -113,29 +113,35 @@ for k in range(0, n_t):
     # plt.close(fig)
     print('Image ' + str(k+1) + ' of ' + str(n_t))
     
-    fig, ax = plt.subplots(figsize=(8,5))
-    plt.plot(Xg[0,:],Vyg[20,:])
-    plt.scatter(Xg[0,:],Vyg[20,:])
-    plt.plot(Xg[0,:],Vyg[150,:])
-    plt.scatter(Xg[0,:],Vyg[150,:])
-    plt.plot(Xg[0,:],Vyg[300,:])
-    plt.scatter(Xg[0,:],Vyg[300,:])
-    ax.set_xlim(Xg[0,0],Xg[0,-1])
-    ax.set_ylim(-24,0)
-    ax.invert_yaxis() # Invert Axis for plotting purpose
-    Save_Name = Fol_Gif +'Gif_img%03d.png' %k
-    fig.savefig(Save_Name,dpi=100)
-    plt.close(fig)
+    # fig, ax = plt.subplots(figsize=(8,5))
+    # plt.plot(Xg[0,:],Vyg[20,:])
+    # plt.scatter(Xg[0,:],Vyg[20,:])
+    # plt.plot(Xg[0,:],Vyg[150,:])
+    # plt.scatter(Xg[0,:],Vyg[150,:])
+    # plt.plot(Xg[0,:],Vyg[300,:])
+    # plt.scatter(Xg[0,:],Vyg[300,:])
+    # ax.set_xlim(Xg[0,0],Xg[0,-1])
+    # ax.set_ylim(-24,0)
+    # ax.invert_yaxis() # Invert Axis for plotting purpose
+    # Save_Name = Fol_Gif +'Gif_img%03d.png' %k
+    # fig.savefig(Save_Name,dpi=100)
+    # plt.close(fig)
 
-import imageio
-GIFNAME = Fol_Gif + os.sep + '..' + os.sep + 'Giff_Velocity.gif'
-images = []
+# for i in range(0, Xg.shape[0]):
+for i in range(0, 15, 2):
+    fig, ax = plt.subplots()
+    plt.plot(Xg[i,:],Vyg[i,:])
+    plt.scatter(Xg[i,:],Vyg[i,:])
 
-for k in range(0, n_t):
-    FIG_NAME = Fol_Gif +'Gif_img%03d' %k + '.png'
-    images.append(imageio.imread(FIG_NAME))
+# import imageio
+# GIFNAME = Fol_Gif + os.sep + '..' + os.sep + 'Giff_Velocity.gif'
+# images = []
+
+# for k in range(0, n_t):
+#     FIG_NAME = Fol_Gif +'Gif_img%03d' %k + '.png'
+#     images.append(imageio.imread(FIG_NAME))
     
-# Now we can assembly the video and clean the folder of png's (optional)
-imageio.mimsave(GIFNAME, images, duration=0.05)
-# import shutil  # nice and powerfull tool to delete a folder and its content
-# shutil.rmtree(Fol_Gif)
+# # Now we can assembly the video and clean the folder of png's (optional)
+# imageio.mimsave(GIFNAME, images, duration=0.05)
+# # import shutil  # nice and powerfull tool to delete a folder and its content
+# # shutil.rmtree(Fol_Gif)

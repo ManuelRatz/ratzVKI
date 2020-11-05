@@ -4,14 +4,8 @@ Created on Wed Sep 18 16:42:13 2019
 
 @author: Theo
 """
-
-# add two directories that include the new files
-# note that we need to import openpiv in a separate, original namespace
-# so we can use everything from openpiv as openpiv.filters and whatever is 
-# going to replace it will be just filteers (for example)
-
 import os
-from OpenPIV_windef_func import PIV_windef
+from openpiv.windef import piv
 
 class Settings(object):
     pass  
@@ -42,7 +36,7 @@ settings.dynamic_masking_filter_size = 7
 
 'Processing Parameters'
 settings.correlation_method = 'circular'  # 'circular' or 'linear'
-settings.iterations = 2  # select the number of PIV passes
+settings.iterations = 1  # select the number of PIV passes
 # add the interroagtion window size for each pass. 
 # For the moment, it should be a power of 2 
 settings.windowsizes = (64, 32, 16) # if longer than n iteration the rest is ignored
@@ -107,4 +101,4 @@ settings.save_plot = True
 settings.show_plot = False
 settings.scale_plot = 200 # select a value to scale the quiver plot of the vectorfield
 # run the script with the given settings
-PIV_windef(settings)
+piv(settings)

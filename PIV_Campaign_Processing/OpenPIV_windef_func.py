@@ -37,42 +37,16 @@ def PIV_windef(settings):
             frame_b =  frame_b[settings.ROI[0]:settings.ROI[1],settings.ROI[2]:settings.ROI[3]]
         
         if settings.dynamic_masking_method=='edge' or 'intensity':    
-            frame_a = preprocess.dynamic_masking(frame_a,method=settings.dynamic_masking_method,filter_size=settings.dynamic_masking_filter_size,threshold=settings.dynamic_masking_threshold)
-            frame_b = preprocess.dynamic_masking(frame_b,method=settings.dynamic_masking_method,filter_size=settings.dynamic_masking_filter_size,threshold=settings.dynamic_masking_threshold)
+            frame_a = preprocess.dynamic_masking(frame_a,method=settings.dynamic_masking_method\
+                    ,filter_size=settings.dynamic_masking_filter_size,threshold=settings.dynamic_masking_threshold)
+            frame_b = preprocess.dynamic_masking(frame_b,method=settings.dynamic_masking_method\
+                    ,filter_size=settings.dynamic_masking_filter_size,threshold=settings.dynamic_masking_threshold)
 
         '''%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%'''
         'first pass'
         x, y, u, v, sig2noise_ratio = windef.first_pass(frame_a,frame_b,settings.windowsizes[0], settings.overlap[0],settings.iterations,
                                       correlation_method=settings.correlation_method, subpixel_method=settings.subpixel_method, do_sig2noise=settings.extract_sig2noise,
                                       sig2noise_method=settings.sig2noise_method, sig2noise_mask=settings.sig2noise_mask,)
-    
-        'validation using gloabl limits and std and local median'
-        '''MinMaxU : two elements tuple
-            sets the limits of the u displacment component
-            Used for validation.
-
-        MinMaxV : two elements tuple
-            sets the limits of the v displacment component
-            Used for validation.
-
-        std_threshold : float
-            sets the  threshold for the std validation
-
-        median_threshold : float
-            sets the threshold for the median validation
-
-        filter_method : string
-            the method used to replace the non-valid vectors
-            Methods:
-                'localmean',
-                'disk',
-                'distance', 
-
-        max_filter_iteration : int
-            maximum of filter iterations to replace nans
-
-        filter_kernel_size : int
-            size of the kernel used for the filtering'''
 
         mask=np.full_like(x,False)
         if settings.validation_first_pass==True:    
@@ -100,10 +74,6 @@ def PIV_windef(settings):
                   u, v = filters.replace_outliers( u, v, method=settings.filter_method, max_iter=settings.max_filter_iteration, kernel_size=settings.filter_kernel_size)
                   u,dummy_u1,dummy_u2,dummy_u3=smoothn(u,s=settings.smoothn_p)
                   v,dummy_v1,dummy_v2,dummy_v3=smoothn(v,s=settings.smoothn_p)        
-     
-
-
-
 
         i = 1
         'all the following passes'
@@ -123,11 +93,6 @@ def PIV_windef(settings):
                  u,dummy_u1,dummy_u2,dummy_u3=smoothn(u,s=settings.smoothn_p)
                  v,dummy_v1,dummy_v2,dummy_v3=smoothn(v,s=settings.smoothn_p)        
      
-        
-#             if settings.smoothn==True 
-#                u,dummy_u1,dummy_u2,dummy_u3=smoothn(u,s=settings.smoothn_p)
-#                v,dummy_v1,dummy_v2,dummy_v3=smoothn(v,s=settings.smoothn_p)   
-        
         '''%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%'''
         if settings.extract_sig2noise==True and i==settings.iterations and settings.iterations!=1 and settings.do_sig2noise_validation==True:
             u,v, mask_s2n = validation.sig2noise_val( u, v, sig2noise_ratio, threshold = settings.sig2noise_threshold)
@@ -150,7 +115,6 @@ def PIV_windef(settings):
             plt.close('all')
             fig, ax = tools_patch.display_vector_field_windef(os.path.join(save_path, 'field_A%03d.txt' % counter), scaling_factor=settings.scale_plot)
             Name = os.path.join(save_path, 'Image_A%03d.png' % (counter))
-            #Name = os.path.join(save_path, settings.field_name)
             if settings.save_plot==True:
                 fig.savefig(Name, dpi=400)
             if settings.show_plot==False:

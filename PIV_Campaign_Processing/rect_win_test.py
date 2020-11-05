@@ -16,6 +16,9 @@ import os
 from numpy.fft import rfft2, irfft2, fftshift
 import matplotlib.pyplot as plt
 from openpiv import process, validation, filters, pyprocess, tools, preprocess,scaling
+from scipy.interpolate import RectBivariateSpline
+import scipy.ndimage as scn
+
 # not modified
 def moving_window_array(array, window_size, overlap):
     """
@@ -40,44 +43,18 @@ def moving_window_array(array, window_size, overlap):
 
     return numpy.lib.stride_tricks.as_strided(array, strides=strides, shape=shape).reshape(-1, window_size, window_size)
 
-
-
 # modified
 def moving_window_array2(array, win_width, win_height, overlap_width, overlap_height):
     sz = array.itemsize
     shape = array.shape
     array = np.ascontiguousarray(array)
-
     strides = (sz * shape[1] * (win_height - overlap_height),
                 sz * (win_width - overlap_width), sz * shape[1], sz)
-    shape = (int((shape[0] - win_height) / (win_height - overlap_height)) + 1, int(
-        (shape[1] - win_width) / (win_width - overlap_width)) + 1, win_height, win_width)
+    shape = ((shape[0] - overlap_height) // (win_height - overlap_height), 
+        (shape[1] - overlap_width) // (win_width - overlap_width), win_height, win_width)
 
     return numpy.lib.stride_tricks.as_strided(array, strides=strides, shape=shape).reshape(-1, win_height, win_width)
 
-# modified
-def moving_window_array(array, window_size, overlap):
-    """
-    This is a nice numpy trick. The concept of numpy strides should be
-    clear to understand this code.
-
-    Basically, we have a 2d array and we want to perform cross-correlation
-    over the interrogation windows. An approach could be to loop over the array
-    but loops are expensive in python. So we create from the array a new array
-    with three dimension, of size (n_windows, window_size, window_size), in which
-    each slice, (along the first axis) is an interrogation window.
-
-    """
-    sz = array.itemsize
-    shape = array.shape
-    array = np.ascontiguousarray(array)
-
-    strides = (sz * shape[1] * (window_size - overlap),
-               sz * (window_size - overlap), sz * shape[1], sz)
-    shape = (int((shape[0] - window_size) / (window_size - overlap)) + 1, int(
-        (shape[1] - window_size) / (window_size - overlap)) + 1, window_size, window_size)
-
-    return numpy.lib.stride_tricks.as_strided(array, strides=strides, shape=shape).reshape(-1, window_size, window_size)
 # modified
 def get_coordinates(image_size, win_width, win_height, overlap_width, overlap_height):
         """Compute the x, y coordinates of the centers of the interrogation windows.
@@ -161,7 +138,6 @@ def find_first_peak(corr):
 
     return i, j, corr.max()
 
-
 # not modified
 def find_subpixel_peak_position(corr, subpixel_method='gaussian'):
         """
@@ -242,6 +218,7 @@ def find_subpixel_peak_position(corr, subpixel_method='gaussian'):
             This function returns the displacement in u and v
             '''
         return subp_peak_position[0] - default_peak_position[0], subp_peak_position[1] - default_peak_position[1]
+
 # modified
 def get_field_shape(image_size, win_width, win_height, overlap_width, overlap_height):
     """Compute the shape of the resulting flow field.
@@ -268,8 +245,71 @@ def get_field_shape(image_size, win_width, win_height, overlap_width, overlap_he
     return ((image_size[0] - win_height) // (win_height - overlap_height) + 1,
             (image_size[1] - win_width) // (win_width - overlap_width) + 1)
 
+# modified
+def correlation_func(cor_win_1, cor_win_2, win_width, win_height ,correlation_method='circular'):
+    '''This function is doing the cross-correlation. Right now circular cross-correlation
+    That means no zero-padding is done
+    the .real is to cut off possible imaginary parts that remains due to finite numerical accuarcy
+     '''
+    if correlation_method=='linear':
+        # still under development
+        cor_win_1 = cor_win_1-cor_win_1.mean(axis=(1,2)).reshape(cor_win_1.shape[0],1,1)
+        cor_win_2 = cor_win_2-cor_win_2.mean(axis=(1,2)).reshape(cor_win_1.shape[0],1,1)
+        cor_win_1[cor_win_1<0]=0
+        cor_win_2[cor_win_2<0]=0
+
+     
+        corr = fftshift(irfft2(np.conj(rfft2(cor_win_1,s=(2*win_height,2*win_width))) *
+                                  rfft2(cor_win_2,s=(2*win_height,2*win_width))).real, axes=(1, 2))
+        corr=corr[:,win_height//2:3*win_height//2,win_width//2:3*win_width//2]
+        
+    else:
+        corr = fftshift(irfft2(np.conj(rfft2(cor_win_1)) *
+                                  rfft2(cor_win_2)).real, axes=(1, 2))
+    return corr
+
+# not modified
+def frame_interpolation(frame, x, y, u, v, interpolation_order=1):
+    '''This one is doing the image deformation also known as window deformation
+    Therefore, the pixel values of the old image are interpolated on a new grid that is defined
+    by the grid of the previous pass and the displacment evaluated by the previous pass
+    '''
+    '''
+    The interpolation function dont like meshgrids as input. Hence, the the edges
+    must be extracted to provide the sufficient input, also the y coordinates need
+    to be inverted since the image origin is in the upper left corner and the
+    y-axis goes downwards. The x-axis goes to the right.
+    '''
+    frame=frame.astype(np.float32)
+    y1 = y[:, 0] # extract first coloumn from meshgrid
+    y1 = y1[::-1] #flip 
+    x1 = x[0, :] #extract first row from meshgrid
+    side_x = np.arange(0, np.size(frame[0, :]), 1) #extract the image grid
+    side_y = np.arange(0, np.size(frame[:, 0]), 1)
+
+    ip = RectBivariateSpline(y1, x1, u) #interpolate the diplacement on the image grid
+    ut = ip(side_y, side_x)# the way how to use the interpolation functions differs
+                            #from matlab 
+    ip2 = RectBivariateSpline(y1, x1, v)
+    vt = ip2(side_y, side_x)
+    
+    '''This lines are interpolating the displacement from the interrogation window
+    grid onto the image grid. The result is displacment meshgrid with the size of the image.
+    '''
+    x, y = np.meshgrid(side_x, side_y)#create a meshgrid 
+    frame_def = scn.map_coordinates(
+        frame, ((y+vt, x+ut,)), order=interpolation_order,mode='nearest')
+    #deform the image by using the map coordinates function
+    '''This spline interpolation is doing the image deformation. This one likes meshgrids
+    new grid is defined by the old grid + the displacement.
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+    This function returns the deformed image.
+    '''
+    #print('stop')
+    return frame_def
+
 # # example case for a very simple array to get the windows correctly
-# dim = 8
+# dim = 19
 # AA = np.zeros((dim,1))
 # for i in range(0, dim):
 #     AA[i]=i
@@ -280,8 +320,8 @@ def get_field_shape(image_size, win_width, win_height, overlap_width, overlap_he
 #         c[k]=AA[k-i-1]
 #     b = np.hstack((b,c))
     
-# test = moving_window_array(b,4,2)
-# test2 = moving_window_array2(b,8,2,4,1)
+# # test = moving_window_array(b,4,2)
+# test2 = moving_window_array2(b,4,8,2,4)
 
 # set up the input folder
 Fol_In = 'C:'+os.sep+'Users'+os.sep+'manue'+os.sep+'Desktop'+os.sep+'tmp'+os.sep
@@ -291,24 +331,30 @@ file_b = Fol_In + 'R_h1_f1200_1_p15.000281.tif'
 frame_a = cv2.imread(file_a,0)
 frame_b = cv2.imread(file_b,0)
 
-# set a rectangular window with an aspect ratio of 2 and an overlap of 50%
-win_height = 48
-win_width = int(0.5*win_height)
+##############################################################################
+#                       Here the first pass is done                          #
+##############################################################################
+
+# set a rectangular window with an aspect ratio of 4 and an overlap of 50%
+win_height = 128
+win_width = int(0.25*win_height)
 overlap_height = int(0.5*win_height)
 overlap_width = int(0.5*win_width)
 
 # calculate the correlation windows and the correlation map
-cor_win_1_new = moving_window_array2(frame_a, win_width, win_height, overlap_width, overlap_height)
-cor_win_2_new = moving_window_array2(frame_b, win_width, win_height, overlap_width, overlap_height)
-correlation = fftshift(irfft2(np.conj(rfft2(cor_win_1_new)) *rfft2(cor_win_2_new)).real, axes=(1, 2))
-# plt.contourf(corr[0,:,:])
+cor_win_1 = moving_window_array2(frame_a, win_width, win_height, overlap_width, overlap_height)
+cor_win_2 = moving_window_array2(frame_b, win_width, win_height, overlap_width, overlap_height)
+correlation = correlation_func(cor_win_1, cor_win_2, win_width, win_height)
+corr2= correlation_func(cor_win_1, cor_win_2, win_width, win_height, correlation_method = 'linear')
+plt.contourf(correlation[0,:,:]) ; plt.show()
+plt.contourf(corr2[0,:,:]) ; plt.show()
 
 # this part is taken from the windef.py file and modified to suit our needs
 disp_new = np.zeros((np.size(correlation, 0), 2))#create a dummy for the loop to fill
 for i in range(0, np.size(correlation, 0)):
     ''' determine the displacment on subpixel level '''
     disp_new[i, :] = find_subpixel_peak_position(
-        correlation[i, :, :], subpixel_method='gaussian')
+        correlation[i, :, :], subpixel_method='parabolic')
 'this loop is doing the displacment evaluation for each window '
 
 # shapes = np.array(get_field_shape(frame_a.shape, win_width, overlap_width))
@@ -319,42 +365,102 @@ v = -disp_new[:, 0].reshape(shapes)
 
 x, y = get_coordinates(frame_a.shape, win_width, win_height, overlap_width, overlap_height)
 
-
 ##############################################################################
-# load the solution of the square piv to compare
-old = np.genfromtxt('C:\\Users\manue\Desktop\\tmp_processed\Open_PIV_results_test\\field_A000.txt')
-nxny = old.shape[0]  # is the to be doubled at the end we will have n_s=2 * n_x * n_y
-n_s = 2 * nxny
-## 1. Reconstruct Mesh from file
-X_S = old[:, 0]
-Y_S = old[:, 1]
-# Number of n_X/n_Y from forward differences
-GRAD_Y = np.diff(Y_S)
-# Depending on the reshaping performed, one of the two will start with
-# non-zero gradient. The other will have zero gradient only on the change.
-IND_X = np.where(GRAD_Y != 0)
-DAT = IND_X[0]
-n_y = DAT[0] + 1
-# Reshaping the grid from the data
-n_x = (nxny // (n_y))  # Carefull with integer and float!
-x_old = (X_S.reshape((n_x, n_y)))
-y_old = (Y_S.reshape((n_x, n_y)))  # This is now the mesh! 60x114.
-# Reshape also the velocity components
-V_X = old[:, 2]  # U component
-V_Y = old[:, 3]  # V component
-# Put both components as fields in the grid
-u_old = (V_X.reshape((n_x, n_y)))
-v_old = (V_Y.reshape((n_x, n_y)))
+#                       Here the multipass is done                           #
+##############################################################################
+x_old = x
+y_old = y
+u_old = u
+v_old = v
 
-# plot the v component of the velocity for different heights to get a comparison
-for idx in range(0, x.shape[0]):
-    fig, ax = plt.subplots()
-    plt.scatter(x[0,:],v[idx,:], c='b', label = 'new')
-    plt.plot(x[0,:],v[idx,:], c='b')
-    plt.scatter(x_old[0,:],v_old[(idx+1)*2],c='r', label = 'old')
-    plt.plot(x_old[0,:],v_old[(idx+1)*2],c='r')
-    plt.grid()
-    plt.legend()
+for i in range(1, 3):
+# give the new windowsizes
+    win_height = int(win_height/2)
+    win_width = int(0.25*win_height)
+    overlap_height = int(0.5*win_height)
+    overlap_width = int(0.5*win_width)
+
+x, y = get_coordinates(np.shape(frame_a), win_width, win_height, overlap_width, overlap_height)
+'calculate the y and y coordinates of the interrogation window centres'
+y_old = y_old[:, 0]
+y_old = y_old[::-1]
+x_old = x_old[0, :]
+y_int = y[:, 0]
+y_int = y_int[::-1]
+x_int = x[0, :]
+'''The interpolation function dont like meshgrids as input. Hence, the the edges
+must be extracted to provide the sufficient input. x_old and y_old are the 
+are the coordinates of the old grid. x_int and y_int are the coordiantes
+of the new grid'''
+
+ip = RectBivariateSpline(y_old, x_old, u_old)
+u_pre = ip(y_int, x_int)
+ip2 = RectBivariateSpline(y_old, x_old, v_old)
+v_pre = ip2(y_int, x_int)
+
+frame_b_deform = frame_interpolation(frame_b, x, y, u_pre, -v_pre)
+
+cor_win_1 = moving_window_array2(frame_a, win_width, win_height, overlap_width, overlap_height)
+cor_win_2 = moving_window_array2(frame_b_deform, win_width, win_height, overlap_width, overlap_height)
+'''Filling the interrogation window. They windows are arranged
+in a 3d array with number of interrogation window *window_size*window_size
+this way is much faster then using a loop'''
+
+correlation = correlation_func(cor_win_1, cor_win_2, win_width, win_height)
+'do the correlation'
+disp = np.zeros((np.size(correlation, 0), 2))
+for i in range(0, np.size(correlation, 0)):
+    ''' determine the displacment on subpixel level  '''
+    disp[i, :] = find_subpixel_peak_position(
+        correlation[i, :, :], subpixel_method='parabolic')
+'this loop is doing the displacment evaluation for each window '
+
+'reshaping the interrogation window to vector field shape'
+shapes = get_field_shape(frame_a.shape, win_width, win_height, overlap_width, overlap_height)
+u = disp[:, 1].reshape(shapes)
+v = -disp[:, 0].reshape(shapes)
+
+'adding the recent displacment on to the displacment of the previous pass'
+u = u+u_pre
+v = v+v_pre
+
+
+# ##############################################################################
+# # load the solution of the square piv to compare
+# oldd = np.genfromtxt('C:\\Users\manue\Desktop\\tmp_processed\Open_PIV_results_test\\field_A000.txt')
+# nxny = oldd.shape[0]  # is the to be doubled at the end we will have n_s=2 * n_x * n_y
+# n_s = 2 * nxny
+# ## 1. Reconstruct Mesh from file
+# X_S = oldd[:, 0]
+# Y_S = oldd[:, 1]
+# # Number of n_X/n_Y from forward differences
+# GRAD_Y = np.diff(Y_S)
+# # Depending on the reshaping performed, one of the two will start with
+# # non-zero gradient. The other will have zero gradient only on the change.
+# IND_X = np.where(GRAD_Y != 0)
+# DAT = IND_X[0]
+# n_y = DAT[0] + 1
+# # Reshaping the grid from the data
+# n_x = (nxny // (n_y))  # Carefull with integer and float!
+# x_oldd = (X_S.reshape((n_x, n_y)))
+# y_oldd = (Y_S.reshape((n_x, n_y)))  # This is now the mesh! 60x114.
+# # Reshape also the velocity components
+# V_X = oldd[:, 2]  # U component
+# V_Y = oldd[:, 3]  # V component
+# # Put both components as fields in the grid
+# u_oldd = (V_X.reshape((n_x, n_y)))
+# v_oldd = (V_Y.reshape((n_x, n_y)))
+
+# # plot the v component of the velocity for different heights to get a comparison
+# # for idx in range(0, x.shape[0]):
+# for idx in range(7, 15):
+#     fig, ax = plt.subplots()
+#     plt.scatter(x[0,:],v[idx,:], c='b', label = 'new')
+#     plt.plot(x[0,:],v[idx,:], c='b')
+#     plt.scatter(x_oldd[0,:],v_oldd[idx*2+1],c='r', label = 'old')
+#     plt.plot(x_oldd[0,:],v_oldd[idx*2+1],c='r')
+#     plt.grid()
+#     plt.legend()
 
 
 

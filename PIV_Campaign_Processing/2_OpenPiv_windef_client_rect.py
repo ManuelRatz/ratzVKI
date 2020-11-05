@@ -21,7 +21,7 @@ settings = Settings()
 # Folder with the images to process
 settings.filepath_images = 'C:' +os.sep+'Users\manue\Desktop'+os.sep+'tmp'
 # Folder for the outputs
-settings.save_path = 'C:' +os.sep+'Users'+os.sep+'manue'+os.sep+'Desktop'+os.sep+'tmp_processed'
+settings.save_path = 'C:'+os.sep+'Users'+os.sep+'manue'+os.sep+'Desktop'+os.sep+'tmp_processed'
 # Root name of the output Folder for Result Files
 settings.save_folder_suffix = 'F_h1_f1000_1_s'
 # Format and Image Sequence
@@ -42,12 +42,12 @@ settings.dynamic_masking_filter_size = 7
 settings.interpolation_order = 3
 settings.subpixel_method = 'gaussian'
 settings.correlation_method = 'linear'  # 'circular' or 'linear'
-settings.iterations = 3  # select the number of PIV passes
+settings.iterations = 2  # select the number of PIV passes
 # base 2
 settings.window_height = (256, 128, 64, 32, 16)
 settings.overlap_height = (128, 64, 32, 16, 8)
-settings.window_width = (64, 32, 16, 8)
-settings.overlap_width = (32, 16, 8, 4) 
+settings.window_width = (16, 16, 16, 8)
+settings.overlap_width = (8, 8, 8, 4) 
 # # base 3
 # settings.window_height = (192, 96, 48, 24, 12)
 # settings.overlap_height = (96, 48, 24, 12, 6) # 50%

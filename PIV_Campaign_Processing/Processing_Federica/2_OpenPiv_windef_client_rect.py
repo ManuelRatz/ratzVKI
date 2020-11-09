@@ -11,7 +11,7 @@ Created on Wed Sep 18 16:42:13 2019
 # going to replace it will be just filteers (for example)
 
 import os
-from windef_rect_moving_roi_fall import piv
+from windef_rect import piv
 
 class Settings(object):
     pass  
@@ -23,7 +23,7 @@ settings.filepath_images = 'C:'+os.sep+'Users'+os.sep+'manue'+os.sep+'Desktop'+o
 # Folder for the outputs
 settings.save_path = 'C:'+os.sep+'Users'+os.sep+'manue'+os.sep+'Desktop'+os.sep+'tmp_processed'
 # Root name of the output Folder for Result Files
-settings.save_folder_suffix = 'F_h2_f1000_1_q'
+settings.save_folder_suffix = 'F_h2_f1000_1_qasdf'
 # Format and Image Sequence
 settings.frame_pattern_a = 'F_h2_f1000_1_q.*.tif'
 settings.frame_pattern_b = None    
@@ -44,6 +44,12 @@ settings.interpolation_order = 3
 settings.subpixel_method = 'gaussian'
 settings.correlation_method = 'linear'  # 'circular' or 'linear'
 settings.iterations = 3 # select the number of PIV passes
+
+"""
+Here we set the window sizes. This code uses rectangular windows, if this is 
+not desired, simply put the same values for window_height and window_width as
+well as overlap_height and overlap_width
+"""
 # base 2
 settings.window_height = (64, 32, 16)
 settings.overlap_height = (32, 16, 8)
@@ -85,6 +91,7 @@ settings.save_plot = True
 settings.show_plot = False
 settings.scale_plot = 200 # select a value to scale the quiver plot of the vectorfield
 
+# run the script with these settings
 piv(settings)
 
 

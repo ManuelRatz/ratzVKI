@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Oct  4 14:04:04 2019
-
 @author: Theo
 """
 
@@ -214,7 +213,6 @@ def moving_window_array_rectangular(array, win_width, win_height, overlap_width,
     """
     This is a nice numpy trick. The concept of numpy strides should be
     clear to understand this code.
-
     Basically, we have a 2d array and we want to perform cross-correlation
     over the interrogation windows. An approach could be to loop over the array
     but loops are expensive in python. So we create from the array a new array
@@ -238,48 +236,36 @@ def first_pass(frame_a, frame_b, win_width, win_height, overlap_width, overlap_h
                    ,do_sig2noise=False, sig2noise_method='peak2peak', sig2noise_mask=2):
     """
     First pass of the PIV evaluation.
-
     This function does the PIV evaluation of the first pass. It returns
     the coordinates of the interrogation window centres, the displacment
     u and v for each interrogation window as well as the mask which indicates
     wether the displacement vector was interpolated or not.
-
-
     Parameters
     ----------
     frame_a : 2d np.ndarray
         the first image
-
     frame_b : 2d np.ndarray
         the second image
-
     window_size : int
          the size of the interrogation window
-
     overlap : int
         the overlap of the interrogation window normal for example window_size/2
-
     subpixel_method: string
         the method used for the subpixel interpolation.
         one of the following methods to estimate subpixel location of the peak:
         'centroid' [replaces default if correlation map is negative],
         'gaussian' [default if correlation map is positive],
         'parabolic'
-
     Returns
     -------
     x : 2d np.array
         array containg the x coordinates of the interrogation window centres
-
     y : 2d np.array
         array containg the y coordinates of the interrogation window centres 
-
     u : 2d np.array
         array containing the u displacement for every interrogation window
-
     u : 2d np.array
         array containing the u displacement for every interrogation window
-
     """
     
     cor_win_1 = moving_window_array_rectangular(frame_a, win_width, win_height,
@@ -322,94 +308,69 @@ def multipass_img_deform(frame_a, frame_b, win_width, win_height, overlap_width,
                          max_filter_iteration=10, filter_kernel_size=2, interpolation_order=3):
     """
     First pass of the PIV evaluation.
-
     This function does the PIV evaluation of the first pass. It returns
     the coordinates of the interrogation window centres, the displacment
     u and v for each interrogation window as well as the mask which indicates
     wether the displacement vector was interpolated or not.
-
-
     Parameters
     ----------
     frame_a : 2d np.ndarray
         the first image
-
     frame_b : 2d np.ndarray
         the second image
-
     window_size : tuple of ints
          the size of the interrogation window
-
     overlap : tuple of ints
         the overlap of the interrogation window normal for example window_size/2
-
     x_old : 2d np.ndarray
         the x coordinates of the vector field of the previous pass
-
     y_old : 2d np.ndarray
         the y coordinates of the vector field of the previous pass
-
     u_old : 2d np.ndarray
         the u displacement of the vector field of the previous pass
-
     v_old : 2d np.ndarray
         the v displacement of the vector field of the previous pass
-
     subpixel_method: string
         the method used for the subpixel interpolation.
         one of the following methods to estimate subpixel location of the peak:
         'centroid' [replaces default if correlation map is negative],
         'gaussian' [default if correlation map is positive],
         'parabolic'
-
     MinMaxU : two elements tuple
         sets the limits of the u displacment component
         Used for validation.
-
     MinMaxV : two elements tuple
         sets the limits of the v displacment component
         Used for validation.
-
     std_threshold : float
         sets the  threshold for the std validation
-
     median_threshold : float
         sets the threshold for the median validation
-
     filter_method : string
         the method used to replace the non-valid vectors
         Methods:
             'localmean',
             'disk',
             'distance', 
-
     max_filter_iteration : int
         maximum of filter iterations to replace nans
-
     filter_kernel_size : int
         size of the kernel used for the filtering
-
     interpolation_order : int
         the order of the spline interpolation used for the image deformation
-
     Returns
     -------
     x : 2d np.array
         array containg the x coordinates of the interrogation window centres
-
     y : 2d np.array
         array containg the y coordinates of the interrogation window centres 
-
     u : 2d np.array
         array containing the u displacement for every interrogation window
-
     u : 2d np.array
         array containing the u displacement for every interrogation window
-
     mask : 2d np.array
         array containg the mask values (bool) which contains information if
         the vector was filtered
-
     """
 
     x, y = get_coordinates(np.shape(frame_a), win_width, win_height, overlap_width, overlap_height)
@@ -541,16 +502,12 @@ def display_vector_field( filename, on_img=False, image_name='None', window_size
     ----------
     filename :  string
         the absolute path of the text file
-
     on_img : Bool, optional
         if True, display the vector field on top of the image provided by image_name
-
     image_name : string, optional
         path to the image to plot the vector field onto when on_img is True
-
     window_size : int, optional
         when on_img is True, provide the interogation window size to fit the background image to the vector field
-
     scaling_factor : float, optional
         when on_img is True, provide the scaling factor to scale the background image to the vector field
     
@@ -568,7 +525,6 @@ def display_vector_field( filename, on_img=False, image_name='None', window_size
     --------
     --- only vector field
     >>> openpiv.tools.display_vector_field('./exp1_0000.txt',scale=100, width=0.0025) 
-
     --- vector field on top of image
     >>> openpiv.tools.display_vector_field('./exp1_0000.txt', on_img=True, image_name='exp1_001_a.bmp', window_size=32, scaling_factor=70, scale=100, width=0.0025)
     
@@ -634,25 +590,19 @@ def get_coordinates(image_size, win_width, win_height, overlap_width, overlap_he
             a two dimensional tuple for the pixel size of the image
             first element is number of rows, second element is 
             the number of columns.
-
         window_size: int
             the size of the interrogation windows.
-
         overlap: int
             the number of pixel by which two adjacent interrogation
             windows overlap.
-
-
         Returns
         -------
         x : 2d np.ndarray
             a two dimensional array containing the x coordinates of the 
             interrogation window centers, in pixels.
-
         y : 2d np.ndarray
             a two dimensional array containing the y coordinates of the 
             interrogation window centers, in pixels.
-
         """
 
         # get shape of the resulting flow field
@@ -682,23 +632,19 @@ def get_coordinates(image_size, win_width, win_height, overlap_width, overlap_he
 def find_subpixel_peak_position(corr, subpixel_method='gaussian'):
         """
         Find subpixel approximation of the correlation peak.
-
         This function returns a subpixels approximation of the correlation
         peak by using one of the several methods available. If requested,
         the function also returns the signal to noise ratio level evaluated
         from the correlation map.
-
         Parameters
         ----------
         corr : np.ndarray
             the correlation map.
-
         subpixel_method : string
              one of the following methods to estimate subpixel location of the peak:
              'centroid' [replaces default if correlation map is negative],
              'gaussian' [default if correlation map is positive],
              'parabolic'.
-
         Returns
         -------
         subp_peak_position : two elements tuple
@@ -764,31 +710,25 @@ def find_subpixel_peak_position(corr, subpixel_method='gaussian'):
 def sig2noise_ratio_function(corr, sig2noise_method='peak2peak', width=2):
     """
     Computes the signal to noise ratio from the correlation map.
-
     The signal to noise ratio is computed from the correlation map with
     one of two available method. It is a measure of the quality of the
     matching between to interogation windows.
-
     Parameters
     ----------
     corr : 2d np.ndarray
         the correlation map.
-
     sig2noise_method: string
         the method for evaluating the signal to noise ratio value from
         the correlation map. Can be `peak2peak`, `peak2mean` or None
         if no evaluation should be made.
-
     width : int, optional
         the half size of the region around the first
         correlation peak to ignore for finding the second
         peak. [default: 2]. Only used if ``sig2noise_method==peak2peak``.
-
     Returns
     -------
     sig2noise : np.ndarray 
         the signal to noise ratio from the correlation map.
-
     """
 
     corr_max1=np.zeros(corr.shape[0])
@@ -839,9 +779,7 @@ class Settings(object):
 
 if __name__ == "__main__":
     """ Run windef.py as a script: 
-
     python windef.py 
-
     """
 
 

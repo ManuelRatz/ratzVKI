@@ -18,7 +18,7 @@ plt.rc('xtick', labelsize=15)    # fontsize of the tick labels
 plt.rc('ytick', labelsize=15)    # fontsize of the tick labels
 plt.rc('legend', fontsize=15)    # legend fontsize
 plt.rc('figure', titlesize=20)   # fontsize of the figure title
-plt.rc('text', usetex=True)      # use latex for the text
+plt.rc('text', usetex=False)      # use latex for the text
 plt.rc('font', family='serif')   # serif as text font
 plt.rc('axes', grid=True)        # enable the grid
 plt.rc('savefig', dpi = 100)     # set the dpi for saving figures
@@ -28,7 +28,7 @@ plt.rc('savefig', dpi = 100)     # set the dpi for saving figures
 ## Step 1: Read all the files and (optional) make a video out of it.
 
 
-Fol_In = 'C:\\Users\manue\Desktop\\tmp_processed\Open_PIV_results_16_64_F_h1_f1000_1_s'+os.sep
+Fol_In = 'C:\\Users\manue\Desktop\\tmp_processed\Open_PIV_results_F_h2_f1000_1_q_16_16'+os.sep
 Fol_Out = 'C:\\Users\manue\Desktop\\tmp_processed\post'+os.sep
 if not os.path.exists(Fol_Out):
     os.mkdir(Fol_Out)
@@ -94,23 +94,25 @@ for k in range(0, n_t):
     D_U[:, k] = V_X
     D_V[:, k] = V_Y
     # Open the figure
-    # fig, ax = plt.subplots()  # This creates the figure
-    # # Or you can plot it as streamlines
-    # plt.contourf(Xg *1000 , Yg*1000 , Magn)
-    # # One possibility is to use quiver
-    # STEPx = 1
-    # STEPy = 1
+    fig, ax = plt.subplots()  # This creates the figure
+    # Or you can plot it as streamlines
+    plt.contourf(Xg *1000 , Yg*1000 , Magn)
+    # One possibility is to use quiver
+    STEPx = 1
+    STEPy = 1
     
-    # plt.quiver(Xg[::STEPx, ::STEPy] * 1000, Yg[::STEPx, ::STEPy] * 1000,
-    #            Vxg[::STEPx, ::STEPy], Vyg[::STEPx, ::STEPy], color='k', scale = 100)  # Create a quiver (arrows) plot
-    # ax.set_aspect('equal')  # Set equal aspect ratio
-    # ax.set_xlabel('$x[mm]$', fontsize=18) # set the xlabel
-    # ax.set_ylabel('$y[mm]$', fontsize=18) # set the ylabel
-    # plt.axis('off') # disable the axis ticks
-    # plt.clim(0, 10) # set the colorbar for the contour
-    # plt.colorbar()  # show the colorbar
-    # plt.savefig(NameOUT, dpi=400) # save the figure
+    plt.quiver(Xg[::STEPx, ::STEPy] * 1000, Yg[::STEPx, ::STEPy] * 1000,
+                Vxg[::STEPx, ::STEPy], Vyg[::STEPx, ::STEPy], color='k', scale = 100)  # Create a quiver (arrows) plot
+    ax.set_aspect('equal')  # Set equal aspect ratio
+    ax.set_xlabel('$x[mm]$', fontsize=18) # set the xlabel
+    ax.set_ylabel('$y[mm]$', fontsize=18) # set the ylabel
+    plt.contourf(Vyg)
+    plt.axis('off') # disable the axis ticks
+    plt.clim(-24, 24) # set the colorbar for the contour
+    plt.colorbar()  # show the colorbar
+    plt.savefig(NameOUT, dpi=400) # save the figure
     # plt.close(fig)
+    
     print('Image ' + str(k+1) + ' of ' + str(n_t))
     
     # fig, ax = plt.subplots(figsize=(8,5))
@@ -128,10 +130,10 @@ for k in range(0, n_t):
     # plt.close(fig)
 
 # for i in range(0, Xg.shape[0]):
-for i in range(0, 15, 2):
-    fig, ax = plt.subplots()
-    plt.plot(Xg[i,:],Vyg[i,:])
-    plt.scatter(Xg[i,:],Vyg[i,:])
+# for i in range(0, 15, 2):
+#     fig, ax = plt.subplots()
+#     plt.plot(Xg[i,:],Vyg[i,:])
+#     plt.scatter(Xg[i,:],Vyg[i,:])
 
 # import imageio
 # GIFNAME = Fol_Gif + os.sep + '..' + os.sep + 'Giff_Velocity.gif'

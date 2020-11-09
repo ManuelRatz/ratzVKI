@@ -17,8 +17,13 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""
 
+Modifications by Manuel:
+    Used cv2 for reading the images because sometimes errors popped up
+    Changed the Multiprocessor to include the index of the first image
+"""
+import glob
+import os
 import numpy as np
 import matplotlib.image as ig
 import matplotlib.pyplot as pl
@@ -171,3 +176,81 @@ def imread(filename, flatten=0):
 
 def rgb2gray(rgb):
     return np.dot(rgb[..., :3], [0.299, 0.587, 0.144])
+
+class Multiprocesser():
+    def __init__ ( self, data_dir, pattern_a, idx0, amount, pattern_b = None  ):
+        """A class to handle and process large sets of images.
+
+        This class is responsible of loading image datasets
+        and processing them. It has parallelization facilities
+        to speed up the computation on multicore machines.
+        
+        It currently support only image pair obtained from 
+        conventional double pulse piv acquisition. Support 
+        for continuos time resolved piv acquistion is in the 
+        future.
+        
+        
+        Parameters
+        ----------
+        data_dir : str
+            the path where image files are located 
+            
+        pattern_a : str
+            a shell glob patter to match the first 
+            frames.
+            
+        pattern_b : str
+            a shell glob patter to match the second
+            frames. if None, then the list is sequential, 001.tif, 002.tif 
+
+        Examples
+        --------
+        >>> multi = openpiv.tools.Multiprocesser( '/home/user/images', 'image_*_a.bmp', 'image_*_b.bmp')
+    
+        """
+        # load lists of images
+         
+        self.files_a = sorted( glob.glob( os.path.join( os.path.abspath(data_dir), pattern_a ) ) )
+        
+        if pattern_b is None:
+            self.files_b = self.files_a[1:]
+            self.files_a = self.files_a[:-1]
+        else:    
+            self.files_b = sorted( glob.glob( os.path.join( os.path.abspath(data_dir), pattern_b ) ) )
+        
+        # number of images
+        self.n_files = len(self.files_a)
+        self.n_files = amount
+        self.files_a = self.files_a[idx0:idx0+amount]
+        self.files_b = self.files_b[idx0:idx0+amount]
+        
+        # check if everything was fine
+        if not len(self.files_a) == len(self.files_b):
+            raise ValueError('Something failed loading the image file. There should be an equal number of "a" and "b" files.')
+            
+        if not len(self.files_a):
+            raise ValueError('Something failed loading the image file. No images were found. Please check directory and image template name.')
+
+    def run( self, func, n_cpus=1 ):
+        """Start to process images.
+        
+        Parameters
+        ----------
+        
+        func : python function which will be executed for each 
+            image pair. See tutorial for more details.
+        
+        n_cpus : int
+            the number of processes to launch in parallel.
+            For debugging purposes use n_cpus=1
+        
+        """
+
+        # create a list of tasks to be executed.
+        image_pairs = [ (file_a, file_b, i) for file_a, file_b, i in zip( self.files_a, self.files_b, range(self.n_files) ) ]
+        
+        # for debugging purposes always use n_cpus = 1,
+        # since it is difficult to debug multiprocessing stuff.
+        for image_pair in image_pairs:
+            func( image_pair )

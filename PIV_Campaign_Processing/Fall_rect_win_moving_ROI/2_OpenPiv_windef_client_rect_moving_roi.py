@@ -36,21 +36,23 @@ settings.dynamic_masking_method = 'None'
 settings.dynamic_masking_threshold = 0.005
 settings.dynamic_masking_filter_size = 7 
 
+
+
 # windows and displacement calculation
 settings.interpolation_order = 3
 settings.subpixel_method = 'gaussian'
 settings.correlation_method = 'linear'  # 'circular' or 'linear'
-settings.iterations = 3 # select the number of PIV passes
+settings.iterations = 2 # select the number of PIV passes
 # base 2
 settings.window_height = (64, 32, 16)
 settings.overlap_height = (32, 16, 8)
 settings.window_width = (64, 32, 16, 16, 16)
 settings.overlap_width = (32, 16, 8, 8, 8) 
 # base 3
-settings.window_height = (96, 48, 24, 12)
-settings.overlap_height = (48, 24, 12, 6) # 50%
-settings.window_width = (96, 48, 24, 12)
-settings.overlap_width = (48, 24, 12, 6) # 50%
+# settings.window_height = (96, 48, 24, 12)
+# settings.overlap_height = (48, 24, 12, 6) # 50%
+# settings.window_width = (96, 48, 24, 12)
+# settings.overlap_width = (48, 24, 12, 6) # 50%
 
 # sig2noise
 settings.extract_sig2noise = True  # 'True' or 'False' (only for the last pass)
@@ -82,10 +84,9 @@ settings.save_plot = True
 settings.show_plot = False
 settings.scale_plot = 200 # select a value to scale the quiver plot of the vectorfield
 
-folder_list = os.listdir('D:\PIV_Processed\Images_Preprocessed')
 observation_periods = np.genfromtxt('observation_fall.txt', dtype=str)
 
-for i in range(0, 1):
+for i in range(2, 3):
     settings.ROI = np.asarray([0,1270,0,500])
     # Folder with the images to process
     settings.filepath_images = 'D:\PIV_Processed\Images_Preprocessed'+os.sep+observation_periods[i,0]

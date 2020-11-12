@@ -61,7 +61,6 @@ def piv(settings):
                                                 settings.overlap_width[0], settings.overlap_height[0], settings.iterations,
                                       correlation_method=settings.correlation_method, subpixel_method=settings.subpixel_method, do_sig2noise=settings.extract_sig2noise,
                                       sig2noise_method=settings.sig2noise_method, sig2noise_mask=settings.sig2noise_mask,)
-    
         mask=np.full_like(x,False)
         if settings.validation_first_pass==True:    
             u, v, mask_g = validation.global_val( u, v, settings.MinMax_U_disp, settings.MinMax_V_disp)
@@ -136,7 +135,7 @@ def piv(settings):
         return False
     
     #%%
-    # initialize the saving path for the images and the txts
+    # initialize the saving path for the images and the txts in case they dont exist
     save_path=os.path.join(settings.save_path,'Open_PIV_results_'+settings.save_folder_suffix+'_'+str(settings.window_width[settings.iterations-1])+'_'\
                            +str(settings.window_height[settings.iterations-1]))
     if not os.path.exists(save_path):
@@ -153,6 +152,7 @@ def piv(settings):
     task = tools_patch_fall.Multiprocesser(
         data_dir=settings.filepath_images, pattern_a=settings.frame_pattern_a,\
             pattern_b=settings.frame_pattern_b, amount = settings.amount)
+    # run the task
     task.run(func, settings.fall_start, settings.roi_shift_start,
              settings.process_fall, settings.process_roi_shift, n_cpus=1)
     

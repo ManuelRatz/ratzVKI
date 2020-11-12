@@ -72,7 +72,7 @@ def export_images(matrix, folder, n_images, shape):
         cv2.imwrite(name, Im2)
 
 # subfolder from which to take the images
-Images_Name = 'R_h1_f1200_1_p11'
+Images_Name = 'R_h1_f750_1_p15'
 
 # Folder in
 Fol_In = 'D:\PIV_Processed\Images_Rotated'+os.sep + Images_Name + os.sep
@@ -91,7 +91,7 @@ ny, nx = Im.shape
 # load all the image names in the directory and initialize the data matrix
 img_list = os.listdir(Fol_In)
 n_t = len(img_list)
-n_t = 2000; idx0 = 0
+n_t = 1500; idx0 = 1500
 D_a = np.zeros((nx * ny, n_t))
 
 # loop over all the images
@@ -99,7 +99,7 @@ for k in range(0, n_t):
     # prepare the image for the matrix
     ImV = process_image_for_matrix_D(FOL_IN=Fol_In, iter=(k+idx0))
     # update the user
-    print('Loading ' + str(k+1) + '/' + str(n_t))
+    print('Loading ' + str(k+1+idx0) + '/' + str(n_t+idx0))
     # append into matrix
     D_a[:, k] = ImV[:, 0]
 

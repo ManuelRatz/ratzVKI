@@ -2,9 +2,11 @@
 """
 Created on Fri Oct  4 14:04:04 2019
 
-@author: Theo
+@author: Ratz
+@description: This is a modified version of the windef_rect file.
+    It includes the option to process a complete fall or just the fall with 
+    full roi or moving roi respectively.
 """
-
 
 import os
 import numpy as np
@@ -14,38 +16,36 @@ import scipy.ndimage as scn
 from scipy.interpolate import RectBivariateSpline
 from openpiv import process, validation, filters, pyprocess, tools, preprocess, scaling
 from openpiv import smoothn
-import tools_patch
+import tools_patch_fall
 import matplotlib.pyplot as plt
 
+#%%
 def piv(settings):
     def func(args):
-        """A function to process each image pair."""
-
         file_a, file_b, counter = args
-        
-        # calculate the shift for the ROI
-        if(counter != 0):
-            settings.ROI[0] = settings.ROI[0]-calc_prev_disp(counter-1, save_path, settings.scaling_factor, settings.dt)
-
-        settings.ROI = np.asarray(settings.ROI)
-        
-        if((settings.ROI[1]-settings.ROI[0]) < 5*(settings.window_height[0]-settings.overlap_height[0])):
-            return
-        ' read images into numpy arrays'
+        # read the iamges
         frame_a = tools.imread(os.path.join(settings.filepath_images, file_a))
         frame_b = tools.imread(os.path.join(settings.filepath_images, file_b))
         
-        # # this creates a plot with the ROI to see if the cropping is correct
-        # fig = plt.figure(figsize = (4, 10))
-        # plt.imshow(frame_b, cmap=plt.cm.gray)
-        # dummy = np.arange(0, frame_a.shape[1],1)    
-        # roi_plot = np.ones((len(dummy),))*settings.ROI[0]
-        # plt.plot(dummy, roi_plot, lw = 1)
-        # fig.savefig('tmp\img_%06d.png' %counter, dpi = 250)
-        # plt.close(fig)
-        
-        ' crop to ROI'
-        if settings.ROI=='full':
+        """ Here we check if the interface has reached the top of the roi yet
+        by comparing it to the index in the observation_periods file. If it has
+        not reached the roi yet we skip this part, if it did then we shift the
+        roi for each pair after the initial one """
+        if counter > settings.roi_shift_start:
+            # set the roi to the image height for the first frame
+            if counter == settings.roi_shift_start :
+                settings.ROI[1] = frame_a.shape[0]
+            # shift the roi for each pair (this is not done for the first one)
+            settings.ROI[0] = settings.ROI[0] - shift_ROI(counter, save_path, save_path_txts, settings.scaling_factor,\
+                          settings.dt, frame_b, settings.ROI[0], settings.roi_shift_start, settings.plot_roi)
+            # stop processing the fall in case the remaining height gets too small
+            if((settings.ROI[1]-settings.ROI[0]) < (5*(settings.window_height[0]-settings.overlap_height[0])+1)):
+                    return True
+        # # print the upper boundary in case we messed up
+        # if settings.ROI[0] > 0:
+        #     print(settings.ROI[0])
+        # crop to roi
+        if settings.ROI =='full':
             frame_a=frame_a
             frame_b=frame_b
         else: 
@@ -54,11 +54,11 @@ def piv(settings):
         if settings.dynamic_masking_method=='edge' or settings.dynamic_masking_method=='intensity':    
             frame_a = preprocess.dynamic_masking(frame_a,method=settings.dynamic_masking_method,filter_size=settings.dynamic_masking_filter_size,threshold=settings.dynamic_masking_threshold)
             frame_b = preprocess.dynamic_masking(frame_b,method=settings.dynamic_masking_method,filter_size=settings.dynamic_masking_filter_size,threshold=settings.dynamic_masking_threshold)
-
-        '''%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%'''
-        'first pass'
+            
+#%%
+        """ Here we do the first pass of the piv interrogation """
         x, y, u, v, sig2noise_ratio = first_pass(frame_a,frame_b, settings.window_width[0], settings.window_height[0],
-                                                 settings.overlap_width[0], settings.overlap_height[0], settings.iterations,
+                                                settings.overlap_width[0], settings.overlap_height[0], settings.iterations,
                                       correlation_method=settings.correlation_method, subpixel_method=settings.subpixel_method, do_sig2noise=settings.extract_sig2noise,
                                       sig2noise_method=settings.sig2noise_method, sig2noise_mask=settings.sig2noise_mask,)
     
@@ -85,14 +85,11 @@ def piv(settings):
              if settings.smoothn==True:
                   u, v = filters.replace_outliers( u, v, method=settings.filter_method, max_iter=settings.max_filter_iteration, kernel_size=settings.filter_kernel_size)
                   u,dummy_u1,dummy_u2,dummy_u3=smoothn.smoothn(u,s=settings.smoothn_p)
-                  v,dummy_v1,dummy_v2,dummy_v3=smoothn.smoothn(v,s=settings.smoothn_p)        
-     
-
-
-
-
+                  v,dummy_v1,dummy_v2,dummy_v3=smoothn.smoothn(v,s=settings.smoothn_p) 
+                  
+#%%
         i = 1
-        'all the following passes'
+        """ Do the multipass until the maximum iterations are reached """
         for i in range(2, settings.iterations+1):
             x, y, u, v, sig2noise_ratio, mask = multipass_img_deform(frame_a, frame_b, settings.window_width[i-1], settings.window_height[i-1],
                                                     settings.overlap_width[i-1], settings.overlap_height[i-1],settings.iterations,i,
@@ -104,79 +101,122 @@ def piv(settings):
                                                     median_threshold=settings.median_threshold,median_size=settings.median_size,filter_method=settings.filter_method,
                                                     max_filter_iteration=settings.max_filter_iteration, filter_kernel_size=settings.filter_kernel_size,
                                                     interpolation_order=settings.interpolation_order)
-            # If the smoothing is active, we do it at each pass
+            # smooth on each pass in case this is wanted
             if settings.smoothn==True:
                  u,dummy_u1,dummy_u2,dummy_u3= smoothn.smoothn(u,s=settings.smoothn_p)
                  v,dummy_v1,dummy_v2,dummy_v3= smoothn.smoothn(v,s=settings.smoothn_p)        
    
         
-        '''%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%'''
+        # extract the sig2noise ratio in case it is desired and replace the vectors
         if settings.extract_sig2noise==True and i==settings.iterations and settings.iterations!=1 and settings.do_sig2noise_validation==True:
             u,v, mask_s2n = validation.sig2noise_val( u, v, sig2noise_ratio, threshold = settings.sig2noise_threshold)
             mask=mask+mask_s2n
         if settings.replace_vectors==True:
             u, v = filters.replace_outliers( u, v, method=settings.filter_method, max_iter=settings.max_filter_iteration, kernel_size=settings.filter_kernel_size)
-        'pixel/frame->pixel/sec'
+        # scale the result timewise and lengthwise
         u=u/settings.dt
         v=v/settings.dt
-        'scales the results pixel-> meter'
         x, y, u, v = scaling.uniform(x, y, u, v, scaling_factor = settings.scaling_factor )     
-        'save to a file'
-        save(x, y, u, v,sig2noise_ratio, mask ,os.path.join(save_path,'field_A%06d.txt' % (counter)), delimiter='\t')
-        'some messages to check if it is still alive'
+        # save the result
+        save(x, y, u, v,sig2noise_ratio, mask, os.path.join(save_path_txts,'field_A%06d.txt' % (counter)), delimiter='\t')
         # disable the grid in the rcParams file
         plt.rcParams['axes.grid'] = False
-        'some other stuff that one might want to use'
+        # show and save the plot if it is desired
         if settings.show_plot==True or settings.save_plot==True:
-            # plt.close('all')
             plt.ioff()
-            Name = os.path.join(save_path, 'Image_A%06d.png' % (counter))
-            display_vector_field(os.path.join(save_path, 'field_A%06d.txt' % (counter)), scale=settings.scale_plot)
+            Name = os.path.join(save_path_images, 'Image_A%06d.png' % (counter))
+            display_vector_field(os.path.join(save_path_txts, 'field_A%06d.txt' % (counter)), scale=settings.scale_plot)
             if settings.save_plot==True:
                 plt.savefig(Name, dpi=600)
             if settings.show_plot==True:
                 plt.show()
+            plt.close('all')
 
-        print('Image Pair ' + str(counter+1))
-        
-    'Below is code to read files and create a folder to store the results'
+        print('Image Pair %06d' %(counter)+ ' from ' + settings.save_folder_suffix)
+        return False
+    
+    #%%
+    # initialize the saving path for the images and the txts
     save_path=os.path.join(settings.save_path,'Open_PIV_results_'+settings.save_folder_suffix+'_'+str(settings.window_width[settings.iterations-1])+'_'\
                            +str(settings.window_height[settings.iterations-1]))
     if not os.path.exists(save_path):
         os.makedirs(save_path)
-    task = tools_patch.Multiprocesser(
+    save_path_images = save_path + os.sep + 'velocity_fields'
+    if not os.path.exists(save_path_images):
+        os.makedirs(save_path_images)
+    save_path_txts = save_path + os.sep + 'text_files'
+    if not os.path.exists(save_path_txts):
+        os.makedirs(save_path_txts)
+    # save the settings of the processing
+    save_settings(settings, save_path)
+    # create a task to be executed
+    task = tools_patch_fall.Multiprocesser(
         data_dir=settings.filepath_images, pattern_a=settings.frame_pattern_a,\
-            idx0 = settings.index_0, amount = settings.amount, pattern_b=settings.frame_pattern_b)
-    task.run(func=func, n_cpus=1)
+            pattern_b=settings.frame_pattern_b, amount = settings.amount)
+    task.run(func, settings.fall_start, settings.roi_shift_start,
+             settings.process_fall, settings.process_roi_shift, n_cpus=1)
+    
+#%%
+def save_settings(settings, save_path):
+    variables = vars(settings)
+    with open(save_path+os.sep+"settings.txt", "w") as f:
+        for key, value in variables.items():
+          f.write('{} {}'.format(key, value)+"\n")
 
-def calc_prev_disp(counter, save_path, scaling_factor, dt):
+def shift_ROI(counter, save_path, save_path_txts, scaling_factor, dt, frame_b, interface_position,\
+              roi_shift_start, plot_ROI = False):
     """
-    Function to get the displacement of the previous image pair in pixels.
-    This is used for a dynamic ROI.
+    Function to shift the ROI from the data of the previous image pair.
 
     Parameters
     ----------
     counter : int
         Index of the last iteration.
     save_path : string
-        Location of the .txt file with the data.
+        Location of the folder where we create the roi_images folder.
+    save_path_txts : string
+        Location of the .txt file with the data
     scaling_factor : float
         Scaling of the image in px/mm.
     dt : float64
         Delta t between two frames in s.
-
+    frame_a : 2d np.ndarray
+        The first image
+    interface : int
+        Position of the current crop in pixels.
+    plot_ROI : boolean, optional
+        creates a plot of the shifted ROI and saves them in 
+        
     Returns
     -------
     mean_disp : int
-        Mean displacement of the previous image pair in pixels/frame.
-
+        Mean displacement of the previous pass in pixels
     """
-    # load the txt file with the data; This is still in meter/second
-    data = np.genfromtxt(os.path.join(save_path,'field_A%06d.txt' %counter))
-    vel = data[:,3]
-    # calculate the mean velocity as an integer in pixels/frame
-    mean_disp = int(np.rint(np.mean(vel)*scaling_factor*dt))
-    # return the mean displacement
+    # initialize mean displacement with zero in case we are looking at the first frame of the fall
+    mean_disp = 0
+    # calculate mean displacement for all the other cases
+    if(counter > roi_shift_start):
+        # load the txt file with the data; This is still in meter/second
+        data = np.genfromtxt(os.path.join(save_path_txts,'field_A%06d.txt' %(counter-1)))
+        # get the velocity
+        vel = data[:,3]
+        # calculate the mean velocity as an integer in pixels/frame
+        mean_disp = int(np.rint(np.nanmean(vel)*scaling_factor*dt))
+    # plot the raw image with the ROI in case this is desired
+    if plot_ROI == True:
+        # create a folder in case there is none
+        Fol_Out = save_path + os.sep + 'ROI_Images' + os.sep
+        if not os.path.exists(Fol_Out):
+            os.mkdir(Fol_Out)
+        # plot the result
+        fig = plt.figure(figsize = (4, 10)) # create the figure
+        plt.imshow(frame_b, cmap=plt.cm.gray) # plot the image
+        dummy = np.arange(0, frame_b.shape[1],1) # create a dummy for the plot
+        roi_plot = np.ones((len(dummy),))*(interface_position-mean_disp) # create a horizontal line 
+        plt.plot(dummy, roi_plot, lw = 1) # plot the line
+        fig.savefig(Fol_Out + 'ROI_img_%06d.png' %counter, dpi = 100) # save the figure
+        plt.close(fig) # close the figure
+        
     return mean_disp
     
 
@@ -566,7 +606,8 @@ def save( x, y, u, v, sig2noise_ratio, mask, filename, fmt='%8.4f', delimiter='\
     out = np.vstack( [m.ravel() for m in [x, y, u, v,sig2noise_ratio, mask] ] )
             
     # save data to file.
-    np.savetxt( filename, out.T, fmt=fmt, delimiter=delimiter, header='x'+delimiter+'y'+delimiter+'u'+delimiter+'v'+delimiter+'s2n'+delimiter+'mask' )
+    np.savetxt( filename, out.T, fmt=fmt, delimiter=delimiter, header='x'+delimiter+'y'\
+               +delimiter+'u'+delimiter+'v'+delimiter+'s2n'+delimiter+'mask')
     
 def display_vector_field( filename, on_img=False, image_name='None', window_size=32, scaling_factor=1,skiprows=1, **kw):
     """ Displays quiver plot of the data stored in the file 

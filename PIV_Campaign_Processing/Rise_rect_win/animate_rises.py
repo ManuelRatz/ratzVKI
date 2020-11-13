@@ -66,7 +66,7 @@ IDY0 = 4
 IDY1 = int(len(x[0,:])/2)
 IDY2 = int(len(x[0,:])-4)
 n_t = 200
-for k in range(200, 200+n_t):
+for k in range(0, 0+n_t):
     print('Image ' + str(k+1) + ' of ' + str(n_t))
     NAME = Fol_In + os.sep + 'field_A%06d' % (3*k+frame0) + '.txt' 
     DATA = np.genfromtxt(NAME)  # Here we have the four colums
@@ -93,33 +93,33 @@ for k in range(200, 200+n_t):
     ax.legend(loc = 'lower center', ncol = 3)
     ax.set_ylabel('v[px/frame]')
     ax.set_xlabel('$x$[px]')
-    ax.set_ylim(-3,3)
+    ax.set_ylim(-10,15)
     ax.set_xlim(x[0,0],x[0,-1])
-    plt.title('Frame %06d' %(3*k))
+    plt.title('Frame %03d' %(3*k))
     Save_Name = Fol_Gif_y +'Gif_img%06d.png' %k # set the output name
     fig.savefig(Save_Name,dpi=60) # save the plot
     plt.close(fig) # close the figure to avoid overcrowding
     images_y.append(imageio.imread(Save_Name)) # append the name into the list of images
     
-    # fig, ax = plt.subplots(figsize=(8,5))
-    # ax.plot(y[:,IDY0], v[:,IDY0], label='x = %d px' %x[0,IDY0])
-    # ax.scatter(y[:,IDY0], v[:,IDY0], marker='x', s=(300./fig.dpi)**2)
-    # ax.plot(y[:,IDY1], v[:,IDY1], label = 'x = %d px' %x[0,IDY1])
-    # ax.scatter(y[:,IDY1], v[:,IDY1], marker='x', s=(300./fig.dpi)**2)
-    # ax.plot(y[:,IDY2], v[:,IDY2], label = 'x = %d px' %x[0,IDY2])
-    # ax.scatter(y[:,IDY2], v[:,IDY2], marker='x', s=(300./fig.dpi)**2)
-    # ax.legend(loc = 'lower center', ncol = 3)
-    # ax.grid(b = True, lw = 2)
-    # ax.set_ylabel('V[px/frame]')
-    # ax.set_xlabel('$y$[px]')
-    # ax.set_ylim(-14,0)
-    # ax.set_xlim(y[-1,0],y[0,0])
-    # plt.title('Frame %03d' %(5*k))
-    # Save_Name = Fol_Gif_x +'Gif_img%06d.png' %k # set the output name
-    # fig.savefig(Save_Name,dpi=60) # save the plot
-    # plt.close(fig) # close the figure to avoid overcrowding
-    # images_x.append(imageio.imread(Save_Name)) # append the name into the list of images
-# imageio.mimsave(GIFNAME_X, images_x, duration=0.2) # create the gif
+    fig, ax = plt.subplots(figsize=(8,5))
+    ax.plot(y[:,IDY0], v[:,IDY0], label='x = %d px' %x[0,IDY0])
+    ax.scatter(y[:,IDY0], v[:,IDY0], marker='x', s=(300./fig.dpi)**2)
+    ax.plot(y[:,IDY1], v[:,IDY1], label = 'x = %d px' %x[0,IDY1])
+    ax.scatter(y[:,IDY1], v[:,IDY1], marker='x', s=(300./fig.dpi)**2)
+    ax.plot(y[:,IDY2], v[:,IDY2], label = 'x = %d px' %x[0,IDY2])
+    ax.scatter(y[:,IDY2], v[:,IDY2], marker='x', s=(300./fig.dpi)**2)
+    ax.legend(loc = 'lower center', ncol = 3)
+    ax.grid(b = True, lw = 2)
+    ax.set_ylabel('v[px/frame]')
+    ax.set_xlabel('$y$[px]')
+    ax.set_ylim(-10,15)
+    ax.set_xlim(y[-1,0],y[0,0])
+    plt.title('Frame %03d' %(3*k))
+    Save_Name = Fol_Gif_x +'Gif_img%06d.png' %k # set the output name
+    fig.savefig(Save_Name,dpi=60) # save the plot
+    plt.close(fig) # close the figure to avoid overcrowding
+    images_x.append(imageio.imread(Save_Name)) # append the name into the list of images
+imageio.mimsave(GIFNAME_X, images_x, duration=0.1) # create the gif
 imageio.mimsave(GIFNAME_Y, images_y, duration=0.1) # create the gif
 
 import shutil  # nice and powerfull tool to delete a folder and its content

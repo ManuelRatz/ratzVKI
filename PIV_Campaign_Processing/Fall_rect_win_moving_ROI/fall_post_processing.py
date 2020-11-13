@@ -91,7 +91,7 @@ for k in range(0, n_t):
     ax.scatter(x[IDX2,:],v[IDX2,:], marker='x', s=(300./fig.dpi)**2)    
     ax.grid(b = True, lw = 2)
     ax.legend(loc = 'lower center', ncol = 3)
-    ax.set_ylabel('V[px/frame]')
+    ax.set_ylabel('v[px/frame]')
     ax.set_xlabel('$x$[px]')
     ax.set_ylim(-14,0)
     ax.set_xlim(x[0,0],x[0,-1])
@@ -110,10 +110,10 @@ for k in range(0, n_t):
     ax.scatter(y[:,IDY2], v[:,IDY2], marker='x', s=(300./fig.dpi)**2)
     ax.legend(loc = 'lower center', ncol = 3)
     ax.grid(b = True, lw = 2)
-    ax.set_ylabel('V[px/frame]')
+    ax.set_ylabel('v[px/frame]')
     ax.set_xlabel('$y$[px]')
     ax.set_ylim(-14,0)
-    ax.set_xlim(y[-1,0],y[0,0])
+    ax.set_xlim(y[0,0],y[-1,0])
     plt.title('Frame %03d' %(5*k))
     Save_Name = Fol_Gif_x +'Gif_img%06d.png' %k # set the output name
     fig.savefig(Save_Name,dpi=60) # save the plot
@@ -124,7 +124,7 @@ imageio.mimsave(GIFNAME_Y, images_y, duration=0.2) # create the gif
 
 import shutil  # nice and powerfull tool to delete a folder and its content
 # shutil.rmtree(Fol_Gif_x)
-shutil.rmtree(Fol_Gif_y)
+# shutil.rmtree(Fol_Gif_y)
 
 
 

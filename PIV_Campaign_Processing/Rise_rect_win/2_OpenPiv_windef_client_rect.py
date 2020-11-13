@@ -19,13 +19,13 @@ settings = Settings()
 
 'Data related settings'
 # Folder with the images to process
-settings.filepath_images = 'C:'+os.sep+'Users'+os.sep+'manue'+os.sep+'Desktop'+os.sep+'working_directory'
+settings.filepath_images = 'C:'+os.sep+'Users'+os.sep+'manue'+os.sep+'Desktop'+os.sep+'working_directory_2'
 # Folder for the outputs
-settings.save_path = 'C:'+os.sep+'Users'+os.sep+'manue'+os.sep+'Desktop'+os.sep+'tmp_processed'
+settings.save_path = 'C:'+os.sep+'Users'+os.sep+'manue'+os.sep+'Desktop'+os.sep+'tmp_processed_2'
 # Root name of the output Folder for Result Files
-settings.save_folder_suffix = 'R_h1_f1200_1_p14'
+settings.save_folder_suffix = 'R_h1_f1200_1_p15'
 # Format and Image Sequence
-settings.frame_pattern_a = 'R_h1_f1200_1_p14.*.tif'
+settings.frame_pattern_a = 'R_h1_f1200_1_p15.*.tif'
 settings.frame_pattern_b = None    
 
 'Region of interest'

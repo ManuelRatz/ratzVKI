@@ -117,16 +117,16 @@ def piv(settings):
         'scales the results pixel-> meter'
         x, y, u, v = scaling.uniform(x, y, u, v, scaling_factor = settings.scaling_factor )     
         'save to a file'
-        save(x, y, u, v,sig2noise_ratio, mask ,os.path.join(save_path,'field_A%03d.txt' % counter), delimiter='\t')
+        save(x, y, u, v,sig2noise_ratio, mask ,os.path.join(save_path,'field_A%06d.txt' % counter), delimiter='\t')
         'some messages to check if it is still alive'
-        
+        # disable the grid in case it is activated
         plt.rcParams['axes.grid'] = False
         'some other stuff that one might want to use'
         if settings.show_plot==True or settings.save_plot==True:
             plt.close('all')
             plt.ioff()
-            Name = os.path.join(save_path, 'Image_A%03d.png' % counter)
-            display_vector_field(os.path.join(save_path, 'field_A%03d.txt' % counter), scale=settings.scale_plot)
+            Name = os.path.join(save_path, 'Image_A%06d.png' % counter)
+            display_vector_field(os.path.join(save_path, 'field_A%06d.txt' % counter), scale=settings.scale_plot)
             if settings.save_plot==True:
                 plt.savefig(Name, dpi=600)
             if settings.show_plot==True:

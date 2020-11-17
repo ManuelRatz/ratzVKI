@@ -47,32 +47,24 @@ for i in range(0, n_t):
     x, y, u, v = ppf.load_txt(Fol_In, load_idx, nx)
     # create the figure
     fig, ax = plt.subplots(figsize = (5,10))
-    # create the contourplot using pcolormesh
-    cs = plt.pcolormesh(x,y,v, vmin=-10, vmax=16, cmap = custom_map)
-    # set the correct aspect ratio
-    ax.set_aspect('equal')
-    # get the colorbar
-    clb = fig.colorbar(cs)
-    # set the colorbarticks
-    clb.set_ticks(np.arange(-10, 17, 2))
-    # set the colorbar title
-    clb.ax.set_title('Velocity\n [px/frame] \n \n')
+    cs = plt.pcolormesh(x,y,v, vmin=-10, vmax=16, cmap = custom_map) # create the contourplot using pcolormesh
+    ax.set_aspect('equal') # set the correct aspect ratio
+    clb = fig.colorbar(cs) # get the colorbar
+    clb.set_ticks(np.arange(-10, 17, 2)) # set the colorbarticks
+    clb.ax.set_title('Velocity\n [px/frame] \n \n') # set the colorbar title
     # set a stepsize in the x and y direction to avoid overcrowding the quiver plot
     STEPY= 2
     STEPX = 1
     # plot the quivers
     ax.quiver(x[::STEPY, ::STEPX], y[::STEPY, ::STEPX], u[::STEPY, ::STEPX], v[::STEPY, ::STEPX],\
             color='k', scale =30, width=0.005,headwidth=4, headaxislength = 6)
-    # set the title
-    ax.set_title('Image %06d' % load_idx)
-    # set the output name
-    Name_Out = Gif_Images + os.sep + '%06d.jpg' % (load_idx)
-    # save the figure
-    fig.savefig(Name_Out, dpi = 75)
-    # append into the imagelist
-    IMAGES.append(imageio.imread(Name_Out))
-    # close the figure to avoid overcrowding the plot window
-    plt.close(fig)
+    ax.set_title('Image %06d' % load_idx) # set the title
+    Name_Out = Gif_Images + os.sep + '%06d.jpg' % (load_idx) # set the output name
+    fig.savefig(Name_Out, dpi = 75) # save the figure
+    IMAGES.append(imageio.imread(Name_Out)) # append into the imagelist
+    plt.close(fig) # close the figure to avoid overcrowding the plot window
+# render the gif
 imageio.mimsave(GIFNAME, IMAGES, duration = 0.1)
 
+# delete the image folder
 shutil.rmtree(Gif_Images)

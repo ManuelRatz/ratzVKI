@@ -42,7 +42,7 @@ h_cl_right_all_adv = np.zeros([n_t+1])*np.nan
 angle_all_left_adv = np.zeros([n_t+1])*np.nan  
 angle_all_right_adv = np.zeros([n_t+1])*np.nan  
 
-IMG_AMOUNT = 2000 # amount of images to process
+IMG_AMOUNT = 100 # amount of images to process
 Image = 1492
 # iterate over all images 
 for k in range(0,IMG_AMOUNT+1):
@@ -83,36 +83,36 @@ for k in range(0,IMG_AMOUNT+1):
     
     mu_s = mu_s/pix2mm # calculate the resulting height in mm
     
-    # # plot the result
-    # final_img = img[int(1280-mu_s[500])-70:int(1280-mu_s[500])+50,0:144]
-    # grad_img = grad_img[int(1280-mu_s[500])-70:int(1280-mu_s[500])+50,0:144]
-    # fig, ax = plt.subplots() # create a figure
-    # plt.imshow(final_img, cmap=plt.cm.gray) # show the image in greyscale
-    # plt.scatter(i_x, -i_y+mu_s[500]+70, marker='o', s=(73./fig.dpi)**2) # plot the detected gradient onto the image
-    # plt.plot((X)/(pix2mm)-0.5, -mu_s+mu_s[500]+70, 'r-', linewidth=0.5) # plot the interface fit
-    # plt.axis('off') # disable the showing of the axis
-    # Name=Fol_Out+ os.sep +'Step_'+str(idx)+'.png' # set output name
+    # plot the result
+    final_img = img[int(1280-mu_s[500])-70:int(1280-mu_s[500])+50,0:144]
+    grad_img = grad_img[int(1280-mu_s[500])-70:int(1280-mu_s[500])+50,0:144]
+    fig, ax = plt.subplots() # create a figure
+    plt.imshow(final_img, cmap=plt.cm.gray) # show the image in greyscale
+    plt.scatter(i_x, -i_y+mu_s[500]+70, marker='o', s=(73./fig.dpi)**2) # plot the detected gradient onto the image
+    plt.plot((X)/(pix2mm)-0.5, -mu_s+mu_s[500]+70, 'r-', linewidth=0.5) # plot the interface fit
+    plt.axis('off') # disable the showing of the axis
+    Name=Fol_Out+ os.sep +'Step_'+str(idx)+'.png' # set output name
     MEX= 'Exporting Im '+ str(k)+' of ' + str(IMG_AMOUNT) # update on progress
     print(MEX) 
-    # plt.title('Image %04d' % ((idx-1121+1))) # set image title
-    # plt.savefig(Name, dpi= 100) # save image
-    # plt.close(fig) # disable or enabel depending on whether you want to see image in the plot window
+    plt.title('Image %04d' % ((idx-1121+1))) # set image title
+    plt.savefig(Name, dpi= 100) # save image
+    plt.close(fig) # disable or enabel depending on whether you want to see image in the plot window
 
 # animate the result
 
-def saveTxt(Fol_Out,h_mm, h_cl_l, h_cl_r, angle_l, angle_r):                
+# def saveTxt(Fol_Out,h_mm, h_cl_l, h_cl_r, angle_l, angle_r):                
     
-    if not os.path.exists(Fol_Out):
-        os.mkdir(Fol_Out)
-    np.savetxt(Fol_Out + os.sep + 'Displacement.txt',h_mm)
+#     if not os.path.exists(Fol_Out):
+#         os.mkdir(Fol_Out)
+#     np.savetxt(Fol_Out + os.sep + 'Displacement.txt',h_mm)
     
-    np.savetxt(Fol_Out + os.sep + 'Displacement_CLsx.txt',h_cl_l)
-    np.savetxt(Fol_Out + os.sep + 'Displacement_CLdx.txt',h_cl_r)
+#     np.savetxt(Fol_Out + os.sep + 'Displacement_CLsx.txt',h_cl_l)
+#     np.savetxt(Fol_Out + os.sep + 'Displacement_CLdx.txt',h_cl_r)
     
-    np.savetxt(Fol_Out + os.sep + 'LCA.txt',angle_l*np.pi/180)
-    np.savetxt(Fol_Out + os.sep + 'RCA.txt',angle_r*np.pi/180)
+#     np.savetxt(Fol_Out + os.sep + 'LCA.txt',angle_l*np.pi/180)
+#     np.savetxt(Fol_Out + os.sep + 'RCA.txt',angle_r*np.pi/180)
     
-Fol_Out_Adv= os.path.abspath(FOL + os.sep + 'Txts_advanced_fitting')
-if not os.path.exists(Fol_Out_Adv):
-    os.mkdir(Fol_Out_Adv)
-saveTxt(Fol_Out_Adv,h_mm_adv, h_cl_left_all_adv, h_cl_right_all_adv, angle_all_left_adv, angle_all_right_adv)
+# Fol_Out_Adv= os.path.abspath(FOL + os.sep + 'Txts_advanced_fitting')
+# if not os.path.exists(Fol_Out_Adv):
+#     os.mkdir(Fol_Out_Adv)
+# saveTxt(Fol_Out_Adv,h_mm_adv, h_cl_left_all_adv, h_cl_right_all_adv, angle_all_left_adv, angle_all_right_adv)

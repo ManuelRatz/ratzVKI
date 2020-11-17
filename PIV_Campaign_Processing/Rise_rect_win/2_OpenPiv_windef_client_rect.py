@@ -18,11 +18,11 @@ class Settings(object):
 settings = Settings()
 
 'Data related settings'
-settings.save_folder_suffix = 'R_h2_f1200_1_p13'
+settings.save_folder_suffix = 'R_h1_f1200_1_p15'
 # Folder with the images to process
-settings.filepath_images = 'C:\\Users\manue\Desktop\Rise_test' + os.sep
+settings.filepath_images = 'C:\PIV_Processed\Images_Preprocessed' + os.sep + settings.save_folder_suffix + os.sep
 # Folder for the outputs
-settings.save_path = 'C:\\Users\manue\Desktop\Rise_test_processed' + os.sep
+settings.save_path = 'C:\PIV_Processed\Images_Processed' + os.sep
 # Root name of the output Folder for Result Files
 
 # Format and Image Sequence
@@ -52,10 +52,10 @@ not desired, simply put the same values for window_height and window_width as
 well as overlap_height and overlap_width
 """
 # base 2
-settings.window_height = (256, 32, 24, 16)
-settings.overlap_height = (128, 16, 12, 8)
-settings.window_width = (32, 16, 12, 16)
-settings.overlap_width = (16, 8, 6, 8) 
+settings.window_height = ( 128, 64)
+settings.overlap_height = ( 64, 32)
+settings.window_width = (32, 16, 16, 16)
+settings.overlap_width = (16, 8, 8, 8) 
 # # base 3
 # settings.window_height = (192, 96, 48, 24, 12)
 # settings.overlap_height = (96, 48, 24, 12, 6) # 50%
@@ -66,7 +66,7 @@ settings.overlap_width = (16, 8, 6, 8)
 settings.extract_sig2noise = True  # 'True' or 'False' (only for the last pass)
 settings.sig2noise_method = 'peak2peak'
 settings.sig2noise_mask = 3
-settings.do_sig2noise_validation = True # This is time consuming
+settings.do_sig2noise_validation = False # This is time consuming
 settings.sig2noise_threshold = 1.3
 
 # validation
@@ -92,7 +92,7 @@ settings.save_plot = True
 settings.show_plot = False
 settings.scale_plot = 200 # select a value to scale the quiver plot of the vectorfield
 
-settings.beginning_index = 0
+settings.beginning_index = 279
 
 # run the script with these settings
 piv(settings)

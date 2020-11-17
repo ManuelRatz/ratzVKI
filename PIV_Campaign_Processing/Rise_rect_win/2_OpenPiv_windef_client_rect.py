@@ -18,15 +18,15 @@ class Settings(object):
 settings = Settings()
 
 'Data related settings'
-settings.save_folder_suffix = 'R_h1_f1200_1_p15'
+settings.save_folder_suffix = 'R_h2_f1200_1_p13'
 # Folder with the images to process
-settings.filepath_images = 'G:\PIV_Processed\Images_Preprocessed' + os.sep + settings.save_folder_suffix + os.sep
+settings.filepath_images = 'C:\\Users\manue\Desktop\Rise_test' + os.sep
 # Folder for the outputs
-settings.save_path = 'G:\PIV_Processed\Images_Processed' + os.sep
+settings.save_path = 'C:\\Users\manue\Desktop\Rise_test_processed' + os.sep
 # Root name of the output Folder for Result Files
 
 # Format and Image Sequence
-settings.frame_pattern_a = 'R_h1_f1200_1_p15.*.tif'
+settings.frame_pattern_a = settings.save_folder_suffix + '.*.tif'
 settings.frame_pattern_b = None    
 
 'Region of interest'
@@ -44,7 +44,7 @@ settings.dynamic_masking_filter_size = 7
 settings.interpolation_order = 3
 settings.subpixel_method = 'gaussian'
 settings.correlation_method = 'linear'  # 'circular' or 'linear'
-settings.iterations = 3 # select the number of PIV passes
+settings.iterations = 2 # select the number of PIV passes
 
 """
 Here we set the window sizes. This code uses rectangular windows, if this is 
@@ -52,8 +52,8 @@ not desired, simply put the same values for window_height and window_width as
 well as overlap_height and overlap_width
 """
 # base 2
-settings.window_height = (64, 32, 24, 16)
-settings.overlap_height = (32, 16, 12, 8)
+settings.window_height = (256, 32, 24, 16)
+settings.overlap_height = (128, 16, 12, 8)
 settings.window_width = (32, 16, 12, 16)
 settings.overlap_width = (16, 8, 6, 8) 
 # # base 3
@@ -92,7 +92,7 @@ settings.save_plot = True
 settings.show_plot = False
 settings.scale_plot = 200 # select a value to scale the quiver plot of the vectorfield
 
-settings.beginning_index = 279
+settings.beginning_index = 0
 
 # run the script with these settings
 piv(settings)

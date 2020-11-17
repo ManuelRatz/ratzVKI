@@ -95,6 +95,21 @@ def load_txt(Fol_In, idx, nx):
     # return the arrays
     return  x, y, u, v
 
+def custom_div_cmap(numcolors=11, name='custom_div_cmap',
+                    mincol='blue', midcol='white', maxcol='red'):
+    """ Create a custom diverging colormap with three colors
+    
+    Default is blue to white to red with 11 colors.  Colors can be specified
+    in any way understandable by matplotlib.colors.ColorConverter.to_rgb()
+    """
+
+    from matplotlib.colors import LinearSegmentedColormap 
+    
+    cmap = LinearSegmentedColormap.from_list(name=name, 
+                                             colors =[mincol, midcol, maxcol],
+                                             N=numcolors)
+    return cmap
+
 # Fol_In = 'C:\\Users\manue\Desktop\Results_12_48_R_h1_f1200_1_p15'
 # nx = get_column_amount(Fol_In)
 # x, y, u, v = load_txt(Fol_In, 1, nx)

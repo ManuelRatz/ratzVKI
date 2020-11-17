@@ -30,7 +30,7 @@ GIFNAME = Gif_Images + os.sep + '..' +os.sep + 'rise_inversion.gif'
 IMAGES = []
 # give the starting frame and the amount of images to process
 frame0 = 0
-n_t = 70
+n_t = 181
 # plot every IMG_STP_SZ'th image
 IMG_STP_SZ =15
 

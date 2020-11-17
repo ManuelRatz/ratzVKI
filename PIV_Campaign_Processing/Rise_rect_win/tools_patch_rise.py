@@ -178,7 +178,7 @@ def rgb2gray(rgb):
     return np.dot(rgb[..., :3], [0.299, 0.587, 0.144])
 
 class Multiprocesser():
-    def __init__ ( self, data_dir, pattern_a, idx0, amount, pattern_b = None  ):
+    def __init__ ( self, data_dir, pattern_a, pattern_b = None  ):
         """A class to handle and process large sets of images.
 
         This class is responsible of loading image datasets
@@ -221,9 +221,9 @@ class Multiprocesser():
         
         # number of images
         self.n_files = len(self.files_a)
-        self.n_files = amount
-        self.files_a = self.files_a[idx0:idx0+amount]
-        self.files_b = self.files_b[idx0:idx0+amount]
+        # self.n_files = amount
+        # self.files_a = self.files_a[idx0:idx0+amount]
+        # self.files_b = self.files_b[idx0:idx0+amount]
         
         # check if everything was fine
         if not len(self.files_a) == len(self.files_b):
@@ -232,7 +232,7 @@ class Multiprocesser():
         if not len(self.files_a):
             raise ValueError('Something failed loading the image file. No images were found. Please check directory and image template name.')
 
-    def run( self, func, n_cpus=1 ):
+    def run( self, func, beginning_index, n_cpus=1 ):
         """Start to process images.
         
         Parameters
@@ -248,7 +248,8 @@ class Multiprocesser():
         """
 
         # create a list of tasks to be executed.
-        image_pairs = [ (file_a, file_b, i) for file_a, file_b, i in zip( self.files_a, self.files_b, range(self.n_files) ) ]
+        image_pairs = [ (file_a, file_b, i) for file_a, file_b,\
+                       i in zip( self.files_a[beginning_index:], self.files_b[beginning_index:], range(beginning_index,self.n_files) ) ]
         
         # for debugging purposes always use n_cpus = 1,
         # since it is difficult to debug multiprocessing stuff.

@@ -136,7 +136,7 @@ def piv(settings):
     
     #%%
     # initialize the saving path for the images and the txts in case they dont exist
-    save_path=os.path.join(settings.save_path,'Open_PIV_results_'+settings.save_folder_suffix+'_'+str(settings.window_width[settings.iterations-1])+'_'\
+    save_path=os.path.join(settings.save_path,'Results_'+settings.save_folder_suffix+'_'+str(settings.window_width[settings.iterations-1])+'_'\
                            +str(settings.window_height[settings.iterations-1]))
     if not os.path.exists(save_path):
         os.makedirs(save_path)
@@ -158,10 +158,24 @@ def piv(settings):
     
 #%%
 def save_settings(settings, save_path):
+    """
+    Function to save the settings given in the client.
+
+    Parameters
+    ----------
+    settings : class
+        Class containing all the settings given.
+    save_path : string
+        Path where to save the generated txt file.
+    """
+    # extract the variables
     variables = vars(settings)
+    # open the file
     with open(save_path+os.sep+"settings.txt", "w") as f:
+        # iterate over the list of variables
         for key, value in variables.items():
-          f.write('{} {}'.format(key, value)+"\n")
+            #write into the file
+            f.write('{} {}'.format(key, value)+"\n")
 
 def shift_ROI(counter, save_path, save_path_txts, scaling_factor, dt, frame_b, interface_position,\
               roi_shift_start, plot_ROI = False):

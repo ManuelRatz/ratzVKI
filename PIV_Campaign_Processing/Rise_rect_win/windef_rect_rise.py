@@ -13,31 +13,17 @@ import scipy.ndimage as scn
 from scipy.interpolate import RectBivariateSpline
 from openpiv import process, validation, filters, pyprocess, tools, preprocess,scaling
 from openpiv import smoothn
+import tools_patch_rise
 import matplotlib.pyplot as plt
 
 def piv(settings):
     def func(args):
         """A function to process each image pair."""
-
-        # this line is REQUIRED for multiprocessing to work
-        # always use it in your custom function
-
         file_a, file_b, counter = args
-
-        # counter2=str(counter2)
-        #####################
-        # Here goes you code
-        #####################
 
         ' read images into numpy arrays'
         frame_a = tools.imread(os.path.join(settings.filepath_images, file_a))
         frame_b = tools.imread(os.path.join(settings.filepath_images, file_b))
-
-        
-        ## Miguel: I just had a quick look, and I do not understand the reason for this step.
-        #  I propose to remove it.
-        #frame_a = (frame_a*1024).astype(np.int32)
-        #frame_b = (frame_b*1024).astype(np.int32)
 
         ' crop to ROI'
         if settings.ROI=='full':
@@ -117,7 +103,7 @@ def piv(settings):
         'scales the results pixel-> meter'
         x, y, u, v = scaling.uniform(x, y, u, v, scaling_factor = settings.scaling_factor )     
         'save to a file'
-        save(x, y, u, v,sig2noise_ratio, mask ,os.path.join(save_path,'field_A%06d.txt' % counter), delimiter='\t')
+        save(x, y, u, v,sig2noise_ratio, mask ,os.path.join(save_path_txts,'field_A%06d.txt' % counter), delimiter='\t')
         'some messages to check if it is still alive'
         # disable the grid in case it is activated
         plt.rcParams['axes.grid'] = False
@@ -125,24 +111,51 @@ def piv(settings):
         if settings.show_plot==True or settings.save_plot==True:
             plt.close('all')
             plt.ioff()
-            Name = os.path.join(save_path, 'Image_A%06d.png' % counter)
-            display_vector_field(os.path.join(save_path, 'field_A%06d.txt' % counter), scale=settings.scale_plot)
+            Name = os.path.join(save_path_images, 'Image_A%06d.png' % counter)
+            display_vector_field(os.path.join(save_path_txts, 'field_A%06d.txt' % counter), scale=settings.scale_plot)
             if settings.save_plot==True:
                 plt.savefig(Name, dpi=600)
             if settings.show_plot==True:
                 plt.show()
 
-        print('Image Pair ' + str(counter+1))
+        print('Image Pair ' + str(counter))
         
     'Below is code to read files and create a folder to store the results'
-    save_path=os.path.join(settings.save_path,'Open_PIV_results_'+str(settings.window_width[settings.iterations-1])+'_'\
+    save_path=os.path.join(settings.save_path,'Results_'+str(settings.window_width[settings.iterations-1])+'_'\
                            +str(settings.window_height[settings.iterations-1])+'_'+settings.save_folder_suffix)
     if not os.path.exists(save_path):
         os.makedirs(save_path)
-    task = tools.Multiprocesser(
+    save_path_images = save_path + os.sep + 'velocity_fields'
+    if not os.path.exists(save_path_images):
+        os.makedirs(save_path_images)
+    save_path_txts = save_path + os.sep + 'text_files'
+    if not os.path.exists(save_path_txts):
+        os.makedirs(save_path_txts)       
+    # save the settings of the processing
+    save_settings(settings, save_path)
+    task = tools_patch_rise.Multiprocesser(
         data_dir=settings.filepath_images, pattern_a=settings.frame_pattern_a, pattern_b=settings.frame_pattern_b)
-    task.run(func=func, n_cpus=1)
+    task.run(func=func, beginning_index = settings.beginning_index, n_cpus=1)
 
+def save_settings(settings, save_path):
+    """
+    Function to save the settings given in the client.
+
+    Parameters
+    ----------
+    settings : class
+        Class containing all the settings given.
+    save_path : string
+        Path where to save the generated txt file.
+    """
+    # extract the variables
+    variables = vars(settings)
+    # open the file
+    with open(save_path+os.sep+"settings.txt", "w") as f:
+        # iterate over the list of variables
+        for key, value in variables.items():
+            #write into the file
+            f.write('{}'.format(key) + "\t" + '{}'.format(value)+"\n")
 
 def correlation_func(cor_win_1, cor_win_2, win_width, win_height ,correlation_method='circular'):
     '''This function is doing the cross-correlation. Right now circular cross-correlation

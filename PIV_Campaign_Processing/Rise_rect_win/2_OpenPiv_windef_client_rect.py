@@ -11,19 +11,20 @@ Created on Wed Sep 18 16:42:13 2019
 # going to replace it will be just filteers (for example)
 
 import os
-from windef_rect import piv
+from windef_rect_rise import piv
 
 class Settings(object):
     pass  
 settings = Settings()
 
 'Data related settings'
-# Folder with the images to process
-settings.filepath_images = 'C:'+os.sep+'Users'+os.sep+'manue'+os.sep+'Desktop'+os.sep+'working_directory_2'
-# Folder for the outputs
-settings.save_path = 'C:'+os.sep+'Users'+os.sep+'manue'+os.sep+'Desktop'+os.sep+'tmp_processed_2'
-# Root name of the output Folder for Result Files
 settings.save_folder_suffix = 'R_h1_f1200_1_p15'
+# Folder with the images to process
+settings.filepath_images = 'G:\PIV_Processed\Images_Preprocessed' + os.sep + settings.save_folder_suffix + os.sep
+# Folder for the outputs
+settings.save_path = 'G:\PIV_Processed\Images_Processed' + os.sep
+# Root name of the output Folder for Result Files
+
 # Format and Image Sequence
 settings.frame_pattern_a = 'R_h1_f1200_1_p15.*.tif'
 settings.frame_pattern_b = None    
@@ -51,10 +52,10 @@ not desired, simply put the same values for window_height and window_width as
 well as overlap_height and overlap_width
 """
 # base 2
-settings.window_height = (256, 128, 64, 32, 16)
-settings.overlap_height = (128, 64, 32, 16, 8)
-settings.window_width = (64, 32, 16, 16, 16)
-settings.overlap_width = (32, 16, 8, 8, 8) 
+settings.window_height = (64, 32, 24, 16)
+settings.overlap_height = (32, 16, 12, 8)
+settings.window_width = (32, 16, 12, 16)
+settings.overlap_width = (16, 8, 6, 8) 
 # # base 3
 # settings.window_height = (192, 96, 48, 24, 12)
 # settings.overlap_height = (96, 48, 24, 12, 6) # 50%
@@ -90,6 +91,8 @@ settings.dt = 1  # time between to frames (in seconds)
 settings.save_plot = True
 settings.show_plot = False
 settings.scale_plot = 200 # select a value to scale the quiver plot of the vectorfield
+
+settings.beginning_index = 279
 
 # run the script with these settings
 piv(settings)

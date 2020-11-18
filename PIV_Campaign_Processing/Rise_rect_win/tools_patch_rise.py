@@ -254,4 +254,6 @@ class Multiprocesser():
         # for debugging purposes always use n_cpus = 1,
         # since it is difficult to debug multiprocessing stuff.
         for image_pair in image_pairs:
+            if image_pair[2] > 329:
+                break
             func( image_pair )

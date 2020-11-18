@@ -82,7 +82,7 @@ def load_txt(Fol_In, idx, nx):
 
     """
     # set the file name
-    file_name = Fol_In + os.sep + 'field_A%06d.txt' % idx
+    file_name = Fol_In + os.sep + 'field_%06d.txt' % idx
     # load the data
     data = np.genfromtxt(file_name)
     # get the amount of points in the field

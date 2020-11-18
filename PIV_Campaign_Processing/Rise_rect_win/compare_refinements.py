@@ -27,10 +27,10 @@ nx3 = ppf.get_column_amount(Fol_In_3)
 nx4 = ppf.get_column_amount(Fol_In_4)
 
 # set up folders to store the gifs in (to be deleted later)
-Gif_Fol_ver = 'tmp_gif_images'+os.sep
+Gif_Fol_ver = 'gif_images_ver'
 if not os.path.exists(Gif_Fol_ver):
     os.makedirs(Gif_Fol_ver)
-Gif_Fol_hor = 'tmp_gif_images'+os.sep
+Gif_Fol_hor = 'mp_gif_images_hor'
 if not os.path.exists(Gif_Fol_hor):
     os.makedirs(Gif_Fol_hor)
 
@@ -53,7 +53,7 @@ IDY3 = 2
 IDY4 = 2
 
 # set the number of imagess and the frame at which to start
-n_t = 1
+n_t = 20
 frame0 = 309
 
 for k in range(0, n_t):
@@ -69,9 +69,9 @@ for k in range(0, n_t):
     # create the figure
     fig, ax = plt.subplots(figsize=(8,5))
     # plot the 4 data sets with scatter plots and lines
-    ax.plot(x1[IDX1,:],v1[IDX1,:], label = 'linear')
+    ax.plot(x1[IDX1,:],v1[IDX1,:], label = '24 96')
     ax.scatter(x1[IDX1,:],v1[IDX1,:], marker='x', s=(300./fig.dpi)**2)
-    ax.plot(x2[IDX2,:],v2[IDX2,:], label = 'circular', c='r')
+    ax.plot(x2[IDX2,:],v2[IDX2,:], label = '12 48', c='r')
     ax.scatter(x2[IDX2,:],v2[IDX2,:], marker='x', s=(300./fig.dpi)**2, c='r')
     ax.plot(x3[IDX3,:],v3[IDX3,:], label = '16 64 Rough Start', c='y')
     ax.scatter(x3[IDX3,:],v3[IDX3,:], marker='x', s=(300./fig.dpi)**2, c='y')
@@ -84,15 +84,15 @@ for k in range(0, n_t):
     ax.set_ylim(0,15) # set the y limit
     ax.set_xlim(0,270) # set the x limit
     plt.title('Frame %03d' %(load_index)) # set the image title
-    save_name = Gif_Fol_ver + 'circ_vs_lin_horizontal_%06d.jpg' %load_index # set the image name
-    fig.savefig(save_name, dpi = 400) # save the figure
+    save_name = Gif_Fol_ver + os.sep + 'circ_vs_lin_horizontal_%06d.jpg' %load_index # set the image name
+    fig.savefig(save_name, dpi = 75) # save the figure
     images_hor.append(imageio.imread(save_name)) # append into the imagelist
     
      # repeat the same thing for the vertical plots
     fig, ax = plt.subplots(figsize=(8,5))
-    ax.plot(y1[:,IDY1],v1[:,IDY1], label = 'linear')
+    ax.plot(y1[:,IDY1],v1[:,IDY1], label = '24 96')
     ax.scatter(y1[:,IDY1],v1[:,IDY1], marker='x', s=(300./fig.dpi)**2)
-    ax.plot(y2[:,IDY2],v2[:,IDY2], label = 'circular', c='r')
+    ax.plot(y2[:,IDY2],v2[:,IDY2], label = '12 48', c='r')
     ax.scatter(y2[:,IDY2],v2[:,IDY2], marker='x', s=(300./fig.dpi)**2, c='r')
     ax.plot(y3[:,IDY3],v3[:,IDY3], label = '16 64 Rough Start', c='y')
     ax.scatter(y3[:,IDY3],v3[:,IDY3], marker='x', s=(300./fig.dpi)**2, c='y')
@@ -102,16 +102,16 @@ for k in range(0, n_t):
     ax.legend(loc = 'lower center', ncol = 2)
     ax.set_ylabel('v[px/frame]')
     ax.set_xlabel('$x$[px]')
-    ax.set_ylim(14,16)
+    ax.set_ylim(0,16)
     ax.set_xlim(0,1230)
     plt.title('Frame %03d' %(load_index))
-    save_name = Gif_Fol_hor + 'circ_vs_lin_vertical.jpg'
-    fig.savefig(save_name, dpi = 400)
+    save_name = Gif_Fol_hor + os.sep + 'circ_vs_lin_vertical.jpg'
+    fig.savefig(save_name, dpi = 75)
     images_ver.append(imageio.imread(save_name))
 
 # render the gifs
-imageio.mimsave(name_hor, images_hor, duration = 0.5)
-imageio.mimsave(name_ver, images_ver, duration = 0.5)
+imageio.mimsave(name_hor, images_hor, duration = 1.25)
+imageio.mimsave(name_ver, images_ver, duration = 1.25)
 
 # delete the folder containing the temporary plot images
 import shutil

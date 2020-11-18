@@ -2,13 +2,8 @@
 """
 Created on Wed Sep 18 16:42:13 2019
 
-@author: Theo
+@author: Manuel
 """
-
-# add two directories that include the new files
-# note that we need to import openpiv in a separate, original namespace
-# so we can use everything from openpiv as openpiv.filters and whatever is 
-# going to replace it will be just filteers (for example)
 
 import os
 import numpy as np
@@ -19,7 +14,7 @@ class Settings(object):
 settings = Settings()
 
 'Data related settings'
-settings.save_folder_suffix = 'R_h2_f1200_1_p15'
+settings.save_folder_suffix = 'R_h1_f1200_1_p15'
 # Folder with the images to process
 settings.filepath_images = 'C:\PIV_Processed\Images_Preprocessed' + os.sep + settings.save_folder_suffix + os.sep
 # Folder for the outputs
@@ -48,16 +43,15 @@ settings.correlation_method = 'circular'  # 'circular' or 'linear'
 settings.iterations = 3 # select the number of PIV passes
 
 """
-
 Here we set the window sizes. This code uses rectangular windows, if this is 
 not desired, simply put the same values for window_height and window_width as
 well as overlap_height and overlap_width
 """
 # base 2
-settings.window_height = (256, 128, 64)
-settings.overlap_height = (128, 64, 32)
-settings.window_width = (16, 16, 16)
-settings.overlap_width = (8, 8, 8) 
+settings.window_height = (128, 64, 32)
+settings.overlap_height = (64, 32, 16)
+settings.window_width = (64, 32, 16)
+settings.overlap_width = (32, 16, 8) 
 # # base 3
 # settings.window_height = (192, 96, 48, 24, 12)
 # settings.overlap_height = (96, 48, 24, 12, 6) # 50%
@@ -94,7 +88,7 @@ settings.save_plot = False
 settings.show_plot = False
 settings.scale_plot = 200 # select a value to scale the quiver plot of the vectorfield
 
-settings.beginning_index = 335
+settings.beginning_index = 279
 
 # run the script with these settings
 

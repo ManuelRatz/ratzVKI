@@ -118,7 +118,7 @@ def piv(settings):
             if settings.show_plot==True:
                 plt.show()
 
-        print('Image Pair ' + str(counter))
+        # print('Image Pair ' + str(counter))
         
     'Below is code to read files and create a folder to store the results'
     save_path=os.path.join(settings.save_path,'Results_'+str(settings.window_width[settings.iterations-1])+'_'\

@@ -11,6 +11,7 @@ Created on Wed Sep 18 16:42:13 2019
 # going to replace it will be just filteers (for example)
 
 import os
+import numpy as np
 from windef_rect_rise import piv
 
 class Settings(object):
@@ -43,8 +44,8 @@ settings.dynamic_masking_filter_size = 7
 # windows and displacement calculation
 settings.interpolation_order = 3
 settings.subpixel_method = 'gaussian'
-settings.correlation_method = 'linear'  # 'circular' or 'linear'
-settings.iterations = 2 # select the number of PIV passes
+settings.correlation_method = 'circular'  # 'circular' or 'linear'
+settings.iterations = 3 # select the number of PIV passes
 
 """
 Here we set the window sizes. This code uses rectangular windows, if this is 
@@ -52,10 +53,10 @@ not desired, simply put the same values for window_height and window_width as
 well as overlap_height and overlap_width
 """
 # base 2
-settings.window_height = ( 128, 64)
-settings.overlap_height = ( 64, 32)
-settings.window_width = (32, 16, 16, 16)
-settings.overlap_width = (16, 8, 8, 8) 
+settings.window_height = ( 128, 64, 48)
+settings.overlap_height = ( 64, 32, 24)
+settings.window_width = (32, 16, 12, 16)
+settings.overlap_width = (16, 8, 6, 8) 
 # # base 3
 # settings.window_height = (192, 96, 48, 24, 12)
 # settings.overlap_height = (96, 48, 24, 12, 6) # 50%
@@ -95,7 +96,21 @@ settings.scale_plot = 200 # select a value to scale the quiver plot of the vecto
 settings.beginning_index = 279
 
 # run the script with these settings
-piv(settings)
+
+height = np.array([[256,128,96],[256,128,64],[128, 64, 48],[256,128,64]])
+overlap_height = np.array([[128,64,48],[128,64,32],[64, 32, 24],[128,64,32]])
+width = np.array([[64,32,24],[64,32,16],[32, 16, 12],[16,16,16]])
+overlap_width= np.array([[32,16,12],[32,16,8],[16, 8, 6],[8,8,8]])
+import time
+for i in range(1,2):
+    start = time.time()
+    settings.window_height = height[i]
+    settings.overlap_height = overlap_height[i]
+    settings.window_width = width[i]
+    settings.overlap_width = overlap_width[i]
+    piv(settings)
+    print(time.time()-start)
+
 
 
 

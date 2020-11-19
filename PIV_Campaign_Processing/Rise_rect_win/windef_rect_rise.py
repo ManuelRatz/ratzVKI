@@ -24,7 +24,19 @@ def piv(settings):
         ' read images into numpy arrays'
         frame_a = tools.imread(os.path.join(settings.filepath_images, file_a))
         frame_b = tools.imread(os.path.join(settings.filepath_images, file_b))
-
+        
+        #%%
+        'Here begins the new stuff for the chaning roi'
+        if counter == settings.beginning_index:
+            settings.current_pos = 0
+        settings.current_pos = settings.current_pos - shift_roi_rise(counter, save_path,\
+                save_path_txts, settings.scaling_factor, settings.dt, settings.beginning_index, frame_b, settings.ROI[0])
+        if settings.current_pos > 0:
+            settings.ROI[0] = settings.current_pos
+        
+        
+        #%%
+        
         ' crop to ROI'
         if settings.ROI=='full':
             frame_a=frame_a
@@ -32,7 +44,7 @@ def piv(settings):
         else:     
             frame_a =  frame_a[settings.ROI[0]:settings.ROI[1],settings.ROI[2]:settings.ROI[3]]
             frame_b =  frame_b[settings.ROI[0]:settings.ROI[1],settings.ROI[2]:settings.ROI[3]]
-        if settings.dynamic_masking_method=='edge' or 'intensity':    
+        if settings.dynamic_masking_method=='edge' or settings.dynamic_masking_method=='intensity':    
             frame_a = preprocess.dynamic_masking(frame_a,method=settings.dynamic_masking_method,filter_size=settings.dynamic_masking_filter_size,threshold=settings.dynamic_masking_threshold)
             frame_b = preprocess.dynamic_masking(frame_b,method=settings.dynamic_masking_method,filter_size=settings.dynamic_masking_filter_size,threshold=settings.dynamic_masking_threshold)
 
@@ -118,17 +130,16 @@ def piv(settings):
             if settings.show_plot==True:
                 plt.show()
 
-        print('Image Pair ' + str(counter))
+        print('Image Pair ' + str(counter) + ', ' + str(settings.ROI[1]) + ', ' + str(settings.current_pos))
         
     'Below is code to read files and create a folder to store the results'
-    save_path=os.path.join(settings.save_path,'Results_'+str(settings.window_width[settings.iterations-1])+'_'\
-                           +str(settings.window_height[settings.iterations-1])+'_'+settings.save_folder_suffix)
+    save_path=os.path.join(settings.save_path,'Results_'+settings.save_folder_suffix+'_Run_'+str(settings.run))
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     save_path_images = save_path + os.sep + 'velocity_fields'
     if not os.path.exists(save_path_images):
         os.makedirs(save_path_images)
-    save_path_txts = save_path + os.sep + 'text_files'
+    save_path_txts = save_path + os.sep + 'data_files'
     if not os.path.exists(save_path_txts):
         os.makedirs(save_path_txts)       
     # save the settings of the processing
@@ -156,6 +167,35 @@ def save_settings(settings, save_path):
         for key, value in variables.items():
             #write into the file
             f.write('{}'.format(key) + "\t" + '{}'.format(value)+"\n")
+
+def shift_roi_rise(counter, save_path, save_path_txts, scaling_factor, dt, beginning_index, frame_b,interface_position):
+    # initialize mean displacement with zero in case we are looking at the first frame of the fall
+    mean_disp = 0
+    # calculate mean displacement for all the other cases
+
+    # load the txt file with the data; This is still in meter/second
+    if counter == beginning_index:
+        return mean_disp
+    data = np.genfromtxt(os.path.join(save_path_txts,'field_%06d.txt' %(counter-1))) # -1 because we take the previous pass
+    # get the velocity
+    vel = data[:,3]
+    # calculate the mean velocity as an integer in pixels/frame
+    mean_disp = int(np.rint(np.nanmean(vel)*scaling_factor*dt))
+    # plot the raw image with the ROI in case this is desired
+    if(interface_position > 0):
+        # create a folder in case there is none
+        Fol_Out = save_path + os.sep + 'ROI_Images' + os.sep
+        if not os.path.exists(Fol_Out):
+            os.mkdir(Fol_Out)
+        # plot the result
+        fig = plt.figure(figsize = (4, 10)) # create the figure
+        plt.imshow(frame_b, cmap=plt.cm.gray) # plot the image
+        dummy = np.arange(0, frame_b.shape[1],1) # create a dummy for the plot
+        roi_plot = np.ones((len(dummy),))*(interface_position-mean_disp) # create a horizontal line 
+        plt.plot(dummy, roi_plot, lw = 1) # plot the line
+        fig.savefig(Fol_Out + 'ROI_img_%06d.png' %counter, dpi = 100) # save the figure
+        plt.close(fig) # close the figure
+    return mean_disp
 
 def correlation_func(cor_win_1, cor_win_2, win_width, win_height ,correlation_method='circular'):
     '''This function is doing the cross-correlation. Right now circular cross-correlation

@@ -27,7 +27,7 @@ def piv(settings):
         frame_a = tools.imread(os.path.join(settings.filepath_images, file_a))
         frame_b = tools.imread(os.path.join(settings.filepath_images, file_b))
         
-        """ Here we check if the interface has reached the top of the roi yet
+        """Here we check if the interface has reached the top of the roi yet
         by comparing it to the index in the observation_periods file. If it has
         not reached the roi yet we skip this part, if it did then we shift the
         roi for each pair after the initial one """
@@ -117,14 +117,14 @@ def piv(settings):
         v=v/settings.dt
         x, y, u, v = scaling.uniform(x, y, u, v, scaling_factor = settings.scaling_factor )     
         # save the result
-        save(x, y, u, v,sig2noise_ratio, mask, os.path.join(save_path_txts,'field_A%06d.txt' % (counter)), delimiter='\t')
+        save(x, y, u, v,sig2noise_ratio, mask, os.path.join(save_path_txts,'field_%06d.txt' % (counter)), delimiter='\t')
         # disable the grid in the rcParams file
         plt.rcParams['axes.grid'] = False
         # show and save the plot if it is desired
         if settings.show_plot==True or settings.save_plot==True:
             plt.ioff()
-            Name = os.path.join(save_path_images, 'Image_A%06d.png' % (counter))
-            display_vector_field(os.path.join(save_path_txts, 'field_A%06d.txt' % (counter)), scale=settings.scale_plot)
+            Name = os.path.join(save_path_images, 'Image_%06d.png' % (counter))
+            display_vector_field(os.path.join(save_path_txts, 'field_%06d.txt' % (counter)), scale=settings.scale_plot)
             if settings.save_plot==True:
                 plt.savefig(Name, dpi=600)
             if settings.show_plot==True:
@@ -211,7 +211,7 @@ def shift_ROI(counter, save_path, save_path_txts, scaling_factor, dt, frame_b, i
     # calculate mean displacement for all the other cases
     if(counter > roi_shift_start):
         # load the txt file with the data; This is still in meter/second
-        data = np.genfromtxt(os.path.join(save_path_txts,'field_A%06d.txt' %(counter-1)))
+        data = np.genfromtxt(os.path.join(save_path_txts,'field_%06d.txt' %(counter-1)))
         # get the velocity
         vel = data[:,3]
         # calculate the mean velocity as an integer in pixels/frame

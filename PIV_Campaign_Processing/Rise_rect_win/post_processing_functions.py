@@ -38,7 +38,7 @@ def get_column_amount(Fol_In):
         Amount of columns in the fields.
 
     """
-    Fol_In = Fol_In + os.sep + 'data_files'
+    # Fol_In = Fol_In + os.sep + 'data_files'
     # get the name of the first file
     file0 = os.listdir(Fol_In)[0]
     # set the input path
@@ -82,7 +82,7 @@ def load_txt(Fol_In, idx, nx):
         Array containing the v component for every interrogation window.
 
     """
-    Fol_In = Fol_In + os.sep + 'data_files'
+    # Fol_In = Fol_In + os.sep + 'data_files'
     # set the file name
     file_name = Fol_In + os.sep + 'field_%06d.txt' % idx
     # load the data
@@ -92,10 +92,10 @@ def load_txt(Fol_In, idx, nx):
     # calculate the number of rows
     ny = nxny // nx
     # calculate the components of the velocity field and the positions by reshaping
-    x, y, u, v = data[:, 0].reshape((ny, nx)), data[:, 1].reshape((ny, nx)),\
-        data[:, 2].reshape((ny, nx)), data[:, 3].reshape((ny, nx))
+    x, y, u, v, sig2noise, valid = data[:, 0].reshape((ny, nx)), data[:, 1].reshape((ny, nx)),\
+        data[:, 2].reshape((ny, nx)), data[:, 3].reshape((ny, nx)), data[:, 4].reshape((ny, nx)), data[:, 5].reshape((ny, nx))
     # return the arrays
-    return  x, y, u, v
+    return  x, y, u, v, sig2noise, valid
 
 def custom_div_cmap(numcolors=11, name='custom_div_cmap',
                     mincol='blue', midcol='white', maxcol='red'):

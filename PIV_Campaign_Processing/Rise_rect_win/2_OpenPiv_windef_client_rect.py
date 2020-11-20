@@ -88,7 +88,7 @@ settings.dt = 1  # time between to frames (in seconds)
 settings.save_plot = False
 settings.show_plot = False
 settings.scale_plot = 200 # select a value to scale the quiver plot of the vectorfield
-
+settings.plot_ROI = True
 settings.beginning_index = 391
 
 # run the script with these settings

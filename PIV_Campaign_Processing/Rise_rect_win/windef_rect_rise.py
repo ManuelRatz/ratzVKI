@@ -29,12 +29,10 @@ def piv(settings):
         'Here begins the new stuff for the chaning roi'
         if counter == settings.beginning_index:
             settings.current_pos = 0
-        settings.current_pos = settings.current_pos - shift_roi_rise(counter, save_path,\
-                save_path_txts, settings.scaling_factor, settings.dt, settings.beginning_index, frame_b, settings.ROI[0])
         if settings.current_pos > 0:
-            settings.ROI[0] = settings.current_pos
-        
-        
+            settings.ROI[0] = int(settings.current_pos)
+        if settings.plot_ROI == True:
+            plot_shifted_ROI(frame_b, counter, settings.current_pos, save_path)
         #%%
         
         ' crop to ROI'
@@ -105,10 +103,14 @@ def piv(settings):
         
         '''%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%'''
         if settings.extract_sig2noise==True and i==settings.iterations and settings.iterations!=1 and settings.do_sig2noise_validation==True:
-            u,v, mask_s2n = validation.sig2noise_val( u, v, sig2noise_ratio, threshold = settings.sig2noise_threshold)
+            u,v, mask_s2n = validation_patch.sig2noise_val( u, v, sig2noise_ratio, threshold_low = settings.sig2noise_threshold)
             mask=mask+mask_s2n
         if settings.replace_vectors==True:
             u, v = filters.replace_outliers( u, v, method=settings.filter_method, max_iter=settings.max_filter_iteration, kernel_size=settings.filter_kernel_size)
+        #%%
+        'Calculate the mean displacement'
+        settings.current_pos = settings.current_pos - calc_disp(x, v, frame_b.shape[1])
+        #%%
         'pixel/frame->pixel/sec'
         u=u/settings.dt
         v=v/settings.dt
@@ -131,7 +133,7 @@ def piv(settings):
                 plt.show()
 
         print('Image Pair ' + str(counter) + ', ' + str(settings.ROI[1]) + ', ' + str(settings.current_pos))
-        
+        return settings.current_pos
     'Below is code to read files and create a folder to store the results'
     save_path=os.path.join(settings.save_path,'Results_'+settings.save_folder_suffix+'_Run_'+str(settings.run))
     if not os.path.exists(save_path):
@@ -146,7 +148,28 @@ def piv(settings):
     save_settings(settings, save_path)
     task = tools_patch_rise.Multiprocesser(
         data_dir=settings.filepath_images, pattern_a=settings.frame_pattern_a, pattern_b=settings.frame_pattern_b)
-    task.run(func=func, beginning_index = settings.beginning_index, n_cpus=1)
+    task.run(save_path, func=func, beginning_index = settings.beginning_index, n_cpus=1)
+
+def plot_shifted_ROI(frame_b, counter, interface_position, save_path):
+    Fol_ROI = save_path + os.sep + 'ROI_Images' + os.sep
+    if not os.path.exists(Fol_ROI):
+        os.makedirs(Fol_ROI)
+    fig, ax = plt.subplots(figsize=(4,10))
+    plt.imshow(frame_b, cmap=plt.cm.gray)
+    if interface_position > 0:
+        interface_line = np.ones((frame_b.shape[1],1))*interface_position
+        ax.plot(interface_line, lw = 1)
+    fig.savefig(Fol_ROI + 'ROI_img_%06d.png' %counter, dpi = 75)
+    plt.close(fig)
+    return
+    
+def calc_disp(x, v, img_width):
+    dummy_0 = np.zeros((v.shape[0],1))
+    dummy_x_max = np.ones((x.shape[0],1))*img_width
+    x_padded = np.hstack((dummy_0, x, dummy_x_max))
+    v_padded = np.hstack((dummy_0, v, dummy_0))
+    mean_disp = np.mean(np.trapz(v_padded[-5:,:], x_padded[-5:,:]))/img_width
+    return mean_disp
 
 def save_settings(settings, save_path):
     """
@@ -168,7 +191,7 @@ def save_settings(settings, save_path):
             #write into the file
             f.write('{}'.format(key) + "\t" + '{}'.format(value)+"\n")
 
-def shift_roi_rise(counter, save_path, save_path_txts, scaling_factor, dt, beginning_index, frame_b,interface_position):
+def shift_roi_rise(counter, save_path, save_path_txts, scaling_factor, dt, beginning_index, frame_b, interface_position):
     # initialize mean displacement with zero in case we are looking at the first frame of the fall
     mean_disp = 0
     # calculate mean displacement for all the other cases
@@ -176,9 +199,7 @@ def shift_roi_rise(counter, save_path, save_path_txts, scaling_factor, dt, begin
     # load the txt file with the data; This is still in meter/second
     if counter == beginning_index:
         return mean_disp
-    data = np.genfromtxt(os.path.join(save_path_txts,'field_%06d.txt' %(counter-1))) # -1 because we take the previous pass
-    # get the velocity
-    vel = data[:,3]
+    vel = np.genfromtxt(os.path.join(save_path_txts,'field_%06d.txt' %(counter-1)))[:,3] # -1 because we take the previous pass
     # calculate the mean velocity as an integer in pixels/frame
     mean_disp = int(np.rint(np.nanmean(vel)*scaling_factor*dt))
     # plot the raw image with the ROI in case this is desired

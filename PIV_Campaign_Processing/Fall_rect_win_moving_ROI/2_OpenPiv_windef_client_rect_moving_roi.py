@@ -102,6 +102,7 @@ for i in range(2, 3):
     settings.amount = None
     settings.process_fall = True
     settings.process_roi_shift = True
+    settings.run = 1
     piv(settings)
     
 

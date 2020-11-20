@@ -16,7 +16,7 @@ import shutil                           # for removing folders
 ppf.set_plot_parameters()
 
 # set the input folder
-Fol_In = 'C:\\Users\manue\Desktop\Results_16_64_R_h1_f1200_1_p15'
+Fol_In = 'C:\\Users\manue\Desktop\data_files_16_64'
 # set the folder in which to store gif images (will be deleted in the end)
 Gif_Images = 'C:\\Users\manue\Desktop\Gif_Images'
 if not os.path.exists(Gif_Images):
@@ -29,8 +29,8 @@ nx = ppf.get_column_amount(Fol_In)
 GIFNAME = Gif_Images + os.sep + '..' +os.sep + 'rise_inversion.gif'
 IMAGES = []
 # give the starting frame and the amount of images to process
-frame0 = 0
-n_t = 181
+frame0 = 279
+n_t = 40
 # plot every IMG_STP_SZ'th image
 IMG_STP_SZ =15
 
@@ -46,7 +46,7 @@ for i in range(0, n_t):
     # load the data into arrays
     x, y, u, v = ppf.load_txt(Fol_In, load_idx, nx)
     # create the figure
-    fig, ax = plt.subplots(figsize = (5,10))
+    fig, ax = plt.subplots(figsize=(4.2,10))
     cs = plt.pcolormesh(x,y,v, vmin=-10, vmax=16, cmap = custom_map) # create the contourplot using pcolormesh
     ax.set_aspect('equal') # set the correct aspect ratio
     clb = fig.colorbar(cs) # get the colorbar
@@ -60,7 +60,7 @@ for i in range(0, n_t):
             color='k', scale =30, width=0.005,headwidth=4, headaxislength = 6)
     ax.set_title('Image %06d' % load_idx) # set the title
     Name_Out = Gif_Images + os.sep + '%06d.jpg' % (load_idx) # set the output name
-    fig.savefig(Name_Out, dpi = 75) # save the figure
+    fig.savefig(Name_Out, dpi = 55) # save the figure
     IMAGES.append(imageio.imread(Name_Out)) # append into the imagelist
     plt.close(fig) # close the figure to avoid overcrowding the plot window
 # render the gif

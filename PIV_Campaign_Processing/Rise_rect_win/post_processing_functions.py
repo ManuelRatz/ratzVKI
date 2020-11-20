@@ -22,6 +22,7 @@ def set_plot_parameters():
     plt.rc('legend', fontsize=15)    # legend fontsize
     plt.rc('figure', titlesize=20)   # fontsize of the figure title
     plt.rc('font', family='serif')   # serif as text font
+    plt.rc('text', usetex=True)      # enable latex
 
 def get_column_amount(Fol_In):
     """
@@ -38,7 +39,7 @@ def get_column_amount(Fol_In):
         Amount of columns in the fields.
 
     """
-    # Fol_In = Fol_In + os.sep + 'data_files'
+    Fol_In = Fol_In + os.sep + 'data_files'
     # get the name of the first file
     file0 = os.listdir(Fol_In)[0]
     # set the input path
@@ -81,7 +82,7 @@ def load_txt(Fol_In, idx, nx):
         Array containing the v component for every interrogation window.
 
     """
-    # Fol_In = Fol_In + os.sep + 'data_files'
+    Fol_In = Fol_In + os.sep + 'data_files'
     # set the file name
     file_name = Fol_In + os.sep + 'field_%06d.txt' % idx
     # load the data
@@ -111,6 +112,13 @@ def custom_div_cmap(numcolors=11, name='custom_div_cmap',
                                              N=numcolors)
     return cmap
 
-# Fol_In = 'C:\\Users\manue\Desktop\Results_12_48_R_h1_f1200_1_p15'
-# nx = get_column_amount(Fol_In)
-# x, y, u, v = load_txt(Fol_In, 1, nx)
+def create_folder(Fol_In):
+    if not os.path.exists(Fol_In):
+        os.makedirs(Fol_In)
+    return Fol_In
+
+def load_h(Fol_In):
+    h = np.genfromtxt(Fol_In + os.sep + 'interface_position.txt')
+    return h
+    
+

@@ -29,7 +29,7 @@ settings.frame_pattern_b = None
 # (50,300,50,300) #Region of interest: (xmin,xmax,ymin,ymax) or 'full' for full image
 # settings.ROI = (0,1269,0,500) # The first number is the position of the interface measured from the bottom of the image
 # settings.ROI = 'full'
-settings.ROI = np.asarray([0,1270,0,500]) 
+settings.ROI = np.asarray([0,1280,0,500]) 
 
 
 'Image preprocessing'
@@ -98,7 +98,7 @@ overlap_height = np.array([[128,64,48],[128,64,32],[64, 32, 24],[128,64,32],[64,
 width = np.array([[64,32,24],[64,32,16],[32, 16, 12],[16,16,16],[64,32,32],[64,32,32,32]])
 overlap_width= np.array([[32,16,12],[32,16,8],[16, 8, 6],[8,8,8],[32,16,16],[32,16,16,16]])
 iterations=np.array([3,3,3,3,3,4])
-settings.run = 1
+settings.run = 2
 piv(settings)
 # import time
 # for i in range(2,3):

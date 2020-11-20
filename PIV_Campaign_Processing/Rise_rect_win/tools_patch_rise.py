@@ -232,7 +232,7 @@ class Multiprocesser():
         if not len(self.files_a):
             raise ValueError('Something failed loading the image file. No images were found. Please check directory and image template name.')
 
-    def run( self, func, beginning_index, n_cpus=1 ):
+    def run( self, save_path, func, beginning_index, n_cpus=1 ):
         """Start to process images.
         
         Parameters
@@ -250,10 +250,13 @@ class Multiprocesser():
         # create a list of tasks to be executed.
         image_pairs = [ (file_a, file_b, i) for file_a, file_b,\
                        i in zip( self.files_a[beginning_index:], self.files_b[beginning_index:], range(beginning_index,self.n_files) ) ]
-        
+        index_max = self.n_files
+        # index_max = beginning_index-1+3
+        h_dum = np.zeros((index_max,1))
         # for debugging purposes always use n_cpus = 1,
         # since it is difficult to debug multiprocessing stuff.
         for image_pair in image_pairs:
-            if image_pair[2] > 751:
+            if image_pair[2] > index_max:
                 continue
-            func( image_pair )
+            h_dum[image_pair[2]-1] = func( image_pair )
+        np.savetxt(save_path + os.sep + 'interface_position.txt', h_dum, fmt='%8.4f')

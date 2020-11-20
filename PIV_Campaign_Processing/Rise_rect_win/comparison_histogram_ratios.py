@@ -5,7 +5,7 @@ Created on Wed Nov 18 11:39:23 2020
 @author: manue
 """
 import matplotlib.pyplot as plt         # for plotting
-import post_processing_functions_mod as ppf # for reshaping the arrays
+import post_processing_functions as ppf # for reshaping the arrays
 import os                               # for file paths
 import numpy as np
 import imageio
@@ -87,14 +87,12 @@ for i in range(0, n_t):
     plt.close(fig)
     
     # load the x, y coordinates and the ratio
-    # NOTE: This requires a modified postprocessing file that loads the sig2noise ratio,
-    #       which is why this file is not located in the github folder
-    x1,y1,DUMMY,ratio1 = ppf.load_txt(Fol_In_1, load_index, nx1)
-    x2,y2,DUMMY,ratio2 = ppf.load_txt(Fol_In_2, load_index, nx2)
-    x3,y3,DUMMY,ratio3 = ppf.load_txt(Fol_In_3, load_index, nx3)
-    x4,y4,DUMMY,ratio4 = ppf.load_txt(Fol_In_4, load_index, nx4)
-    x5,y5,DUMMY,ratio5 = ppf.load_txt(Fol_In_5, load_index, nx5)
-    x6,y6,DUMMY,ratio6 = ppf.load_txt(Fol_In_6, load_index, nx6)
+    x1,y1,u1,v1,ratio1,mask1 = ppf.load_txt(Fol_In_1, load_index, nx1)
+    x2,y2,u2,v2,ratio2,mask2 = ppf.load_txt(Fol_In_2, load_index, nx2)
+    x3,y3,u3,v3,ratio3,mask3 = ppf.load_txt(Fol_In_3, load_index, nx3)
+    x4,y4,u4,v4,ratio4,mask4 = ppf.load_txt(Fol_In_4, load_index, nx4)
+    x5,y5,u5,v5,ratio5,mask5 = ppf.load_txt(Fol_In_5, load_index, nx5)
+    x6,y6,u6,v6,ratio6,mask6 = ppf.load_txt(Fol_In_6, load_index, nx6)
     
     # design a custom colormap for the pcolormesh plots
     custom_map = ppf.custom_div_cmap(250, mincol='indigo', midcol='darkcyan' ,maxcol='yellow')

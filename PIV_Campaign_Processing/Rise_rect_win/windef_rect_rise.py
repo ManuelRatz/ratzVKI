@@ -27,11 +27,15 @@ def piv(settings):
         frame_b = tools.imread(os.path.join(settings.filepath_images, file_b))
         
         #%%
-        'Here begins the new stuff for the chaning roi'
+        """This is the part for the changing ROI, the new position of the interface
+        is calculated after the final pass to avoid having to load the txt file """
+        # set the top index to 0 in case we are starting the run
         if counter == settings.beginning_index:
             settings.current_pos = 0
+        # if the interface comes into view again, set the ROI to the interface position
         if settings.current_pos > 0:
             settings.ROI[0] = int(settings.current_pos)
+        # plot the current ROI on the images in case this is desired for animation purposes
         if settings.plot_ROI == True:
             plot_shifted_ROI(frame_b, counter, settings.current_pos, save_path)
         #%%
@@ -109,7 +113,7 @@ def piv(settings):
         if settings.replace_vectors==True:
             u, v = filters.replace_outliers( u, v, method=settings.filter_method, max_iter=settings.max_filter_iteration, kernel_size=settings.filter_kernel_size)
         #%%
-        'Calculate the mean displacement'
+        'Calculate the mean displacement, this is the variable that we use at the top'
         settings.current_pos = settings.current_pos - calc_disp(x, v, frame_b.shape[1])
         #%%
         'pixel/frame->pixel/sec'
@@ -152,24 +156,69 @@ def piv(settings):
     task.run(save_path, func=func, beginning_index = settings.beginning_index, n_cpus=1)
 
 def plot_shifted_ROI(frame_b, counter, interface_position, save_path):
+    """
+    Function to plot frame b with the top of the ROI visible
+
+    Parameters
+    ----------
+    frame_b : 2d np.array
+        Array containing the second image.
+    counter : int
+        Index of the curent first image.
+    interface_position : float64
+        Current position of the interface in px. If the value is positive, the
+        interface is visible.
+    save_path : string
+        Location where the results are stored.
+    """
+    
+    # create the folder to store the ROI images into
     Fol_ROI = save_path + os.sep + 'ROI_Images' + os.sep
     if not os.path.exists(Fol_ROI):
         os.makedirs(Fol_ROI)
+    # create the figure
     fig, ax = plt.subplots(figsize=(4,10))
+    # show the image
     plt.imshow(frame_b, cmap=plt.cm.gray)
+    # plot the interface line in case it is in the FOV
     if interface_position > 0:
         interface_line = np.ones((frame_b.shape[1],1))*interface_position
         ax.plot(interface_line, lw = 1)
+    # save and close the figure
     fig.savefig(Fol_ROI + 'ROI_img_%06d.png' %counter, dpi = 75)
     plt.close(fig)
     return
     
 def calc_disp(x, v, img_width):
+    """
+    Function to calculate the mean displacement of the current index
+
+    Parameters
+    ----------
+    x : 2d np.array
+        Array containing the x coordinates of the interrogation window centres.
+    v : 2d np.array
+        Array containing the v values of the interrogation windows.
+    img_width : int
+        Width of the images in px.
+
+    Returns
+    -------
+    mean_disp : float64
+        Mean displacement of the bottom 5 rows.
+
+    """
+    # create a vertical dummy of 0s for the padding
     dummy_0 = np.zeros((v.shape[0],1))
+    # create a vertical dummy of img_width for the padding of x
     dummy_x_max = np.ones((x.shape[0],1))*img_width
+    # pad the x values
     x_padded = np.hstack((dummy_0, x, dummy_x_max))
+    # pad the v values
     v_padded = np.hstack((dummy_0, v, dummy_0))
+    # calculate the mean displacement with np.trapz
     mean_disp = np.mean(np.trapz(v_padded[-5:,:], x_padded[-5:,:]))/img_width
+    # return the mean_disp
     return mean_disp
 
 def save_settings(settings, save_path):
@@ -191,33 +240,6 @@ def save_settings(settings, save_path):
         for key, value in variables.items():
             #write into the file
             f.write('{}'.format(key) + "\t" + '{}'.format(value)+"\n")
-
-def shift_roi_rise(counter, save_path, save_path_txts, scaling_factor, dt, beginning_index, frame_b, interface_position):
-    # initialize mean displacement with zero in case we are looking at the first frame of the fall
-    mean_disp = 0
-    # calculate mean displacement for all the other cases
-
-    # load the txt file with the data; This is still in meter/second
-    if counter == beginning_index:
-        return mean_disp
-    vel = np.genfromtxt(os.path.join(save_path_txts,'field_%06d.txt' %(counter-1)))[:,3] # -1 because we take the previous pass
-    # calculate the mean velocity as an integer in pixels/frame
-    mean_disp = int(np.rint(np.nanmean(vel)*scaling_factor*dt))
-    # plot the raw image with the ROI in case this is desired
-    if(interface_position > 0):
-        # create a folder in case there is none
-        Fol_Out = save_path + os.sep + 'ROI_Images' + os.sep
-        if not os.path.exists(Fol_Out):
-            os.mkdir(Fol_Out)
-        # plot the result
-        fig = plt.figure(figsize = (4, 10)) # create the figure
-        plt.imshow(frame_b, cmap=plt.cm.gray) # plot the image
-        dummy = np.arange(0, frame_b.shape[1],1) # create a dummy for the plot
-        roi_plot = np.ones((len(dummy),))*(interface_position-mean_disp) # create a horizontal line 
-        plt.plot(dummy, roi_plot, lw = 1) # plot the line
-        fig.savefig(Fol_Out + 'ROI_img_%06d.png' %counter, dpi = 100) # save the figure
-        plt.close(fig) # close the figure
-    return mean_disp
 
 def correlation_func(cor_win_1, cor_win_2, win_width, win_height ,correlation_method='circular'):
     '''This function is doing the cross-correlation. Right now circular cross-correlation

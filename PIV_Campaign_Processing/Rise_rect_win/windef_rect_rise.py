@@ -14,6 +14,7 @@ from scipy.interpolate import RectBivariateSpline
 from openpiv import process, validation, filters, pyprocess, tools, preprocess,scaling
 from openpiv import smoothn
 import tools_patch_rise
+import validation_patch
 import matplotlib.pyplot as plt
 
 def piv(settings):

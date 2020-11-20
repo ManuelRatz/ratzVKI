@@ -72,10 +72,9 @@ def load_txt(Fol_In, idx, nx):
     Returns
     -------
     x : 2d np.array
-        Array containg the x coordinates of the interrogation window centres.
-        DESCRIPTION.
+        Array containing the x coordinates of the interrogation window centres.
     y : 2d np.array
-        Array containg the y coordinates of the interrogation window centres.
+        Array containing the y coordinates of the interrogation window centres.
     u : 2d np.array
         Array containing the u component for every interrogation window.
     v : 2d np.array

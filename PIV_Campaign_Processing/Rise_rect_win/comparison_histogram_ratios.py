@@ -62,21 +62,21 @@ for i in range(0, n_t):
     fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3, figsize = (8, 5), sharex=True, sharey=True)
     # set the limits
     ax1.set_xlim(0,6)
-    ax1.set_ylim(0,180)
+    ax1.set_ylim(0,1)
     # set the titles of each axis and plot the histogram
     ax1.set_title('(256,128,96); (64,32,24)', fontsize = 10)
-    ax1.hist(ratio1, range=(0,6), bins = 50)
+    ax1.hist(ratio1, range=(0,6), bins = 50, density=True)
     ax1.set_xticks(np.arange(0,7,1))
     ax2.set_title('(256,128,64); (64,32,16)', fontsize = 10)
-    ax2.hist(ratio2, range=(0,6), bins=50)
+    ax2.hist(ratio2, range=(0,6), bins=50, density=True)
     ax3.set_title('(128,64,48); (32,16,12)', fontsize = 10)
-    ax3.hist(ratio3, range=(0,6), bins = 50)
+    ax3.hist(ratio3, range=(0,6), bins = 50, density=True)
     ax4.set_title('(256,128,64); (16,16,16)', fontsize = 10)
-    ax4.hist(ratio4, range=(0,6), bins = 50)
+    ax4.hist(ratio4, range=(0,6), bins = 50, density=True)
     ax5.set_title('(128,64,32); (64,32,16)', fontsize = 10)
-    ax5.hist(ratio5, range=(0,6), bins = 50)
+    ax5.hist(ratio5, range=(0,6), bins = 50, density=True)
     ax6.set_title('(256,128,64,32); (64,32,32,32)', fontsize = 10)
-    ax6.hist(ratio6, range=(0,6), bins = 50)
+    ax6.hist(ratio6, range=(0,6), bins = 50, density=True)
     for ax in fig.get_axes():
         # enable the grid for each plot
         ax.grid(b=True,lw=1)

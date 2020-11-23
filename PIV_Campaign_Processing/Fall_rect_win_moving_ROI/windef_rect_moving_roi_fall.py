@@ -26,24 +26,19 @@ def piv(settings):
         # read the iamges
         frame_a = tools.imread(os.path.join(settings.filepath_images, file_a))
         frame_b = tools.imread(os.path.join(settings.filepath_images, file_b))
-        
+        if counter == settings.fall_start:
+            settings.ROI[1] = frame_a.shape[0]
         """Here we check if the interface has reached the top of the roi yet
         by comparing it to the index in the observation_periods file. If it has
         not reached the roi yet we skip this part, if it did then we shift the
         roi for each pair after the initial one """
-        if counter > settings.roi_shift_start:
+        if counter >= settings.roi_shift_start:
             # set the roi to the image height for the first frame
             if counter == settings.roi_shift_start :
-                settings.ROI[1] = frame_a.shape[0]
+                settings.current_pos = 0
             # shift the roi for each pair (this is not done for the first one)
-            settings.ROI[0] = settings.ROI[0] - shift_ROI(counter, save_path, save_path_txts, settings.scaling_factor,\
-                          settings.dt, frame_b, settings.ROI[0], settings.roi_shift_start, settings.plot_roi)
-            # stop processing the fall in case the remaining height gets too small
-            if((settings.ROI[1]-settings.ROI[0]) < (5*(settings.window_height[0]-settings.overlap_height[0])+1)):
-                    return True
-        # # print the upper boundary in case we messed up
-        # if settings.ROI[0] > 0:
-        #     print(settings.ROI[0])
+            settings.ROI[0] = int( settings.current_pos)
+
         # crop to roi
         if settings.ROI =='full':
             frame_a=frame_a
@@ -112,6 +107,10 @@ def piv(settings):
             mask=mask+mask_s2n
         if settings.replace_vectors==True:
             u, v = filters.replace_outliers( u, v, method=settings.filter_method, max_iter=settings.max_filter_iteration, kernel_size=settings.filter_kernel_size)
+        if counter >= settings.roi_shift_start:
+            settings.current_pos = settings.current_pos - calc_disp(x, v, frame_b.shape[1])
+            if ((settings.ROI[1]-settings.current_pos) < 250):
+                return True
         # scale the result timewise and lengthwise
         u=u/settings.dt
         v=v/settings.dt
@@ -126,11 +125,10 @@ def piv(settings):
             Name = os.path.join(save_path_images, 'Image_%06d.png' % (counter))
             display_vector_field(os.path.join(save_path_txts, 'field_%06d.txt' % (counter)), scale=settings.scale_plot)
             if settings.save_plot==True:
-                plt.savefig(Name, dpi=600)
+                plt.savefig(Name, dpi=100)
             if settings.show_plot==True:
                 plt.show()
             plt.close('all')
-
         print('Image Pair %06d' %(counter)+ ' from ' + settings.save_folder_suffix)
         return False
     
@@ -156,6 +154,38 @@ def piv(settings):
              settings.process_fall, settings.process_roi_shift, n_cpus=1)
     
 #%%
+def calc_disp(x, v, img_width):
+    """
+    Function to calculate the mean displacement of the current index
+
+    Parameters
+    ----------
+    x : 2d np.array
+        Array containing the x coordinates of the interrogation window centres.
+    v : 2d np.array
+        Array containing the v values of the interrogation windows.
+    img_width : int
+        Width of the images in px.
+
+    Returns
+    -------
+    mean_disp : float64
+        Mean displacement of the bottom 5 rows.
+
+    """
+    # create a vertical dummy of 0s for the padding
+    dummy_0 = np.zeros((v.shape[0],1))
+    # create a vertical dummy of img_width for the padding of x
+    dummy_x_max = np.ones((x.shape[0],1))*img_width
+    # pad the x values
+    x_padded = np.hstack((dummy_0, x, dummy_x_max))
+    # pad the v values
+    v_padded = np.hstack((dummy_0, v, dummy_0))
+    # calculate the mean displacement with np.trapz
+    mean_disp = np.mean(np.trapz(v_padded[-5:,:], x_padded[-5:,:]))/img_width
+    # return the mean_disp
+    return mean_disp
+    
 def save_settings(settings, save_path):
     """
     Function to save the settings given in the client.

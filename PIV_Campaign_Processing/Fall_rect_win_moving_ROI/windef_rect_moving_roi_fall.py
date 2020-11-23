@@ -136,15 +136,15 @@ def piv(settings):
     
     #%%
     # initialize the saving path for the images and the txts in case they dont exist
-    save_path=os.path.join(settings.save_path,'Results_'+settings.save_folder_suffix+'_Run_'+str(settings.run))
+    save_path=os.path.join(settings.save_path,'Results_Run_'+str(settings.run)+'_'+settings.save_folder_suffix)
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     save_path_images = save_path + os.sep + 'velocity_fields'
     if not os.path.exists(save_path_images):
         os.makedirs(save_path_images)
-    save_path_txts = save_path + os.sep + 'text_files'
+    save_path_txts = save_path + os.sep + 'data_files'
     if not os.path.exists(save_path_txts):
-        os.makedirs(save_path_txts)
+        os.makedirs(save_path_txts)   
     # save the settings of the processing
     save_settings(settings, save_path)
     # create a task to be executed

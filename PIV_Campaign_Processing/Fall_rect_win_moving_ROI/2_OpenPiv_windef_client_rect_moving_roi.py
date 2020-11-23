@@ -21,15 +21,12 @@ settings = Settings()
 'Data related settings'
 
 # Folder for the outputs
-settings.save_path = 'D:\PIV_Processed\Images_Processed'
+settings.save_path = 'G:\PIV_Processed\Images_Processed'
   
-
 'Region of interest'
 # (50,300,50,300) #Region of interest: (xmin,xmax,ymin,ymax) or 'full' for full image
 settings.ROI = np.asarray([0,1270,0,500]) # The first number is the position of the interface measured from the bottom of the image
 # settings.ROI = 'full'
-
-
 
 'Image preprocessing'
 settings.dynamic_masking_method = 'None'
@@ -41,13 +38,13 @@ settings.dynamic_masking_filter_size = 7
 # windows and displacement calculation
 settings.interpolation_order = 3
 settings.subpixel_method = 'gaussian'
-settings.correlation_method = 'linear'  # 'circular' or 'linear'
-settings.iterations = 2 # select the number of PIV passes
+settings.correlation_method = 'circular'  # 'circular' or 'linear'
+settings.iterations = 3 # select the number of PIV passes
 # base 2
-settings.window_height = (64, 32, 16)
-settings.overlap_height = (32, 16, 8)
-settings.window_width = (64, 32, 16, 16, 16)
-settings.overlap_width = (32, 16, 8, 8, 8) 
+settings.window_height = (64, 48, 48)
+settings.overlap_height = (32, 24, 24)
+settings.window_width = (48, 24, 12, 16, 16)
+settings.overlap_width = (24, 12, 6, 8, 8) 
 # base 3
 # settings.window_height = (96, 48, 24, 12)
 # settings.overlap_height = (48, 24, 12, 6) # 50%
@@ -80,7 +77,7 @@ settings.smoothn_p=0.01 # This is a smoothing parameter
 # cosmetics
 settings.scaling_factor = 1  # scaling factor pixel/meter
 settings.dt = 1  # time between to frames (in seconds)
-settings.save_plot = True
+settings.save_plot = False
 settings.show_plot = False
 settings.scale_plot = 200 # select a value to scale the quiver plot of the vectorfield
 
@@ -89,7 +86,7 @@ observation_periods = np.genfromtxt('observation_fall.txt', dtype=str)
 for i in range(2, 3):
     settings.ROI = np.asarray([0,1270,0,500])
     # Folder with the images to process
-    settings.filepath_images = 'D:\PIV_Processed\Images_Preprocessed'+os.sep+observation_periods[i,0]
+    settings.filepath_images = 'G:\PIV_Processed\Images_Preprocessed'+os.sep+observation_periods[i,0]
     
     # Root name of the output Folder for Result Files
     settings.save_folder_suffix = observation_periods[i, 0]
@@ -102,7 +99,7 @@ for i in range(2, 3):
     settings.amount = None
     settings.process_fall = True
     settings.process_roi_shift = True
-    settings.run = 1
+    settings.run = 6
     piv(settings)
     
 

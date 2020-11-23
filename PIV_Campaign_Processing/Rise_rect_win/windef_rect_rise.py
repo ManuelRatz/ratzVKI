@@ -133,7 +133,7 @@ def piv(settings):
             Name = os.path.join(save_path_images, 'Image_%06d.png' % counter)
             display_vector_field(os.path.join(save_path_txts, 'field_%06d.txt' % counter), scale=settings.scale_plot)
             if settings.save_plot==True:
-                plt.savefig(Name, dpi=600)
+                plt.savefig(Name, dpi=100)
             if settings.show_plot==True:
                 plt.show()
 

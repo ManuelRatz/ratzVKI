@@ -41,10 +41,10 @@ settings.subpixel_method = 'gaussian'
 settings.correlation_method = 'circular'  # 'circular' or 'linear'
 settings.iterations = 3 # select the number of PIV passes
 # base 2
-settings.window_height = (64, 32, 24)
-settings.overlap_height = (32, 16, 12)
-settings.window_width = (64, 32, 24)
-settings.overlap_width = (32, 16, 12) 
+settings.window_height = (64, 48, 48)
+settings.overlap_height = (32, 24, 24)
+settings.window_width = (48, 24, 12)
+settings.overlap_width = (24, 12, 6) 
 # base 3
 # settings.window_height = (96, 48, 24, 12)
 # settings.overlap_height = (48, 24, 12, 6) # 50%
@@ -98,7 +98,7 @@ for i in range(2, 3):
     settings.amount = None
     settings.process_fall = True
     settings.process_roi_shift = True
-    settings.run = 4
+    settings.run = 6
     piv(settings)
     
 

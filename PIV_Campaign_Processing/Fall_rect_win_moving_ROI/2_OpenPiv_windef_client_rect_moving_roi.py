@@ -21,11 +21,11 @@ settings = Settings()
 'Data related settings'
 
 # Folder for the outputs
-settings.save_path = 'G:\PIV_Processed\Images_Processed'
+settings.save_path = 'C:\PIV_Processed\Images_Processed'
   
 'Region of interest'
 # (50,300,50,300) #Region of interest: (xmin,xmax,ymin,ymax) or 'full' for full image
-settings.ROI = np.asarray([0,1270,0,500]) # The first number is the position of the interface measured from the bottom of the image
+settings.ROI = np.array([0,1280,0,500]) # The first number is the position of the interface measured from the bottom of the image
 # settings.ROI = 'full'
 
 'Image preprocessing'
@@ -41,10 +41,10 @@ settings.subpixel_method = 'gaussian'
 settings.correlation_method = 'circular'  # 'circular' or 'linear'
 settings.iterations = 3 # select the number of PIV passes
 # base 2
-settings.window_height = (64, 48, 48)
-settings.overlap_height = (32, 24, 24)
-settings.window_width = (48, 24, 12, 16, 16)
-settings.overlap_width = (24, 12, 6, 8, 8) 
+settings.window_height = (64, 32, 24)
+settings.overlap_height = (32, 16, 12)
+settings.window_width = (64, 32, 24)
+settings.overlap_width = (32, 16, 12) 
 # base 3
 # settings.window_height = (96, 48, 24, 12)
 # settings.overlap_height = (48, 24, 12, 6) # 50%
@@ -55,7 +55,7 @@ settings.overlap_width = (24, 12, 6, 8, 8)
 settings.extract_sig2noise = True  # 'True' or 'False' (only for the last pass)
 settings.sig2noise_method = 'peak2peak'
 settings.sig2noise_mask = 1
-settings.do_sig2noise_validation = False # This is time consuming
+settings.do_sig2noise_validation = True # This is time consuming
 settings.sig2noise_threshold = 1.3
 
 # validation
@@ -84,9 +84,8 @@ settings.scale_plot = 200 # select a value to scale the quiver plot of the vecto
 observation_periods = np.genfromtxt('observation_fall.txt', dtype=str)
 
 for i in range(2, 3):
-    settings.ROI = np.asarray([0,1270,0,500])
     # Folder with the images to process
-    settings.filepath_images = 'G:\PIV_Processed\Images_Preprocessed'+os.sep+observation_periods[i,0]
+    settings.filepath_images = 'C:\PIV_Processed\Images_Preprocessed'+os.sep+observation_periods[i,0]
     
     # Root name of the output Folder for Result Files
     settings.save_folder_suffix = observation_periods[i, 0]
@@ -99,7 +98,7 @@ for i in range(2, 3):
     settings.amount = None
     settings.process_fall = True
     settings.process_roi_shift = True
-    settings.run = 6
+    settings.run = 4
     piv(settings)
     
 

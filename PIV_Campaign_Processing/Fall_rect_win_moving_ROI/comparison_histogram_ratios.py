@@ -14,12 +14,12 @@ import imageio
 ppf.set_plot_parameters()
 
 # give the input folders
-Fol_In_1 = 'G:\PIV_Processed\Images_Processed\Results_Run_1_F_h1_f1200_1_q'
-Fol_In_2 = 'G:\PIV_Processed\Images_Processed\Results_Run_2_F_h1_f1200_1_q'
-Fol_In_3 = 'G:\PIV_Processed\Images_Processed\Results_Run_3_F_h1_f1200_1_q'
-Fol_In_4 = 'G:\PIV_Processed\Images_Processed\Results_Run_4_F_h1_f1200_1_q'
-Fol_In_5 = 'G:\PIV_Processed\Images_Processed\Results_Run_5_F_h1_f1200_1_q'
-Fol_In_6 = 'G:\PIV_Processed\Images_Processed\Results_Run_6_F_h1_f1200_1_q'
+Fol_In_1 = 'C:\PIV_Processed\Images_Processed\Results_Run_1_F_h1_f1200_1_q'
+Fol_In_2 = 'C:\PIV_Processed\Images_Processed\Results_Run_2_F_h1_f1200_1_q'
+Fol_In_3 = 'C:\PIV_Processed\Images_Processed\Results_Run_3_F_h1_f1200_1_q'
+Fol_In_4 = 'C:\PIV_Processed\Images_Processed\Results_Run_4_F_h1_f1200_1_q'
+Fol_In_5 = 'C:\PIV_Processed\Images_Processed\Results_Run_5_F_h1_f1200_1_q'
+Fol_In_6 = 'C:\PIV_Processed\Images_Processed\Results_Run_6_F_h1_f1200_1_q'
 
 Fol_Hist = 'fol_hist'
 if not os.path.exists(Fol_Hist):

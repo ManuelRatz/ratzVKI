@@ -263,5 +263,7 @@ class Multiprocesser():
         # since it is difficult to debug multiprocessing stuff.
         for image_pair in image_pairs:
             # this is to check whether we have to stop because the roi reached the lowest possible point
-            if (func(image_pair)):
+            # if(image_pair[2] < 709):
+            #     continue
+            if func(image_pair):
                 break

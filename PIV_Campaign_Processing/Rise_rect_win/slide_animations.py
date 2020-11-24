@@ -128,7 +128,7 @@ for i in range(0,N_T):
         ax.set_aspect('equal') # set the correct aspect ratio
         clb = fig.colorbar(cs, pad = 0.2) # get the colorbar
         clb.set_ticks(np.arange(-200, 201, 40)) # set the colorbarticks
-        clb.ax.set_title('Velocity \n [px/frame]', pad=15) # set the colorbar title
+        clb.ax.set_title('Velocity \n [mm/s]', pad=15) # set the colorbar title
         STEPY= 2
         STEPX = 1
         plt.quiver(x[len(x)%2::STEPY, ::STEPX], y[len(x)%2::STEPY, ::STEPX], u[len(x)%2::STEPY, ::STEPX], v[len(x)%2::STEPY, ::STEPX],\

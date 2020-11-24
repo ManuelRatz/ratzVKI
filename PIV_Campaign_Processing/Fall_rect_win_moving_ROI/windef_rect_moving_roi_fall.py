@@ -34,8 +34,8 @@ def piv(settings):
         roi for each pair after the initial one """
         if counter >= settings.roi_shift_start:
             # set the roi to the image height for the first frame
-            if counter == settings.roi_shift_start :
-                settings.current_pos = 0
+            # if counter == settings.roi_shift_start :
+            #     settings.current_pos = 0
             # shift the roi for each pair (this is not done for the first one)
             settings.ROI[0] = int( settings.current_pos)
 
@@ -110,7 +110,7 @@ def piv(settings):
         if counter >= settings.roi_shift_start:
             settings.current_pos = settings.current_pos - calc_disp(x, v, frame_b.shape[1])
             if ((settings.ROI[1]-settings.current_pos) < 250):
-                return True
+                return settings.current_pos, True
         # scale the result timewise and lengthwise
         u=u/settings.dt
         v=v/settings.dt
@@ -130,9 +130,10 @@ def piv(settings):
                 plt.show()
             plt.close('all')
         print('Image Pair %06d' %(counter)+ ' from ' + settings.save_folder_suffix)
-        return False
+        return settings.current_pos, False
     
     #%%
+    settings.current_pos = 0
     # initialize the saving path for the images and the txts in case they dont exist
     save_path=os.path.join(settings.save_path,'Results_Run_'+str(settings.run)+'_'+settings.save_folder_suffix)
     if not os.path.exists(save_path):
@@ -150,7 +151,7 @@ def piv(settings):
         data_dir=settings.filepath_images, pattern_a=settings.frame_pattern_a,\
             pattern_b=settings.frame_pattern_b, amount = settings.amount)
     # run the task
-    task.run(func, settings.fall_start, settings.roi_shift_start,
+    task.run(save_path, func, settings.fall_start, settings.roi_shift_start,
              settings.process_fall, settings.process_roi_shift, n_cpus=1)
     
 #%%

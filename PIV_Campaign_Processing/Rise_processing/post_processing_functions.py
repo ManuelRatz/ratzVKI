@@ -7,6 +7,7 @@ Created on Fri Nov 13 09:40:18 2020
 import matplotlib.pyplot as plt # for plotting
 import numpy as np              # for array operations
 import os                       # for file paths
+import cv2                      # for image reading
 
 def set_plot_parameters():
     """
@@ -59,7 +60,7 @@ def get_column_amount(Fol_In):
 
 def load_txt(Fol_In, idx, nx):
     """
-    Function to load a txt and reshape the fieilds.
+    Function to load a txt and reshape the fields.
 
     Parameters
     ----------
@@ -97,6 +98,95 @@ def load_txt(Fol_In, idx, nx):
     # return the arrays
     return  x, y, u, v, sig2noise, valid
 
+def get_img_width(Fol_Raw):
+    """
+    Function to extract the image width in pixels.
+
+    Parameters
+    ----------
+    Fol_Raw : string
+        Location of the raw images.
+
+    Returns
+    -------
+    width : int
+        Width of the image in pixels.
+
+    """
+    # get the name of the first image in the folder
+    name = Fol_Raw + os.sep +os.listdir(Fol_Raw)[0]
+    # load the image
+    img = cv2.imread(name)
+    # take the image width
+    width = img.shape[1] 
+    # return the width in pixels
+    return width
+
+def get_frequency(Fol_Raw):
+    """
+    Function to extract the acquisition frequency from the image name.
+
+    Parameters
+    ----------
+    Fol_Raw : string
+        Location of the raw images.
+
+    Returns
+    -------
+    frequency : int
+        Acquisition frequcny in Hz.
+
+    """
+    # get the name of the first image in the folder
+    name = os.listdir(Fol_Raw)[0]
+    # crop the beginning indicating the height and R/F. The frequency ALWAYS comes after that
+    name = name[6:]
+    # get the indices of the '_' to see when frequency string stops
+    indices = [i for i, a in enumerate(name) if a == '_']
+    # crop to the frequency and convert to integer
+    frequency = int(name[:indices[0]])
+    # return the value
+    return frequency
+Fol =  'C:\PIV_Processed\Images_Preprocessed\R_h1_f1000_1_p13'
+f = get_frequency(Fol)
+
+def create_folder(Fol_In):
+    """
+    Function to create a folder and return the name.
+
+    Parameters
+    ----------
+    Fol_In : string
+        Location of the input folder.
+
+    Returns
+    -------
+    Fol_In : string
+        Location of the input folder.
+
+    """
+    if not os.path.exists(Fol_In):
+        os.makedirs(Fol_In)
+    return Fol_In
+
+def load_h(Fol_In):
+    """
+    Function to load the h(t) that gets exported after the run is complete
+
+    Parameters
+    ----------
+    Fol_In : string
+        Location of the input folder.
+
+    Returns
+    -------
+    h : 1d numpy array of float64
+        Array containing the heights, length is the same as the number of image pairs.
+
+    """
+    h = np.genfromtxt(Fol_In + os.sep + 'interface_position.txt')
+    return h
+
 def custom_div_cmap(numcolors=11, name='custom_div_cmap',
                     mincol='blue', midcol='white', maxcol='red'):
     """ Create a custom diverging colormap with three colors
@@ -111,14 +201,3 @@ def custom_div_cmap(numcolors=11, name='custom_div_cmap',
                                              colors =[mincol, midcol, maxcol],
                                              N=numcolors)
     return cmap
-
-def create_folder(Fol_In):
-    if not os.path.exists(Fol_In):
-        os.makedirs(Fol_In)
-    return Fol_In
-
-def load_h(Fol_In):
-    h = np.genfromtxt(Fol_In + os.sep + 'interface_position.txt')
-    return h
-    
-

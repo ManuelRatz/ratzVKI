@@ -27,8 +27,13 @@ def piv(settings):
         
         #%%
         """This is the part for the changing ROI, the new position of the interface
-        is calculated after the final pass to avoid having to load the txt file """
-        # set the top index to 0 in case we are starting the run
+        is calculated after the final pass to avoid having to load the txt file.
+        For the very first image pair we set the ROI to be the bottom 450 pixels.
+        Afterwards the script will calculate the current position of the interface
+        and then shift the ROI accordingly. If the Interface comes into view,
+        the ROI gets shifted
+        """
+
         if counter == settings.beginning_index:
             settings.ROI[0] = frame_a.shape[0]-450
             settings.ROI[1] = frame_a.shape[0]
@@ -84,10 +89,6 @@ def piv(settings):
                   u,dummy_u1,dummy_u2,dummy_u3=smoothn.smoothn(u,s=settings.smoothn_p)
                   v,dummy_v1,dummy_v2,dummy_v3=smoothn.smoothn(v,s=settings.smoothn_p)        
      
-
-
-
-
         i = 1
         'all the following passes'
         for i in range(2, settings.iterations+1):
@@ -116,8 +117,6 @@ def piv(settings):
         #%%
         'Calculate the mean displacement, this is the variable that we use at the top'
         settings.current_pos = settings.current_pos - calc_disp(x, v, frame_b.shape[1])
-        if settings.current_pos < 0:
-            return settings.current_pos, False
         #%%
         'pixel/frame->pixel/sec'
         u=u/settings.dt
@@ -140,7 +139,7 @@ def piv(settings):
             if settings.show_plot==True:
                 plt.show()
 
-        print('Image Pair ' + str(counter) + ', ' + str(settings.ROI[1]) + ', ' + str(settings.current_pos))
+        print('Image Pair ' + str(counter) + ' of ' + settings.save_folder_suffix)
         return settings.current_pos, True
     'Below is code to read files and create a folder to store the results'
     save_path=os.path.join(settings.save_path,'Results_'+settings.save_folder_suffix+'_'\

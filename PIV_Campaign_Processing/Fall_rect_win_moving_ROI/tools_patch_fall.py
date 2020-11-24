@@ -234,7 +234,7 @@ class Multiprocesser():
         if not len(self.files_a):
             raise ValueError('Something failed loading the image file. No images were found. Please check directory and image template name.')
 
-    def run( self, func, fall_start, roi_shift_start, process_fall, process_roi_shift, n_cpus=1 ):
+    def run( self, save_path, func, fall_start, roi_shift_start, process_fall, process_roi_shift, n_cpus=1 ):
         """Start to process images.
         
         Parameters
@@ -258,12 +258,16 @@ class Multiprocesser():
         image_pairs = [ (file_a, file_b, i+beginning_index)\
                        for file_a, file_b, i in zip( self.files_a[beginning_index-self.index_0:],\
                                                     self.files_b[beginning_index-self.index_0:], range(self.n_files)) ]
-        
+        index_max = beginning_index+self.n_files
+        h_dum = np.zeros((index_max,1))
         # for debugging purposes always use n_cpus = 1,
         # since it is difficult to debug multiprocessing stuff.
         for image_pair in image_pairs:
             # this is to check whether we have to stop because the roi reached the lowest possible point
             # if(image_pair[2] < 709):
             #     continue
-            if func(image_pair):
+            h, stop_iteration = func(image_pair)
+            h_dum[image_pair[2]-1] = h
+            if (stop_iteration == True):
                 break
+        np.savetxt(save_path + os.sep + 'interface_position.txt', h_dum, fmt='%8.4f')

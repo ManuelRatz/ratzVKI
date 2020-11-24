@@ -22,7 +22,7 @@ Fol_In = 'C:\PIV_Processed\Images_Processed\Results_R_h2_f1200_1_p13_Run_2'
 Fol_Raw = 'C:\PIV_Processed\Images_Preprocessed\R_h2_f1200_1_p13'
 
 # set the constants
-IMG_WIDTH = 275 # image width in pixels
+IMG_WIDTH = ppf.get_img_width(Fol_Raw) # image width in pixels
 SCALE = IMG_WIDTH/5 # scaling factor in px/mm
 DT = 1/1200 # time between two images
 FACTOR = 1/(SCALE*DT) # conversion factor to go from px/frame to mm/s

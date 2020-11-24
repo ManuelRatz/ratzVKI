@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Oct  4 14:04:04 2019
-
-@author: Ratz
-@description: This is a modified version of the windef_rect file.
-    It includes the option to process a complete fall or just the fall with 
-    full roi or moving roi respectively.
+@author: Theo
 """
+
 
 import os
 import numpy as np
@@ -14,48 +11,54 @@ from numpy.fft import rfft2, irfft2, fftshift
 import numpy.lib.stride_tricks
 import scipy.ndimage as scn
 from scipy.interpolate import RectBivariateSpline
-from openpiv import process, validation, filters, pyprocess, tools, preprocess, scaling
+from openpiv import process, validation, filters, pyprocess, tools, preprocess,scaling
 from openpiv import smoothn
-import tools_patch_fall
+import tools_patch_rise
+import validation_patch
 import matplotlib.pyplot as plt
 
-#%%
 def piv(settings):
     def func(args):
+        """A function to process each image pair."""
         file_a, file_b, counter = args
-        # read the iamges
+        ' read images into numpy arrays'
         frame_a = tools.imread(os.path.join(settings.filepath_images, file_a))
         frame_b = tools.imread(os.path.join(settings.filepath_images, file_b))
-        if counter == settings.fall_start:
+        
+        #%%
+        """This is the part for the changing ROI, the new position of the interface
+        is calculated after the final pass to avoid having to load the txt file """
+        # set the top index to 0 in case we are starting the run
+        if counter == settings.beginning_index:
+            settings.ROI[0] = frame_a.shape[0]-450
             settings.ROI[1] = frame_a.shape[0]
-        """Here we check if the interface has reached the top of the roi yet
-        by comparing it to the index in the observation_periods file. If it has
-        not reached the roi yet we skip this part, if it did then we shift the
-        roi for each pair after the initial one """
-        if counter >= settings.roi_shift_start:
-            # set the roi to the image height for the first frame
-            # if counter == settings.roi_shift_start :
-            #     settings.current_pos = 0
-            # shift the roi for each pair (this is not done for the first one)
-            settings.ROI[0] = int( settings.current_pos)
-
-        # crop to roi
-        if settings.ROI =='full':
-            frame_a=frame_a
-            frame_b=frame_b
-        else: 
-            frame_a =  frame_a[settings.ROI[0]:settings.ROI[1],settings.ROI[2]:settings.ROI[3]]
-            frame_b =  frame_b[settings.ROI[0]:settings.ROI[1],settings.ROI[2]:settings.ROI[3]]
+            settings.ROI[2] = 0
+            settings.ROI[3] = frame_a.shape[1]
+            settings.current_pos = settings.ROI[0]
+        # if the interface comes into view again, set the ROI to the interface position
+        if settings.current_pos > 0:
+            settings.ROI[0] = int(settings.current_pos)
+        # plot the current ROI on the images in case this is desired for animation purposes
+        if settings.plot_ROI == True:
+            plot_shifted_ROI(frame_b, counter, settings.current_pos, save_path)
+        #%%
+        settings.height_settings_call = np.array([settings.window_height[0], settings.overlap_height[0]])
+        if (5*settings.height_settings_call[1] > (settings.ROI[1]-settings.ROI[0])):
+            settings.height_settings_call = (settings.window_height[1], settings.overlap_height[1])
+        ' crop to ROI'   
+        frame_a =  frame_a[settings.ROI[0]:settings.ROI[1],settings.ROI[2]:settings.ROI[3]]
+        frame_b =  frame_b[settings.ROI[0]:settings.ROI[1],settings.ROI[2]:settings.ROI[3]]
         if settings.dynamic_masking_method=='edge' or settings.dynamic_masking_method=='intensity':    
             frame_a = preprocess.dynamic_masking(frame_a,method=settings.dynamic_masking_method,filter_size=settings.dynamic_masking_filter_size,threshold=settings.dynamic_masking_threshold)
             frame_b = preprocess.dynamic_masking(frame_b,method=settings.dynamic_masking_method,filter_size=settings.dynamic_masking_filter_size,threshold=settings.dynamic_masking_threshold)
-            
-#%%
-        """ Here we do the first pass of the piv interrogation """
-        x, y, u, v, sig2noise_ratio = first_pass(frame_a,frame_b, settings.window_width[0], settings.window_height[0],
-                                                settings.overlap_width[0], settings.overlap_height[0], settings.iterations,
+
+        '''%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%'''
+        'first pass'
+        x, y, u, v, sig2noise_ratio = first_pass(frame_a,frame_b, settings.window_width[0], settings.height_settings_call[0],
+                                                 settings.overlap_width[0], settings.height_settings_call[1], settings.iterations,
                                       correlation_method=settings.correlation_method, subpixel_method=settings.subpixel_method, do_sig2noise=settings.extract_sig2noise,
                                       sig2noise_method=settings.sig2noise_method, sig2noise_mask=settings.sig2noise_mask,)
+    
         mask=np.full_like(x,False)
         if settings.validation_first_pass==True:    
             u, v, mask_g = validation.global_val( u, v, settings.MinMax_U_disp, settings.MinMax_V_disp)
@@ -79,11 +82,14 @@ def piv(settings):
              if settings.smoothn==True:
                   u, v = filters.replace_outliers( u, v, method=settings.filter_method, max_iter=settings.max_filter_iteration, kernel_size=settings.filter_kernel_size)
                   u,dummy_u1,dummy_u2,dummy_u3=smoothn.smoothn(u,s=settings.smoothn_p)
-                  v,dummy_v1,dummy_v2,dummy_v3=smoothn.smoothn(v,s=settings.smoothn_p) 
-                  
-#%%
+                  v,dummy_v1,dummy_v2,dummy_v3=smoothn.smoothn(v,s=settings.smoothn_p)        
+     
+
+
+
+
         i = 1
-        """ Do the multipass until the maximum iterations are reached """
+        'all the following passes'
         for i in range(2, settings.iterations+1):
             x, y, u, v, sig2noise_ratio, mask = multipass_img_deform(frame_a, frame_b, settings.window_width[i-1], settings.window_height[i-1],
                                                     settings.overlap_width[i-1], settings.overlap_height[i-1],settings.iterations,i,
@@ -95,47 +101,50 @@ def piv(settings):
                                                     median_threshold=settings.median_threshold,median_size=settings.median_size,filter_method=settings.filter_method,
                                                     max_filter_iteration=settings.max_filter_iteration, filter_kernel_size=settings.filter_kernel_size,
                                                     interpolation_order=settings.interpolation_order)
-            # smooth on each pass in case this is wanted
+            # If the smoothing is active, we do it at each pass
             if settings.smoothn==True:
                  u,dummy_u1,dummy_u2,dummy_u3= smoothn.smoothn(u,s=settings.smoothn_p)
                  v,dummy_v1,dummy_v2,dummy_v3= smoothn.smoothn(v,s=settings.smoothn_p)        
    
         
-        # extract the sig2noise ratio in case it is desired and replace the vectors
+        '''%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%'''
         if settings.extract_sig2noise==True and i==settings.iterations and settings.iterations!=1 and settings.do_sig2noise_validation==True:
-            u,v, mask_s2n = validation.sig2noise_val( u, v, sig2noise_ratio, threshold = settings.sig2noise_threshold)
+            u,v, mask_s2n = validation_patch.sig2noise_val( u, v, sig2noise_ratio, threshold_low = settings.sig2noise_threshold)
             mask=mask+mask_s2n
         if settings.replace_vectors==True:
             u, v = filters.replace_outliers( u, v, method=settings.filter_method, max_iter=settings.max_filter_iteration, kernel_size=settings.filter_kernel_size)
-        if counter >= settings.roi_shift_start:
-            settings.current_pos = settings.current_pos - calc_disp(x, v, frame_b.shape[1])
-            if ((settings.ROI[1]-settings.current_pos) < 250):
-                return settings.current_pos, True
-        # scale the result timewise and lengthwise
+        #%%
+        'Calculate the mean displacement, this is the variable that we use at the top'
+        settings.current_pos = settings.current_pos - calc_disp(x, v, frame_b.shape[1])
+        if settings.current_pos < 0:
+            return settings.current_pos, False
+        #%%
+        'pixel/frame->pixel/sec'
         u=u/settings.dt
         v=v/settings.dt
+        'scales the results pixel-> meter'
         x, y, u, v = scaling.uniform(x, y, u, v, scaling_factor = settings.scaling_factor )     
-        # save the result
-        save(x, y, u, v,sig2noise_ratio, mask, os.path.join(save_path_txts,'field_%06d.txt' % (counter)), delimiter='\t')
-        # disable the grid in the rcParams file
+        'save to a file'
+        save(x, y, u, v,sig2noise_ratio, mask ,os.path.join(save_path_txts,'field_%06d.txt' % counter), delimiter='\t')
+        'some messages to check if it is still alive'
+        # disable the grid in case it is activated
         plt.rcParams['axes.grid'] = False
-        # show and save the plot if it is desired
+        'some other stuff that one might want to use'
         if settings.show_plot==True or settings.save_plot==True:
+            plt.close('all')
             plt.ioff()
-            Name = os.path.join(save_path_images, 'Image_%06d.png' % (counter))
-            display_vector_field(os.path.join(save_path_txts, 'field_%06d.txt' % (counter)), scale=settings.scale_plot)
+            Name = os.path.join(save_path_images, 'Image_%06d.png' % counter)
+            display_vector_field(os.path.join(save_path_txts, 'field_%06d.txt' % counter), scale=settings.scale_plot)
             if settings.save_plot==True:
                 plt.savefig(Name, dpi=100)
             if settings.show_plot==True:
                 plt.show()
-            plt.close('all')
-        print('Image Pair %06d' %(counter)+ ' from ' + settings.save_folder_suffix)
-        return settings.current_pos, False
-    
-    #%%
-    settings.current_pos = 0
-    # initialize the saving path for the images and the txts in case they dont exist
-    save_path=os.path.join(settings.save_path,'Results_Run_'+str(settings.run)+'_'+settings.save_folder_suffix)
+
+        print('Image Pair ' + str(counter) + ', ' + str(settings.ROI[1]) + ', ' + str(settings.current_pos))
+        return settings.current_pos, True
+    'Below is code to read files and create a folder to store the results'
+    save_path=os.path.join(settings.save_path,'Results_'+settings.save_folder_suffix+'_'\
+                           +str(settings.window_height[settings.iterations-1])+'_'+str(settings.window_width[settings.iterations-1]))
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     save_path_images = save_path + os.sep + 'velocity_fields'
@@ -143,18 +152,48 @@ def piv(settings):
         os.makedirs(save_path_images)
     save_path_txts = save_path + os.sep + 'data_files'
     if not os.path.exists(save_path_txts):
-        os.makedirs(save_path_txts)   
+        os.makedirs(save_path_txts)       
     # save the settings of the processing
     save_settings(settings, save_path)
-    # create a task to be executed
-    task = tools_patch_fall.Multiprocesser(
-        data_dir=settings.filepath_images, pattern_a=settings.frame_pattern_a,\
-            pattern_b=settings.frame_pattern_b, amount = settings.amount)
-    # run the task
-    task.run(save_path, func, settings.fall_start, settings.roi_shift_start,
-             settings.process_fall, settings.process_roi_shift, n_cpus=1)
+    settings.ROI = np.array([0,0,0,0])
+    task = tools_patch_rise.Multiprocesser(
+        data_dir=settings.filepath_images, pattern_a=settings.frame_pattern_a, pattern_b=settings.frame_pattern_b)
+    task.run(save_path, func=func, beginning_index = settings.beginning_index, n_cpus=1)
+
+def plot_shifted_ROI(frame_b, counter, interface_position, save_path):
+    """
+    Function to plot frame b with the top of the ROI visible
+
+    Parameters
+    ----------
+    frame_b : 2d np.array
+        Array containing the second image.
+    counter : int
+        Index of the curent first image.
+    interface_position : float64
+        Current position of the interface in px. If the value is positive, the
+        interface is visible.
+    save_path : string
+        Location where the results are stored.
+    """
     
-#%%
+    # create the folder to store the ROI images into
+    Fol_ROI = save_path + os.sep + 'ROI_Images' + os.sep
+    if not os.path.exists(Fol_ROI):
+        os.makedirs(Fol_ROI)
+    # create the figure
+    fig, ax = plt.subplots(figsize=(4,10))
+    # show the image
+    plt.imshow(frame_b, cmap=plt.cm.gray)
+    # plot the interface line in case it is in the FOV
+    if interface_position > 0:
+        interface_line = np.ones((frame_b.shape[1],1))*interface_position
+        ax.plot(interface_line, lw = 1)
+    # save and close the figure
+    fig.savefig(Fol_ROI + 'ROI_img_%06d.png' %counter, dpi = 75)
+    plt.close(fig)
+    return
+    
 def calc_disp(x, v, img_width):
     """
     Function to calculate the mean displacement of the current index
@@ -186,7 +225,7 @@ def calc_disp(x, v, img_width):
     mean_disp = np.mean(np.trapz(v_padded[-5:,:], x_padded[-5:,:]))/img_width
     # return the mean_disp
     return mean_disp
-    
+
 def save_settings(settings, save_path):
     """
     Function to save the settings given in the client.
@@ -205,64 +244,7 @@ def save_settings(settings, save_path):
         # iterate over the list of variables
         for key, value in variables.items():
             #write into the file
-            f.write('{} {}'.format(key, value)+"\n")
-
-def shift_ROI(counter, save_path, save_path_txts, scaling_factor, dt, frame_b, interface_position,\
-              roi_shift_start, plot_ROI = False):
-    """
-    Function to shift the ROI from the data of the previous image pair.
-
-    Parameters
-    ----------
-    counter : int
-        Index of the last iteration.
-    save_path : string
-        Location of the folder where we create the roi_images folder.
-    save_path_txts : string
-        Location of the .txt file with the data
-    scaling_factor : float
-        Scaling of the image in px/mm.
-    dt : float64
-        Delta t between two frames in s.
-    frame_a : 2d np.ndarray
-        The first image
-    interface : int
-        Position of the current crop in pixels.
-    plot_ROI : boolean, optional
-        creates a plot of the shifted ROI and saves them in 
-        
-    Returns
-    -------
-    mean_disp : int
-        Mean displacement of the previous pass in pixels
-    """
-    # initialize mean displacement with zero in case we are looking at the first frame of the fall
-    mean_disp = 0
-    # calculate mean displacement for all the other cases
-    if(counter > roi_shift_start):
-        # load the txt file with the data; This is still in meter/second
-        data = np.genfromtxt(os.path.join(save_path_txts,'field_%06d.txt' %(counter-1)))
-        # get the velocity
-        vel = data[:,3]
-        # calculate the mean velocity as an integer in pixels/frame
-        mean_disp = int(np.rint(np.nanmean(vel)*scaling_factor*dt))
-    # plot the raw image with the ROI in case this is desired
-    if plot_ROI == True:
-        # create a folder in case there is none
-        Fol_Out = save_path + os.sep + 'ROI_Images' + os.sep
-        if not os.path.exists(Fol_Out):
-            os.mkdir(Fol_Out)
-        # plot the result
-        fig = plt.figure(figsize = (4, 10)) # create the figure
-        plt.imshow(frame_b, cmap=plt.cm.gray) # plot the image
-        dummy = np.arange(0, frame_b.shape[1],1) # create a dummy for the plot
-        roi_plot = np.ones((len(dummy),))*(interface_position-mean_disp) # create a horizontal line 
-        plt.plot(dummy, roi_plot, lw = 1) # plot the line
-        fig.savefig(Fol_Out + 'ROI_img_%06d.png' %counter, dpi = 100) # save the figure
-        plt.close(fig) # close the figure
-        
-    return mean_disp
-    
+            f.write('{}'.format(key) + "\t" + '{}'.format(value)+"\n")
 
 def correlation_func(cor_win_1, cor_win_2, win_width, win_height ,correlation_method='circular'):
     '''This function is doing the cross-correlation. Right now circular cross-correlation
@@ -333,7 +315,6 @@ def moving_window_array_rectangular(array, win_width, win_height, overlap_width,
     """
     This is a nice numpy trick. The concept of numpy strides should be
     clear to understand this code.
-
     Basically, we have a 2d array and we want to perform cross-correlation
     over the interrogation windows. An approach could be to loop over the array
     but loops are expensive in python. So we create from the array a new array
@@ -357,48 +338,36 @@ def first_pass(frame_a, frame_b, win_width, win_height, overlap_width, overlap_h
                    ,do_sig2noise=False, sig2noise_method='peak2peak', sig2noise_mask=2):
     """
     First pass of the PIV evaluation.
-
     This function does the PIV evaluation of the first pass. It returns
     the coordinates of the interrogation window centres, the displacment
     u and v for each interrogation window as well as the mask which indicates
     wether the displacement vector was interpolated or not.
-
-
     Parameters
     ----------
     frame_a : 2d np.ndarray
         the first image
-
     frame_b : 2d np.ndarray
         the second image
-
     window_size : int
          the size of the interrogation window
-
     overlap : int
         the overlap of the interrogation window normal for example window_size/2
-
     subpixel_method: string
         the method used for the subpixel interpolation.
         one of the following methods to estimate subpixel location of the peak:
         'centroid' [replaces default if correlation map is negative],
         'gaussian' [default if correlation map is positive],
         'parabolic'
-
     Returns
     -------
     x : 2d np.array
         array containg the x coordinates of the interrogation window centres
-
     y : 2d np.array
         array containg the y coordinates of the interrogation window centres 
-
     u : 2d np.array
         array containing the u displacement for every interrogation window
-
     u : 2d np.array
         array containing the u displacement for every interrogation window
-
     """
     
     cor_win_1 = moving_window_array_rectangular(frame_a, win_width, win_height,
@@ -441,94 +410,69 @@ def multipass_img_deform(frame_a, frame_b, win_width, win_height, overlap_width,
                          max_filter_iteration=10, filter_kernel_size=2, interpolation_order=3):
     """
     First pass of the PIV evaluation.
-
     This function does the PIV evaluation of the first pass. It returns
     the coordinates of the interrogation window centres, the displacment
     u and v for each interrogation window as well as the mask which indicates
     wether the displacement vector was interpolated or not.
-
-
     Parameters
     ----------
     frame_a : 2d np.ndarray
         the first image
-
     frame_b : 2d np.ndarray
         the second image
-
     window_size : tuple of ints
          the size of the interrogation window
-
     overlap : tuple of ints
         the overlap of the interrogation window normal for example window_size/2
-
     x_old : 2d np.ndarray
         the x coordinates of the vector field of the previous pass
-
     y_old : 2d np.ndarray
         the y coordinates of the vector field of the previous pass
-
     u_old : 2d np.ndarray
         the u displacement of the vector field of the previous pass
-
     v_old : 2d np.ndarray
         the v displacement of the vector field of the previous pass
-
     subpixel_method: string
         the method used for the subpixel interpolation.
         one of the following methods to estimate subpixel location of the peak:
         'centroid' [replaces default if correlation map is negative],
         'gaussian' [default if correlation map is positive],
         'parabolic'
-
     MinMaxU : two elements tuple
         sets the limits of the u displacment component
         Used for validation.
-
     MinMaxV : two elements tuple
         sets the limits of the v displacment component
         Used for validation.
-
     std_threshold : float
         sets the  threshold for the std validation
-
     median_threshold : float
         sets the threshold for the median validation
-
     filter_method : string
         the method used to replace the non-valid vectors
         Methods:
             'localmean',
             'disk',
             'distance', 
-
     max_filter_iteration : int
         maximum of filter iterations to replace nans
-
     filter_kernel_size : int
         size of the kernel used for the filtering
-
     interpolation_order : int
         the order of the spline interpolation used for the image deformation
-
     Returns
     -------
     x : 2d np.array
         array containg the x coordinates of the interrogation window centres
-
     y : 2d np.array
         array containg the y coordinates of the interrogation window centres 
-
     u : 2d np.array
         array containing the u displacement for every interrogation window
-
     u : 2d np.array
         array containing the u displacement for every interrogation window
-
     mask : 2d np.array
         array containg the mask values (bool) which contains information if
         the vector was filtered
-
     """
 
     x, y = get_coordinates(np.shape(frame_a), win_width, win_height, overlap_width, overlap_height)
@@ -650,26 +594,22 @@ def save( x, y, u, v, sig2noise_ratio, mask, filename, fmt='%8.4f', delimiter='\
     out = np.vstack( [m.ravel() for m in [x, y, u, v,sig2noise_ratio, mask] ] )
             
     # save data to file.
-    np.savetxt( filename, out.T, fmt=fmt, delimiter=delimiter, header='x'+delimiter+'y'\
-               +delimiter+'u'+delimiter+'v'+delimiter+'s2n'+delimiter+'mask')
+    np.savetxt( filename, out.T, fmt=fmt, delimiter=delimiter, header='x'+delimiter+'y'+delimiter+'u'+delimiter+'v'+delimiter+'s2n'+delimiter+'mask' )
     
 def display_vector_field( filename, on_img=False, image_name='None', window_size=32, scaling_factor=1,skiprows=1, **kw):
     """ Displays quiver plot of the data stored in the file 
+    
     
     Parameters
     ----------
     filename :  string
         the absolute path of the text file
-
     on_img : Bool, optional
         if True, display the vector field on top of the image provided by image_name
-
     image_name : string, optional
         path to the image to plot the vector field onto when on_img is True
-
     window_size : int, optional
         when on_img is True, provide the interogation window size to fit the background image to the vector field
-
     scaling_factor : float, optional
         when on_img is True, provide the scaling factor to scale the background image to the vector field
     
@@ -687,24 +627,23 @@ def display_vector_field( filename, on_img=False, image_name='None', window_size
     --------
     --- only vector field
     >>> openpiv.tools.display_vector_field('./exp1_0000.txt',scale=100, width=0.0025) 
-
     --- vector field on top of image
     >>> openpiv.tools.display_vector_field('./exp1_0000.txt', on_img=True, image_name='exp1_001_a.bmp', window_size=32, scaling_factor=70, scale=100, width=0.0025)
     
     """
     
     a = np.loadtxt(filename)
-    fig2=plt.figure()
+    fig=plt.figure()
     if on_img: # plot a background image
-        # im = imread(image_name)
-        # im = fig.negative(im) #plot negative of the image for more clarity
-        # fig.imsave('neg.tif', im)
-        # im = fig.imread('neg.tif')
+        im = fig.imread(image_name)
+        im = fig.negative(im) #plot negative of the image for more clarity
+        fig.imsave('neg.tif', im)
+        im = fig.imread('neg.tif')
         xmax = np.amax(a[:,0])+window_size/(2*scaling_factor)
         ymax = np.amax(a[:,1])+window_size/(2*scaling_factor)
-        # plt.imshow(im, origin='lower', cmap=plt.cm.gray, extent=[0.,xmax,0.,ymax])
+        implot = plt.imshow(im, origin='lower', cmap="Greys_r",extent=[0.,xmax,0.,ymax])
     invalid = a[:,5].astype('bool')
-    fig2.canvas.set_window_title('Vector field, '+str(np.count_nonzero(invalid))+' wrong vectors')
+    fig.canvas.set_window_title('Vector field, '+str(np.count_nonzero(invalid))+' wrong vectors')
     valid = ~invalid
     plt.quiver(a[invalid,0],a[invalid,1],a[invalid,2],a[invalid,3],color='r',width=0.001,headwidth=3,**kw)
     plt.quiver(a[valid,0],a[valid,1],a[valid,2],a[valid,3],color='b',width=0.001,headwidth=3,**kw)
@@ -753,25 +692,19 @@ def get_coordinates(image_size, win_width, win_height, overlap_width, overlap_he
             a two dimensional tuple for the pixel size of the image
             first element is number of rows, second element is 
             the number of columns.
-
         window_size: int
             the size of the interrogation windows.
-
         overlap: int
             the number of pixel by which two adjacent interrogation
             windows overlap.
-
-
         Returns
         -------
         x : 2d np.ndarray
             a two dimensional array containing the x coordinates of the 
             interrogation window centers, in pixels.
-
         y : 2d np.ndarray
             a two dimensional array containing the y coordinates of the 
             interrogation window centers, in pixels.
-
         """
 
         # get shape of the resulting flow field
@@ -801,23 +734,19 @@ def get_coordinates(image_size, win_width, win_height, overlap_width, overlap_he
 def find_subpixel_peak_position(corr, subpixel_method='gaussian'):
         """
         Find subpixel approximation of the correlation peak.
-
         This function returns a subpixels approximation of the correlation
         peak by using one of the several methods available. If requested,
         the function also returns the signal to noise ratio level evaluated
         from the correlation map.
-
         Parameters
         ----------
         corr : np.ndarray
             the correlation map.
-
         subpixel_method : string
              one of the following methods to estimate subpixel location of the peak:
              'centroid' [replaces default if correlation map is negative],
              'gaussian' [default if correlation map is positive],
              'parabolic'.
-
         Returns
         -------
         subp_peak_position : two elements tuple
@@ -883,31 +812,25 @@ def find_subpixel_peak_position(corr, subpixel_method='gaussian'):
 def sig2noise_ratio_function(corr, sig2noise_method='peak2peak', width=2):
     """
     Computes the signal to noise ratio from the correlation map.
-
     The signal to noise ratio is computed from the correlation map with
     one of two available method. It is a measure of the quality of the
     matching between to interogation windows.
-
     Parameters
     ----------
     corr : 2d np.ndarray
         the correlation map.
-
     sig2noise_method: string
         the method for evaluating the signal to noise ratio value from
         the correlation map. Can be `peak2peak`, `peak2mean` or None
         if no evaluation should be made.
-
     width : int, optional
         the half size of the region around the first
         correlation peak to ignore for finding the second
         peak. [default: 2]. Only used if ``sig2noise_method==peak2peak``.
-
     Returns
     -------
     sig2noise : np.ndarray 
         the signal to noise ratio from the correlation map.
-
     """
 
     corr_max1=np.zeros(corr.shape[0])
@@ -958,9 +881,7 @@ class Settings(object):
 
 if __name__ == "__main__":
     """ Run windef.py as a script: 
-
     python windef.py 
-
     """
 
 

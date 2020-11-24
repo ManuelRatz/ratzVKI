@@ -14,7 +14,7 @@ class Settings(object):
 settings = Settings()
 
 'Data related settings'
-settings.save_folder_suffix = 'R_h2_f1200_1_p13'
+settings.save_folder_suffix = 'R_h1_f1200_1_p11'
 # Folder with the images to process
 settings.filepath_images = 'C:\PIV_Processed\Images_Preprocessed' + os.sep + settings.save_folder_suffix + os.sep
 # Folder for the outputs
@@ -24,13 +24,6 @@ settings.save_path = 'C:\PIV_Processed\Images_Processed' + os.sep
 # Format and Image Sequence
 settings.frame_pattern_a = settings.save_folder_suffix + '.*.tif'
 settings.frame_pattern_b = None    
-
-'Region of interest'
-# (50,300,50,300) #Region of interest: (xmin,xmax,ymin,ymax) or 'full' for full image
-# settings.ROI = (0,1269,0,500) # The first number is the position of the interface measured from the bottom of the image
-# settings.ROI = 'full'
-settings.ROI = np.asarray([0,1280,0,500]) 
-
 
 'Image preprocessing'
 settings.dynamic_masking_method = 'None'
@@ -89,28 +82,11 @@ settings.save_plot = False
 settings.show_plot = False
 settings.scale_plot = 200 # select a value to scale the quiver plot of the vectorfield
 settings.plot_ROI = True
-settings.beginning_index = 391
+settings.beginning_index = 291
 
 # run the script with these settings
-
-height = np.array([[256,128,96],[256,128,64],[128, 64, 48],[256,128,64],[128,64,32],[256,128,64,32]])
-overlap_height = np.array([[128,64,48],[128,64,32],[64, 32, 24],[128,64,32],[64,32,16],[128,64,32,16]])
-width = np.array([[64,32,24],[64,32,16],[32, 16, 12],[16,16,16],[64,32,32],[64,32,32,32]])
-overlap_width= np.array([[32,16,12],[32,16,8],[16, 8, 6],[8,8,8],[32,16,16],[32,16,16,16]])
-iterations=np.array([3,3,3,3,3,4])
-settings.run = 2
+settings.run = 1
 piv(settings)
-# import time
-# for i in range(2,3):
-#     start = time.time()
-#     settings.window_height = height[i]
-#     settings.overlap_height = overlap_height[i]
-#     settings.window_width = width[i]
-#     settings.overlap_width = overlap_width[i]
-#     settings.run=7
-#     settings.iterations=iterations[i]
-#     piv(settings)
-#     print(time.time()-start)
 
 
 

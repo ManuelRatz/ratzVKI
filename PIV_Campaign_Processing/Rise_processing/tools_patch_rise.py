@@ -256,7 +256,7 @@ class Multiprocesser():
         # create a list of tasks to be executed.
         image_pairs = [ (file_a, file_b, i) for file_a, file_b,\
                        i in zip( self.files_a[beginning_index:], self.files_b[beginning_index:], range(beginning_index,self.n_files) ) ]
-        index_max = self.n_files
+        index_max = beginning_index+200#self.n_files
         # create a dummy for the loop to fill
         h_dum = np.zeros((index_max,1))
         # for debugging purposes always use n_cpus = 1,
@@ -265,6 +265,8 @@ class Multiprocesser():
             if image_pair[2] > index_max:
                 continue
             # save the calculated height in the array
-            h_dum[image_pair[2]-1] = func( image_pair )
+            h_dum[image_pair[2]-1], continue_run = func( image_pair )
+            if continue_run == False:
+                break
         # save the height data in a .txt file
         np.savetxt(save_path + os.sep + 'interface_position.txt', h_dum, fmt='%8.4f')

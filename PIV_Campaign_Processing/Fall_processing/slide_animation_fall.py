@@ -18,22 +18,23 @@ import imageio                          # for animations
 ppf.set_plot_parameters()
 
 # give the input folder 
-Fol_In = 'C:\PIV_Processed\Images_Processed\Results_Run_4_F_h1_f1200_1_q'
+Fol_In = 'C:\PIV_Processed\Images_Processed\Results_F_h1_f1200_1_q_24_24'
 Fol_Raw = 'C:\PIV_Processed\Images_Preprocessed\F_h1_f1200_1_q'
 
 # set the constants
-IMG_WIDTH = 267 # image width in pixels
+IMG_WIDTH = ppf.get_img_width(Fol_Raw) # image width in pixels
 SCALE = IMG_WIDTH/5 # scaling factor in px/mm
-DT = 1/1200 # time between two images
+DT = 1/ppf.get_frequency(Fol_Raw) # time between images
 FACTOR = 1/(SCALE*DT) # conversion factor to go from px/frame to mm/s
-# get the number of columns
-NX = ppf.get_column_amount(Fol_In)
-
+NX = ppf.get_column_amount(Fol_In) # get the number of columns
+# set frame0, the image step size and how many images to process
+FRAME0 = 391 # starting index of the run
+STP_SZ = 10 # step size in time
+SECONDS = 2 # how many seconds to observe the whole thing
+N_T = int((SECONDS/DT)/STP_SZ)
 # set frame0, the image step size and how many images to process
 FRAME0 = 560
 STP_SZ = 1
-# N_T = int((3000-FRAME0)/STP_SZ)
-# N_T = int(1200/STP_SZ)
 N_T = 240
 
 # set up empty listss to append into and the names of the gifs
@@ -53,7 +54,7 @@ Fol_Img = ppf.create_folder('images')
 
 h = ppf.load_h(Fol_In)
 # set up a time array for plotting
-t = np.linspace(0,1,1201)[::STP_SZ]
+t = np.linspace(0, N_T*DT,N_T, endpoint = False)[::STP_SZ]
 
 # set a custom colormap
 custom_map = ppf.custom_div_cmap(100, mincol='indigo', midcol='darkcyan' ,maxcol='yellow')
@@ -106,14 +107,14 @@ for i in range(0,N_T):
         IMAGES_ROI.append(imageio.imread(Name_Out)) # append into list
     # plot h as a function of time
 
-    
+
     # plot the contour and the quiver, the principle is the same, so not everything is commented
     if PLOT_QUIV == True:
         fig, ax = plt.subplots(figsize = (4, 8))
         cs = plt.pcolormesh(x,y,v, vmin=-400, vmax=0, cmap = custom_map) # create the contourplot using pcolormesh
         ax.set_aspect('equal') # set the correct aspect ratio
         clb = fig.colorbar(cs, pad = 0.2) # get the colorbar
-        clb.set_ticks(np.arange(-400, 0, 40)) # set the colorbarticks
+        clb.set_ticks(np.arange(-400, 1, 40)) # set the colorbarticks
         clb.ax.set_title('Velocity \n [mm/s]', pad=15) # set the colorbar title
         STEPY= 4
         STEPX = 1
@@ -143,6 +144,7 @@ for i in range(0,N_T):
         fig, ax = plt.subplots(figsize=(8,5))
         # initialize array with values every 25% of the ROI
         y_IND = np.array([int(len(x)*0.25)-1,int(len(x)*0.5)-1,int(len(x)*0.75)-1]) 
+        ax.set_title('$t$ = %03d [ms]' %(t[i]*1000))
         ax.plot(x[y_IND[0],:], v[y_IND[0],:], c='r', label='75\% ROI')
         ax.plot(x[y_IND[1],:], v[y_IND[1],:], c='b', label='50\% ROI')
         ax.plot(x[y_IND[2],:], v[y_IND[2],:], c='g', label='25\% ROI')
@@ -168,6 +170,7 @@ for i in range(0,N_T):
         fig, ax = plt.subplots(figsize=(9, 5))
         # integrate using trapz
         q = np.trapz(v, x)
+        ax.set_title('$t$ = %03d [ms]' %(t[i]*1000))
         ax.scatter(y[:,0], q, c='r', marker='x', s=(300./fig.dpi)**2)
         ax.plot(y[:,0], q, c='r')
         ax.set_ylim(-75000,0)
@@ -184,14 +187,17 @@ for i in range(0,N_T):
         plt.close(fig)
         IMAGES_FLUX.append(imageio.imread(Name_Out))
 # render the gifs
-imageio.mimsave(GIF_FLUX, IMAGES_FLUX, duration=0.05)
-imageio.mimsave(GIF_PROF, IMAGES_PROF, duration=0.05)
-imageio.mimsave(GIF_QUIV, IMAGES_CONT, duration=0.05)
-imageio.mimsave(GIF_ROI, IMAGES_ROI, duration = 0.05)
-# imageio.mimsave(GIF_H, IMAGES_H, duration = 0.05)
+if PLOT_FLUX == True:
+    imageio.mimsave(GIF_FLUX, IMAGES_FLUX, duration=0.05)
+if PLOT_PROF == True:
+    imageio.mimsave(GIF_PROF, IMAGES_PROF, duration=0.05)
+if PLOT_QUIV == True:
+    imageio.mimsave(GIF_QUIV, IMAGES_CONT, duration=0.05)
+if PLOT_ROI == True:
+    imageio.mimsave(GIF_ROI, IMAGES_ROI, duration = 0.05)
 # delete the folder with the gif images
 shutil.rmtree(Fol_Img)
-# 
+#
 
 
 

@@ -4,7 +4,7 @@ Created on Fri Nov 20 11:46:08 2020
 
 @author: manue
 @description: Create animations for the slide. These are animations for
-    the Rise R_h2_f1200_1_p13 
+    the R_h2_f1200_1_p13 
 """
 
 import os                               # for file paths
@@ -17,8 +17,9 @@ import imageio                          # for animations
 # set the plot parameters
 ppf.set_plot_parameters()
 
-# give the input folder 
+# give the input folder for the data
 Fol_In = 'C:\PIV_Processed\Images_Processed\Results_R_h2_f1200_1_p13_64_16'
+# give the input folder of the raw images (this is required to get the image width and frequency)
 Fol_Raw = 'C:\PIV_Processed\Images_Preprocessed\R_h2_f1200_1_p13'
 
 # set the constants

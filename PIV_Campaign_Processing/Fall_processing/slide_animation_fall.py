@@ -4,7 +4,7 @@ Created on Fri Nov 20 11:46:08 2020
 
 @author: manue
 @description: Create animations for the slide. These are animations for
-    the Rise R_h2_f1200_1_p13 
+    the Fall R_h2_f1200_1_p13 
 """
 
 import os                               # for file paths
@@ -17,8 +17,9 @@ import imageio                          # for animations
 # set the plot parameters
 ppf.set_plot_parameters()
 
-# give the input folder 
+# give the input folder for the data
 Fol_In = 'C:\PIV_Processed\Images_Processed\Results_F_h1_f1200_1_q_24_24'
+# give the input folder of the raw images (this is required to get the image width and frequency)
 Fol_Raw = 'C:\PIV_Processed\Images_Preprocessed\F_h1_f1200_1_q'
 
 # set the constants
@@ -65,25 +66,19 @@ PLOT_QUIV = True
 PLOT_PROF = True
 PLOT_FLUX = True
 
+# set the initial displacement to zero for the plotting of the shifting ROI
 disp = 0
-
-# def calc_disp(x, v, idx, Img_width):
-#     pad_0 = np.zeros((x.shape[0],1))
-#     pad_x_max = np.ones((x.shape[0],1))*IMG_WIDTH
-#     x = np.hstack((x, pad_0, pad_x_max))
-#     v = np.hstack((pad_0, v, pad_0))
-#     return np.mean(np.trapz(v[-5:,:], x[-5:,:]))/Img_width
 
 for i in range(0,N_T):
     print('Image %d of %d' %((i+1,N_T)))
     # calculate the loading index and load the data
     LOAD_IDX = FRAME0 + STP_SZ*i
     x, y, u, v, sig2noise, valid = ppf.load_txt(Fol_In, LOAD_IDX, NX)
+    
     # convert to mm/s
-
-    # disp = disp + STP_SZ* calc_disp(x, v, LOAD_IDX, IMG_WIDTH)
     u = u*FACTOR
     v = v*FACTOR
+    
     # start with the animation of the changing ROI
     if PLOT_ROI == True:
         name = Fol_Raw + os.sep + 'F_h1_f1200_1_q.%06d.tif' %(LOAD_IDX+1) # because we want frame_b
@@ -105,8 +100,6 @@ for i in range(0,N_T):
         fig.savefig(Name_Out, dpi = 65) # save the figure
         plt.close(fig) # close to not overcrowd
         IMAGES_ROI.append(imageio.imread(Name_Out)) # append into list
-    # plot h as a function of time
-
 
     # plot the contour and the quiver, the principle is the same, so not everything is commented
     if PLOT_QUIV == True:

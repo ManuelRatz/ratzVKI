@@ -84,7 +84,7 @@ settings.smoothn_p=0.01
 # cosmetics; set the rescaling to one because we can do all of this in the post processing
 settings.scaling_factor = 1 
 settings.dt = 1
-settings.save_plot = True
+settings.save_plot = False
 settings.show_plot = False
 settings.scale_plot = 1
 settings.plot_ROI = False

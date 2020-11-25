@@ -7,3 +7,6 @@ PIV_Campaign_Processing/Fall_rect_win_moving_ROI/Observation_periods.xlsx
 *.xlsx
 *.pyc
 *.pyc
+PIV_Campaign_Processing/Rise_processing/__pycache__/post_processing_functions.cpython-37.pyc
+PIV_Campaign_Processing/Rise_processing/__pycache__/windef_rect_rise.cpython-37.pyc
+Cap_Rise_Anna/new_processing/__pycache__/Image_processing_functions.cpython-37.pyc

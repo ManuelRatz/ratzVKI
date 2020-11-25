@@ -26,9 +26,9 @@ crop_index = (68,210,0,1280)
 WIDTH = 5 # width of the channel
 PIX2MM = WIDTH/(crop_index[1]-crop_index[0]) # pixel to mm
 
-CURR_RUN = 'A'
+CURR_RUN = 'B'
 
-TESTNAME = '1500' + CURR_RUN + '_' # prefix of the images
+TESTNAME = '1500' + '_' + CURR_RUN # prefix of the images
 Fol_In = 'C:\Pa1500' + os.sep + 'Run_'+CURR_RUN + os.sep + 'images'
 NAME = Fol_In + os.sep + TESTNAME # file name
 # create the output folder
@@ -48,7 +48,7 @@ plus = 0
 images = []
 GIFNAME = 'Detected interface'
 # iterate over all images 
-for k in range(0,IMG_AMOUNT):
+for k in range(0,2000):
     idx = N_START+1*k+plus # get the first index
     image = NAME + '%05d' %idx + '.png'  # file name
     img=cv2.imread(image,0)  # read the image
@@ -63,10 +63,10 @@ for k in range(0,IMG_AMOUNT):
     # mu_s2,i_x,i_y,i_x_mm,i_y_mm,X2,img_width_mm = imgprocess.fitting_advanced(grad_img2,PIX2MM,l=5,sigma_f=1,sigma_y=6e-6) # fit a gaussian
 
     h_mm_adv[idx] = imgprocess.vol_average(mu_s[:,0],X,img_width_mm)    #mm  # differences to equilibrium height
-    h_cl_left_all_adv[idx] = imgprocess.contact_angle(mu_s[:,0],X,0)  
-    h_cl_right_all_adv[idx] = imgprocess.contact_angle(mu_s[:,0],X,-1) 
-    angle_all_left_adv[idx]= mu_s[0]
-    angle_all_right_adv[idx]= mu_s[-1]
+    h_cl_left_all_adv[idx-1] = imgprocess.contact_angle(mu_s[:,0],X,0)  
+    h_cl_right_all_adv[idx-1] = imgprocess.contact_angle(mu_s[:,0],X,-1) 
+    angle_all_left_adv[idx-1]= mu_s[0]
+    angle_all_right_adv[idx-1]= mu_s[-1]
     
     mu_s = mu_s/PIX2MM # calculate the resulting height in mm
     # mu_s2 = mu_s2/PIX2MM
@@ -81,27 +81,27 @@ for k in range(0,IMG_AMOUNT):
     # plt.plot((X2)/(PIX2MM)-0.5, -mu_s2+mu_s2[500]+70, 'y-', linewidth=0.5) # plot the interface fit
     plt.axis('off') # disable the showing of the axis
     NAME_OUT=Fol_Out+ os.sep +'Step_'+str(idx)+'.png' # set output name
-    MEX= 'Exporting Im '+ str(k+1)+' of ' + str(IMG_AMOUNT) # update on progress
+    MEX= 'Exporting Im '+ str(idx+1)+' of ' + str(IMG_AMOUNT) # update on progress
     print(MEX) 
-    plt.title('Image %04d' % ((idx-1121+1))) # set image title
+    plt.title('Image %04d' % ((idx-1121))) # set image title
     plt.savefig(NAME_OUT, dpi= 500) # save image
     plt.close(fig) # disable or enable depending on whether you want to see image in the plot window
-    # images.append(imageio.imread(NAME_OUT))
+    images.append(imageio.imread(NAME_OUT))
 
 # imageio.mimsave(GIFNAME, images, duration = 0.05)
-# def saveTxt(Fol_Out,h_mm, h_cl_l, h_cl_r, angle_l, angle_r):                
+def saveTxt(Fol_Out,h_mm, h_cl_l, h_cl_r, angle_l, angle_r):                
     
-#     if not os.path.exists(Fol_Out):
-#         os.mkdir(Fol_Out)
-#     np.savetxt(Fol_Out + os.sep + 'Displacement.txt',h_mm)
+    if not os.path.exists(Fol_Out):
+        os.mkdir(Fol_Out)
+    np.savetxt(Fol_Out + os.sep + 'Displacement.txt',h_mm)
     
-#     np.savetxt(Fol_Out + os.sep + 'Displacement_CLsx.txt',h_cl_l)
-#     np.savetxt(Fol_Out + os.sep + 'Displacement_CLdx.txt',h_cl_r)
+    np.savetxt(Fol_Out + os.sep + 'Displacement_CLsx.txt',h_cl_l)
+    np.savetxt(Fol_Out + os.sep + 'Displacement_CLdx.txt',h_cl_r)
     
-#     np.savetxt(Fol_Out + os.sep + 'LCA.txt',angle_l*np.pi/180)
-#     np.savetxt(Fol_Out + os.sep + 'RCA.txt',angle_r*np.pi/180)
+    np.savetxt(Fol_Out + os.sep + 'LCA.txt',angle_l*np.pi/180)
+    np.savetxt(Fol_Out + os.sep + 'RCA.txt',angle_r*np.pi/180)
     
-# Fol_Out_Adv= os.path.abspath(FOL + os.sep + 'Txts_advanced_fitting')
-# if not os.path.exists(Fol_Out_Adv):
-#     os.mkdir(Fol_Out_Adv)
-# saveTxt(Fol_Out_Adv,h_mm_adv, h_cl_left_all_adv, h_cl_right_all_adv, angle_all_left_adv, angle_all_right_adv)
+Fol_Out_Adv= os.path.abspath(Fol_Out + os.sep + 'Txts_advanced_fitting')
+if not os.path.exists(Fol_Out_Adv):
+    os.mkdir(Fol_Out_Adv)
+saveTxt(Fol_Out_Adv,h_mm_adv, h_cl_left_all_adv, h_cl_right_all_adv, angle_all_left_adv, angle_all_right_adv)

@@ -180,7 +180,7 @@ def rgb2gray(rgb):
 
 
 class Multiprocesser():
-    def __init__ ( self, data_dir, pattern_a, pattern_b = None, amount = None):
+    def __init__ ( self, data_dir, pattern_a, pattern_b = None):
         """A class to handle and process large sets of images.
 
         This class is responsible of loading image datasets
@@ -224,9 +224,6 @@ class Multiprocesser():
         
         # number of images
         self.n_files = len(self.files_a)
-        if amount is not None:
-            self.files_a = self.files_a[:amount]
-            self.files_b = self.files_b[:amount]
         # check if everything was fine
         if not len(self.files_a) == len(self.files_b):
             raise ValueError('Something failed loading the image file. There should be an equal number of "a" and "b" files.')

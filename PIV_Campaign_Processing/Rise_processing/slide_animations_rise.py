@@ -18,23 +18,20 @@ import imageio                          # for animations
 ppf.set_plot_parameters()
 
 # give the input folder 
-Fol_In = 'C:\PIV_Processed\Images_Processed\Results_R_h2_f1200_1_p13_Run_2'
+Fol_In = 'C:\PIV_Processed\Images_Processed\Results_R_h2_f1200_1_p13_64_16'
 Fol_Raw = 'C:\PIV_Processed\Images_Preprocessed\R_h2_f1200_1_p13'
 
 # set the constants
 IMG_WIDTH = ppf.get_img_width(Fol_Raw) # image width in pixels
 SCALE = IMG_WIDTH/5 # scaling factor in px/mm
-DT = 1/1200 # time between two images
+DT = 1/ppf.get_frequency(Fol_Raw) # time between images
 FACTOR = 1/(SCALE*DT) # conversion factor to go from px/frame to mm/s
-# get the number of columns
-NX = ppf.get_column_amount(Fol_In)
-
+NX = ppf.get_column_amount(Fol_In) # get the number of columns
 # set frame0, the image step size and how many images to process
-FRAME0 = 391
-STP_SZ = 4
-# N_T = int((3000-FRAME0)/STP_SZ)
-N_T = int(1200/STP_SZ)
-# N_T = 1
+FRAME0 = 391 # starting index of the run
+STP_SZ = 10 # step size in time
+SECONDS = 2 # how many seconds to observe the whole thing
+N_T = int((SECONDS/DT)/STP_SZ)
 
 # set up empty listss to append into and the names of the gifs
 IMAGES_ROI = []
@@ -54,7 +51,7 @@ Fol_Img = ppf.create_folder('images')
 # load the data of the predicted height
 h = ppf.load_h(Fol_In)
 # set up a time array for plotting
-t = np.linspace(0,1,1201)[::STP_SZ]
+t = np.linspace(0,SECONDS,int(SECONDS/DT)+1)[::STP_SZ]
 
 # set a custom colormap
 custom_map = ppf.custom_div_cmap(100, mincol='indigo', midcol='darkcyan' ,maxcol='yellow')
@@ -106,13 +103,14 @@ for i in range(0,N_T):
         h_dum = h_dum[::STP_SZ]
         # plot the height, convert it to mm and shift to have the beginning height at the top of the image
         plot1 = ax.plot(t[:i+1],(-h_dum[:i+1]+1271)/SCALE, c='r', label = 'Interface\nHeight')
+        ax.set_title('$t$ = %03d [ms]' %(t[i]*1000))
         ax.scatter(t[i],(-h_dum[i]+1271)/55, c='r', marker='x', s=(300./fig.dpi)**2)
         ax.set_ylim(0,30)
         ax.set_xlim(0,1)
         ax.set_xlabel('$t$[s]', fontsize = 20)
         ax.set_ylabel('$h$[mm]', fontsize = 20)
         ax.grid(b=True)
-        ax.set_xticks(np.arange(0, 1.1 ,0.1))
+        ax.set_xticks(np.arange(0, 2.1 ,0.2))
         ax.set_yticks(np.arange(0, 35, 5))
         fig.tight_layout(pad=1.1)
         ax.legend(loc='upper right')
@@ -158,6 +156,7 @@ for i in range(0,N_T):
         fig, ax = plt.subplots(figsize=(8,5))
         # initialize array with values every 25% of the ROI
         y_IND = np.array([int(len(x)*0.25)-1,int(len(x)*0.5)-1,int(len(x)*0.75)-1]) 
+        ax.set_title('$t$ = %03d [ms]' %(t[i]*1000))
         ax.plot(x[y_IND[0],:], v[y_IND[0],:], c='r', label='75\% ROI')
         ax.plot(x[y_IND[1],:], v[y_IND[1],:], c='b', label='50\% ROI')
         ax.plot(x[y_IND[2],:], v[y_IND[2],:], c='g', label='25\% ROI')
@@ -183,6 +182,7 @@ for i in range(0,N_T):
         fig, ax = plt.subplots(figsize=(9, 5))
         # integrate using trapz
         q = np.trapz(v, x)
+        ax.set_title('$t$ = %03d [ms]' %(t[i]*1000))
         ax.scatter(y[:,0], q, c='r', marker='x', s=(300./fig.dpi)**2)
         ax.plot(y[:,0], q, c='r')
         ax.set_ylim(-30000,40000)
@@ -199,11 +199,11 @@ for i in range(0,N_T):
         plt.close(fig)
         IMAGES_FLUX.append(imageio.imread(Name_Out))
 # render the gifs
-imageio.mimsave(GIF_FLUX, IMAGES_FLUX, duration=0.05)
-imageio.mimsave(GIF_PROF, IMAGES_PROF, duration=0.05)
-imageio.mimsave(GIF_QUIV, IMAGES_CONT, duration=0.05)
-imageio.mimsave(GIF_ROI, IMAGES_ROI, duration = 0.05)
-imageio.mimsave(GIF_H, IMAGES_H, duration = 0.05)
+imageio.mimsave(GIF_FLUX, IMAGES_FLUX, duration=0.075)
+imageio.mimsave(GIF_PROF, IMAGES_PROF, duration=0.075)
+imageio.mimsave(GIF_QUIV, IMAGES_CONT, duration=0.075)
+imageio.mimsave(GIF_ROI, IMAGES_ROI, duration = 0.075)
+imageio.mimsave(GIF_H, IMAGES_H, duration = 0.075)
 # delete the folder with the gif images
 shutil.rmtree(Fol_Img)
 

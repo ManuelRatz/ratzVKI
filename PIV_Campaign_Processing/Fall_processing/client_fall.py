@@ -22,12 +22,12 @@ The idea is to run two different settings:
         settings.window_height = (64, 32, 24)
         settings.overlap_height = (32, 16, 12)
         settings.window_width = (64, 32, 24)
-        settings.overlap_width = (32, 16, 12) 
+        settings.overlap_width = (32, 16, 12)
     One with squares (Do for the 1000 and 1200 Hz runs), the window sizes for this are
-        settings.window_height = (128, 64, 32)
-        settings.overlap_height = (64, 32, 16)
-        settings.window_width = (128, 64, 32)
-        settings.overlap_width = (64, 32, 16)
+        settings.window_height = (64, 48, 48)
+        settings.overlap_height = (32, 24, 24)
+        settings.window_width = (48, 24, 12)
+        settings.overlap_width = (24, 12, 6) 
 
 The raw images are stored in a .rar file under the following link (YET TO BE DONE, 24.11.)
     https://osf.io/vp3cq/

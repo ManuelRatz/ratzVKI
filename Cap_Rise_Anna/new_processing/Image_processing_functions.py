@@ -59,18 +59,38 @@ def detect_triggersHS(folder):
     return frame0, pressure_signal
 
 
-def edge_detection_grad(crop_img,treshold_pos,wall_cut,threshold_outlier):
+def edge_detection_grad(crop_img,treshold_pos,wall_cut,threshold_outlier, do_mirror):
     """
-    Function to detect horizontal edges
-    :crop_img: the cropped image
-    :treshold: treshold in order to cut the smaller gradient
-    
+    Function to get the the edges of the interface
+
+    Parameters
+    ----------
+    crop_img : 2d np.array
+        Image as array in grayscale.
+    treshold_pos : float64
+        Required threshold for the gradient to be taken as a valid value.
+    wall_cut : int
+        How many pixels to cut near the wall.
+    threshold_outlier : float64
+        Percentage value indicating the relative difference between y and the mean at which to filter.
+    do_mirror : boolean
+        If True, the right side of the image will be mirrored because the gradient is stronger there.
+
+    Returns
+    -------
+    grad_img : 2d np.array
+        Image as a binary map indicating the edge as 1.
+    y_index : 1d np.array
+        Y-coordinates of the edge.
+    x_index : 1d np.array
+        X-coordinates of the edge.
+
     """
     grad_img = np.zeros(crop_img.shape)
     y_index  = (np.asarray([])) 
     
     Profiles   = crop_img[:,wall_cut+3:len(crop_img[1])-wall_cut] # analyse the region where no spots from the wall disturb detection
-    Profiles_s = savgol_filter(Profiles, 15, 3, axis =0)        # intensity profile smoothened
+    Profiles_s = savgol_filter(Profiles, 5, 3, axis =0)        # intensity profile smoothened
     Profiles_d = np.gradient(Profiles_s, axis = 0)              # calculate gradient of smoothend intensity along the vertical direction
     idx_maxima = np.argmax(Profiles_d, axis = 0)                # find positions of all the maxima in the gradient
     #mean_a = np.mean(Profiles_s, axis=0)
@@ -80,32 +100,42 @@ def edge_detection_grad(crop_img,treshold_pos,wall_cut,threshold_outlier):
             grad_img[idx_maxima[j],j+wall_cut+3] = 1 # binarisation
         # else:
             # print('Below Threshold')
-            
+    if do_mirror == True:
+        grad_img = mirror_right_side(grad_img)     
     y_index, x_index = np.where(grad_img==1) # get coordinates of the interface
     # sort both arrays to filter out outliers at the edges
     x_sort_index = x_index.argsort()
     y_index = y_index[x_sort_index[:]]
     x_index = x_index[x_sort_index[:]]
-    
+
     # filter out outliers
     y_average  = np.median(y_index)
     for k in range(len(y_index)):
         # print((y_index[k]-y_average)/np.median(y_index))
         if np.abs(y_index[k]-y_average)/np.median(y_index)>threshold_outlier:
             grad_img[int(y_index[k]),x_index[k]] = 0
-            # print('Filtered by outlier threshold')
         # this is a test to filter out some faulty drops on the left side
         if(k<5 or k>(len(y_index)-6)):
-            kernel_size = 3 # amount of points to sample for median
+            kernel_size = 2 # amount of points to sample for median
             y_kernel=get_kernel(k, y_index,kernel_size)
-            if np.abs(y_index[k]-np.median(y_kernel))/np.median(y_kernel) > 0.001:
+            if np.abs(y_index[k]-np.median(y_kernel))/np.median(y_kernel) > 0.02:
                 grad_img[int(y_index[k]),x_index[k]] = 0
-                # print('Index %d filtered by kernel' %k)
 
     return grad_img, y_index, x_index
 
+def mirror_right_side(array):
+    # take the right side of the array
+    right = array[:,array.shape[1]//2+array.shape[1]%2:]
+    if (array.shape[1]%2 == 0):
+        return np.hstack((np.fliplr(right), right))
+    middle = np.expand_dims(array[:,array.shape[1]//2], 1)
+    return np.hstack((np.fliplr(right), middle,right))
+
+
 def get_kernel(k,y_index,kernel_size):
     """
+    Function to get a defined kernel of an array.
+    
     Parameters
     ----------
     k : int

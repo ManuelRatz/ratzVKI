@@ -17,6 +17,7 @@ from scipy.interpolate import RectBivariateSpline
 from openpiv import process, validation, filters, pyprocess, tools, preprocess, scaling
 from openpiv import smoothn
 import tools_patch_fall
+import validation_patch
 import matplotlib.pyplot as plt
 
 #%%
@@ -37,7 +38,7 @@ def piv(settings):
             # if counter == settings.roi_shift_start :
             #     settings.current_pos = 0
             # shift the roi for each pair (this is not done for the first one)
-            settings.ROI[0] = int( settings.current_pos)
+            settings.ROI[0] = int(settings.current_pos)
 
         # crop to roi
         if settings.ROI =='full':
@@ -103,7 +104,7 @@ def piv(settings):
         
         # extract the sig2noise ratio in case it is desired and replace the vectors
         if settings.extract_sig2noise==True and i==settings.iterations and settings.iterations!=1 and settings.do_sig2noise_validation==True:
-            u,v, mask_s2n = validation.sig2noise_val( u, v, sig2noise_ratio, threshold = settings.sig2noise_threshold)
+            u,v, mask_s2n = validation_patch.sig2noise_val( u, v, sig2noise_ratio, threshold_low = settings.sig2noise_threshold)
             mask=mask+mask_s2n
         if settings.replace_vectors==True:
             u, v = filters.replace_outliers( u, v, method=settings.filter_method, max_iter=settings.max_filter_iteration, kernel_size=settings.filter_kernel_size)
@@ -129,7 +130,7 @@ def piv(settings):
             if settings.show_plot==True:
                 plt.show()
             plt.close('all')
-        print('Image Pair %06d' %(counter)+ ' from ' + settings.save_folder_suffix)
+        print('Image Pair ' + str(counter) + ' of ' + settings.save_folder_suffix)
         return settings.current_pos, False
     
     #%%
@@ -150,7 +151,7 @@ def piv(settings):
     # create a task to be executed
     task = tools_patch_fall.Multiprocesser(
         data_dir=settings.filepath_images, pattern_a=settings.frame_pattern_a,\
-            pattern_b=settings.frame_pattern_b, amount = settings.amount)
+            pattern_b=settings.frame_pattern_b)
     # run the task
     task.run(save_path, func, settings.fall_start, settings.roi_shift_start,
              settings.process_fall, settings.process_roi_shift, n_cpus=1)
@@ -207,64 +208,7 @@ def save_settings(settings, save_path):
         for key, value in variables.items():
             #write into the file
             f.write('{} {}'.format(key, value)+"\n")
-
-def shift_ROI(counter, save_path, save_path_txts, scaling_factor, dt, frame_b, interface_position,\
-              roi_shift_start, plot_ROI = False):
-    """
-    Function to shift the ROI from the data of the previous image pair.
-
-    Parameters
-    ----------
-    counter : int
-        Index of the last iteration.
-    save_path : string
-        Location of the folder where we create the roi_images folder.
-    save_path_txts : string
-        Location of the .txt file with the data
-    scaling_factor : float
-        Scaling of the image in px/mm.
-    dt : float64
-        Delta t between two frames in s.
-    frame_a : 2d np.ndarray
-        The first image
-    interface : int
-        Position of the current crop in pixels.
-    plot_ROI : boolean, optional
-        creates a plot of the shifted ROI and saves them in 
-        
-    Returns
-    -------
-    mean_disp : int
-        Mean displacement of the previous pass in pixels
-    """
-    # initialize mean displacement with zero in case we are looking at the first frame of the fall
-    mean_disp = 0
-    # calculate mean displacement for all the other cases
-    if(counter > roi_shift_start):
-        # load the txt file with the data; This is still in meter/second
-        data = np.genfromtxt(os.path.join(save_path_txts,'field_%06d.txt' %(counter-1)))
-        # get the velocity
-        vel = data[:,3]
-        # calculate the mean velocity as an integer in pixels/frame
-        mean_disp = int(np.rint(np.nanmean(vel)*scaling_factor*dt))
-    # plot the raw image with the ROI in case this is desired
-    if plot_ROI == True:
-        # create a folder in case there is none
-        Fol_Out = save_path + os.sep + 'ROI_Images' + os.sep
-        if not os.path.exists(Fol_Out):
-            os.mkdir(Fol_Out)
-        # plot the result
-        fig = plt.figure(figsize = (4, 10)) # create the figure
-        plt.imshow(frame_b, cmap=plt.cm.gray) # plot the image
-        dummy = np.arange(0, frame_b.shape[1],1) # create a dummy for the plot
-        roi_plot = np.ones((len(dummy),))*(interface_position-mean_disp) # create a horizontal line 
-        plt.plot(dummy, roi_plot, lw = 1) # plot the line
-        fig.savefig(Fol_Out + 'ROI_img_%06d.png' %counter, dpi = 100) # save the figure
-        plt.close(fig) # close the figure
-        
-    return mean_disp
-    
-
+  
 def correlation_func(cor_win_1, cor_win_2, win_width, win_height ,correlation_method='circular'):
     '''This function is doing the cross-correlation. Right now circular cross-correlation
     That means no zero-padding is done

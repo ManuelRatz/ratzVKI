@@ -3,9 +3,8 @@
 Created on Fri Mar  6 15:35:47 2020
 @author: ratz
 @description: testing of different settings for the imageprocessing to get better
-edges for the detection of the contact angle 
-This is a modification of Anna's codes that only focuses on the processing, not
-the exporting of the data'
+edges for the detection of the contact angle .
+This is a modification of Anna's codes.
 """
 
 import numpy as np # for array calculations
@@ -13,93 +12,83 @@ import cv2 # for image processing
 from matplotlib import pyplot as plt # for plotting
 import os # for filepaths
 import Image_processing_functions as imgprocess # for interface detection
-from skimage import exposure # for greyscaling and histogramm equalisation
+import imageio
 
 FPS = 500 # camera frame rate in frame/sec
-n_start = 1121# first image where the interface appears (check the images)
-n_t = n_start+2000
+# tests = ['test1','test2','test3']
+N_START = 1121# first image where the interface appears (check the images)
+N_T = N_START+2000
 THRESHOLD = 0.7  # threshold for the gradient 
-Outlier_threshold = 0.10 # threshold for outliers
-WALL_CUT = 3 # Cutting pixels near the wall
-crop_index = (66, 210, 0, 1280) # Pixels to keep (xmin, xmax, ymin, ymax)
+OUTL_THR = 0.3 # threshold for outliers
+WALL_CUT = 2 # Cutting pixels near the wall
+# crop_index = (66, 210, 0, 1280) # Pixels to keep (xmin, xmax, ymin, ymax)
+crop_index = (68,210,0,1280)
 WIDTH = 5 # width of the channel
-pix2mm = WIDTH/(crop_index[1]-crop_index[0]) # pixel to mm
+PIX2MM = WIDTH/(crop_index[1]-crop_index[0]) # pixel to mm
 
-testname = '350Pa_C' # prefix of the images
-FOL = '..' + os.sep + '..' + os.sep + '..' + os.sep + 'test_images' + os.sep +\
-    'raw_images' + os.sep # input folder
-name = FOL + os.sep + testname  # file name
+CURR_RUN = 'A'
 
+TESTNAME = '1500' + CURR_RUN + '_' # prefix of the images
+Fol_In = 'C:\Pa1500' + os.sep + 'Run_'+CURR_RUN + os.sep + 'images'
+NAME = Fol_In + os.sep + TESTNAME # file name
 # create the output folder
-Fol_Out= '..' + os.sep + '..' + os.sep + '..' + os.sep + 'test_images' + os.sep\
-    + 'images_detected/' + os.sep
+Fol_Out= 'C:\Pa1500'+os.sep+ 'Run_'+CURR_RUN + os.sep + 'images_detected' + os.sep
 if not os.path.exists(Fol_Out):
     os.mkdir(Fol_Out)
 
-h_mm_adv = np.zeros([n_t+1])*np.nan  
-h_cl_left_all_adv = np.zeros([n_t+1])*np.nan  
-h_cl_right_all_adv = np.zeros([n_t+1])*np.nan  
-angle_all_left_adv = np.zeros([n_t+1])*np.nan  
-angle_all_right_adv = np.zeros([n_t+1])*np.nan  
+h_mm_adv = np.zeros([N_T+1])*np.nan  
+h_cl_left_all_adv = np.zeros([N_T+1])*np.nan  
+h_cl_right_all_adv = np.zeros([N_T+1])*np.nan  
+angle_all_left_adv = np.zeros([N_T+1])*np.nan  
+angle_all_right_adv = np.zeros([N_T+1])*np.nan  
 
-IMG_AMOUNT = 100 # amount of images to process
-Image = 1492
+IMG_AMOUNT = N_T # amount of images to process
+plus = 0
+
+images = []
+GIFNAME = 'Detected interface'
 # iterate over all images 
-for k in range(0,IMG_AMOUNT+1):
-    idx = n_start+k # get the first index
-    image = name + '%05d' %idx + '.png'  # file name
+for k in range(0,IMG_AMOUNT):
+    idx = N_START+1*k+plus # get the first index
+    image = NAME + '%05d' %idx + '.png'  # file name
     img=cv2.imread(image,0)  # read the image
     img = img[crop_index[2]:crop_index[3],crop_index[0]:crop_index[1]]  # crop
     dst = cv2.fastNlMeansDenoising(img,2,2,7,21) # denoise
     dst2 = 3*dst.astype(np.float64) # increase contrast
  
-    grad_img,y_index, x_index = imgprocess.edge_detection_grad(dst2,THRESHOLD,WALL_CUT,Outlier_threshold) # calculate the position of the interface
-    mu_s,i_x,i_y,i_x_mm,i_y_mm,X,img_width_mm = imgprocess.fitting_advanced(grad_img,pix2mm,l=5,sigma_f=0.5,sigma_y=4e-5) # fit a gaussian
+    grad_img,y_index, x_index = imgprocess.edge_detection_grad(dst2,THRESHOLD,WALL_CUT,OUTL_THR, do_mirror = True) # calculate the position of the interface
+    mu_s,i_x,i_y,i_x_mm,i_y_mm,X,img_width_mm = imgprocess.fitting_advanced(grad_img,PIX2MM,l=5,sigma_f=1,sigma_y=6e-6) # fit a gaussian
     
-    # Calculate average height
-    #--------------------------------------------------------------------------
+    # grad_img2,y_index2, x_index2 = imgprocess.edge_detection_grad(dst2,THRESHOLD,WALL_CUT,OUTL_THR, do_mirror = False) # calculate the position of the interface
+    # mu_s2,i_x,i_y,i_x_mm,i_y_mm,X2,img_width_mm = imgprocess.fitting_advanced(grad_img2,PIX2MM,l=5,sigma_f=1,sigma_y=6e-6) # fit a gaussian
 
-    h_A_mm_adv = imgprocess.vol_average(mu_s[:,0],X,img_width_mm)
+    h_mm_adv[idx] = imgprocess.vol_average(mu_s[:,0],X,img_width_mm)    #mm  # differences to equilibrium height
+    h_cl_left_all_adv[idx] = imgprocess.contact_angle(mu_s[:,0],X,0)  
+    h_cl_right_all_adv[idx] = imgprocess.contact_angle(mu_s[:,0],X,-1) 
+    angle_all_left_adv[idx]= mu_s[0]
+    angle_all_right_adv[idx]= mu_s[-1]
     
-    # Calculate contact line height
-    #--------------------------------------------------------------------------
-    h_cl_left_adv = mu_s[0]
-    h_cl_right_adv = mu_s[-1]
-          
-    # Calculate contact angle
-    #--------------------------------------------------------------------------
-    angle_left_adv = imgprocess.contact_angle(mu_s[:,0],X,0)
-    angle_right_adv = imgprocess.contact_angle(mu_s[:,0],X,-1)
-
-    h_mm_adv[k+n_start] =h_A_mm_adv    #mm  # differences to equilibrium height
-
-    h_cl_left_all_adv[k+n_start] =h_cl_left_adv    
-    h_cl_right_all_adv[k+n_start] =h_cl_right_adv   
-         
-    # Calculate contact angle
-    #--------------------------------------------------------------------------
-    angle_all_left_adv[k+n_start]= angle_left_adv
-    angle_all_right_adv[k+n_start]= angle_right_adv
-    
-    mu_s = mu_s/pix2mm # calculate the resulting height in mm
+    mu_s = mu_s/PIX2MM # calculate the resulting height in mm
+    # mu_s2 = mu_s2/PIX2MM
     
     # plot the result
-    final_img = img[int(1280-mu_s[500])-70:int(1280-mu_s[500])+50,0:144]
-    grad_img = grad_img[int(1280-mu_s[500])-70:int(1280-mu_s[500])+50,0:144]
+    final_img = img[int(1280-mu_s[500])-70:int(1280-mu_s[500])+50,0:500]
+    grad_img = grad_img[int(1280-mu_s[500])-70:int(1280-mu_s[500])+50,0:500]
     fig, ax = plt.subplots() # create a figure
     plt.imshow(final_img, cmap=plt.cm.gray) # show the image in greyscale
-    plt.scatter(i_x, -i_y+mu_s[500]+70, marker='o', s=(73./fig.dpi)**2) # plot the detected gradient onto the image
-    plt.plot((X)/(pix2mm)-0.5, -mu_s+mu_s[500]+70, 'r-', linewidth=0.5) # plot the interface fit
+    plt.scatter(i_x, -i_y+mu_s[500]+70, marker='x', s=(13./fig.dpi)**2) # plot the detected gradient onto the image
+    plt.plot((X)/(PIX2MM)-0.5, -mu_s+mu_s[500]+70, 'r-', linewidth=0.5) # plot the interface fit
+    # plt.plot((X2)/(PIX2MM)-0.5, -mu_s2+mu_s2[500]+70, 'y-', linewidth=0.5) # plot the interface fit
     plt.axis('off') # disable the showing of the axis
-    Name=Fol_Out+ os.sep +'Step_'+str(idx)+'.png' # set output name
-    MEX= 'Exporting Im '+ str(k)+' of ' + str(IMG_AMOUNT) # update on progress
+    NAME_OUT=Fol_Out+ os.sep +'Step_'+str(idx)+'.png' # set output name
+    MEX= 'Exporting Im '+ str(k+1)+' of ' + str(IMG_AMOUNT) # update on progress
     print(MEX) 
     plt.title('Image %04d' % ((idx-1121+1))) # set image title
-    plt.savefig(Name, dpi= 100) # save image
-    plt.close(fig) # disable or enabel depending on whether you want to see image in the plot window
+    plt.savefig(NAME_OUT, dpi= 500) # save image
+    plt.close(fig) # disable or enable depending on whether you want to see image in the plot window
+    # images.append(imageio.imread(NAME_OUT))
 
-# animate the result
-
+# imageio.mimsave(GIFNAME, images, duration = 0.05)
 # def saveTxt(Fol_Out,h_mm, h_cl_l, h_cl_r, angle_l, angle_r):                
     
 #     if not os.path.exists(Fol_Out):

@@ -18,7 +18,7 @@ from matplotlib import pyplot as plt
 
 
 #%% inputs
-folder = 'C:\PIV_Campaign\Rise\h1\p1500\R_h1_f1000_2_p15' + os.sep
+
 #%% functions....
 
 def read_lvm(path):
@@ -40,24 +40,31 @@ def read_lvm(path):
 
 #%% paths and folders (normally they are in agree with the codes in the same folder)
 
-path_valve_p = folder +'R_h1_f1000_2_p15-utube-valve_p_001.lvm'
-path_pressure= folder +'R_h1_f1000_2_p15-utube-pressure_001.lvm'
-path_pressure_n= folder +'R_h1_f1000_2_p15-utube-pressure_n_001.lvm'
-path_valve_n = folder +'R_h1_f1000_2_p15-utube-valve_n_001.lvm'
-
+fol1 = 'C:\PIV_Campaign\Rise\h2\p1500\R_h2_f1200_1_p15' + os.sep
+fol2 = 'C:\PIV_Campaign\Rise\h1\p1500\R_h1_f1200_1_p15' + os.sep
+fol3 = 'C:\PIV_Campaign\Rise\h4\p1500\R_h4_f1200_1_p15' + os.sep
+path_valve_p_1 = fol1 +'R_h2_f1200_1_p15-utube-valve_p_001.lvm'
+path_pressure_1 = fol1 +'R_h2_f1200_1_p15-utube-pressure_001.lvm'
+path_valve_p_2 = fol2 +'R_h1_f1200_1_p15-utube-valve_p_001.lvm'
+path_pressure_2 = fol2 +'R_h1_f1200_1_p15-utube-pressure_001.lvm'
+path_valve_p_3 = fol3 +'R_h4_f1200_1_p15-utube-valve_p_001.lvm'
+path_pressure_3 = fol3 +'R_h4_f1200_1_p15-utube-pressure_001.lvm'
 
 
 #%% main pressure and zero time setting
 #pressures
-[time, voltages]  = read_lvm(path_pressure)
+[time, voltages]  = read_lvm(path_pressure_3)
 p_pressure        = [voltage*208.73543056621196-11.817265775905382 for voltage in voltages]
 
 # # valves
-[t_valve_p, v_valve_p]   = read_lvm(path_valve_p)
+[t_valve_p, v_valve_p]   = read_lvm(path_valve_p_3)
 g_valve_p        = np.gradient(v_valve_p,t_valve_p)
 
 f_acq_labview = (len(t_valve_p)-1)/t_valve_p[-1]
 
-start = np.argmax(g_valve_p > 500)
+start = np.argmax(v_valve_p > 4)
 t = np.arange(0, 4, 0.001)
-plt.plot(t,p_pressure[start:start+4000])
+roi = p_pressure[start:start+4000]
+from scipy.signal import savgol_filter
+roi = savgol_filter(roi, 15, 3, axis = 0)
+plt.plot(t,roi)

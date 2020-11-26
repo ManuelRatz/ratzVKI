@@ -26,9 +26,9 @@ crop_index = (68,210,0,1280)
 WIDTH = 5 # width of the channel
 PIX2MM = WIDTH/(crop_index[1]-crop_index[0]) # pixel to mm
 
-CURR_RUN = 'B'
+CURR_RUN = 'A'
 
-TESTNAME = '1500' + '_' + CURR_RUN # prefix of the images
+TESTNAME = '1500' + CURR_RUN + '_' # prefix of the images
 Fol_In = 'C:\Pa1500' + os.sep + 'Run_'+CURR_RUN + os.sep + 'images'
 NAME = Fol_In + os.sep + TESTNAME # file name
 # create the output folder
@@ -48,7 +48,7 @@ plus = 0
 images = []
 GIFNAME = 'Detected interface'
 # iterate over all images 
-for k in range(0,2000):
+for k in range(0,2001):
     idx = N_START+1*k+plus # get the first index
     image = NAME + '%05d' %idx + '.png'  # file name
     img=cv2.imread(image,0)  # read the image
@@ -63,10 +63,10 @@ for k in range(0,2000):
     # mu_s2,i_x,i_y,i_x_mm,i_y_mm,X2,img_width_mm = imgprocess.fitting_advanced(grad_img2,PIX2MM,l=5,sigma_f=1,sigma_y=6e-6) # fit a gaussian
 
     h_mm_adv[idx] = imgprocess.vol_average(mu_s[:,0],X,img_width_mm)    #mm  # differences to equilibrium height
-    h_cl_left_all_adv[idx-1] = imgprocess.contact_angle(mu_s[:,0],X,0)  
-    h_cl_right_all_adv[idx-1] = imgprocess.contact_angle(mu_s[:,0],X,-1) 
-    angle_all_left_adv[idx-1]= mu_s[0]
-    angle_all_right_adv[idx-1]= mu_s[-1]
+    h_cl_left_all_adv[idx] = mu_s[0]
+    h_cl_right_all_adv[idx] = mu_s[-1]
+    angle_all_left_adv[idx]= imgprocess.contact_angle(mu_s[:,0],X,0)
+    angle_all_right_adv[idx]= imgprocess.contact_angle(mu_s[:,0],X,-1)
     
     mu_s = mu_s/PIX2MM # calculate the resulting height in mm
     # mu_s2 = mu_s2/PIX2MM
@@ -84,9 +84,9 @@ for k in range(0,2000):
     MEX= 'Exporting Im '+ str(idx+1)+' of ' + str(IMG_AMOUNT) # update on progress
     print(MEX) 
     plt.title('Image %04d' % ((idx-1121))) # set image title
-    plt.savefig(NAME_OUT, dpi= 500) # save image
+    # plt.savefig(NAME_OUT, dpi= 500) # save image
     plt.close(fig) # disable or enable depending on whether you want to see image in the plot window
-    images.append(imageio.imread(NAME_OUT))
+    # images.append(imageio.imread(NAME_OUT))
 
 # imageio.mimsave(GIFNAME, images, duration = 0.05)
 def saveTxt(Fol_Out,h_mm, h_cl_l, h_cl_r, angle_l, angle_r):                

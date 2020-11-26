@@ -24,10 +24,10 @@ def readResultsFile(path):
 # set up the pressure array for naming purposes
 pressure_array = np.array([1000, 1250, 1500])
 for i in range(2, len(pressure_array)):
-    
+    run = 'Run_A'
     # create the input path
     # path = 'experimental_data' + os.sep
-    time, height, cl_l, cl_r, lca_deg, rca_deg, pres = readResultsFile('test.txt')
+    time, height, cl_l, cl_r, lca_deg, rca_deg, pres = readResultsFile(run + '.txt')
     # Shift the data to account for the NaNs at the beginning
     idx = np.argmax(cl_l>0)
     height = height[idx:]
@@ -38,7 +38,9 @@ for i in range(2, len(pressure_array)):
     pres = pres[idx:]
     
     # create the output path
-    path = 'data_1500_pa' + os.sep 
+    path = run + os.sep
+    if not os.path.exists(path):
+        os.makedirs(path)
     # Save the data
     np.savetxt(path + 'cl_l_%d.txt' %pressure_array[i], cl_l)
     np.savetxt(path + 'cl_r_%d.txt' %pressure_array[i], cl_r)

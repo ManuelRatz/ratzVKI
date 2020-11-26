@@ -15,14 +15,15 @@ sys.path.append('../../libraries')
 import numpy as np
 
 
+run = 'Run_A'
 #%% inputs
-folder = 'test_images' + os.sep + 'raw_images' + os.sep
-output_file = 'test.txt'
+folder = 'C:\Pa1500' + os.sep + run +os.sep
+output_file = run +  '.txt'
 
 # Variables changing from experiment to another
 T         = 273.+25. # temperature 
 f_acq     = 500
-h_final   = 74   # final height measured after the test in mm (it is in the TestMatrix.txt file)
+h_final   = 0   # final height measured after the test in mm (it is in the TestMatrix.txt file)
 
 # Fluid
 name      = 'WATER'  # Available fluids: HFE7000, HFE7100, HFE7200, HFE7300, HFE7500, WATER (everything at Patm),LN2SATURO
@@ -80,11 +81,11 @@ frame0 = int((t_valve[idx_start_valve]-t_cam[idx_start_cam])*f_acq)
 #%% paths and folders (normally they are in agree with the codes in the same folder)
 
 
-input_height = folder + 'Txts_advanced_fitting/Displacement.txt'
-input_height_sx = folder + 'Txts_advanced_fitting/Displacement_CLsx.txt'
-input_height_dx = folder + 'Txts_advanced_fitting/Displacement_CLdx.txt'
-input_DCAsx = folder + 'Txts_advanced_fitting/LCA.txt'
-input_DCAdx = folder + 'Txts_advanced_fitting/RCA.txt'
+input_height = folder + 'images_detected\Txts_advanced_fitting\Displacement.txt'
+input_height_sx = folder + 'images_detected\Txts_advanced_fitting\Displacement_CLsx.txt'
+input_height_dx = folder + 'images_detected\Txts_advanced_fitting\Displacement_CLdx.txt'
+input_DCAsx = folder + 'images_detected\Txts_advanced_fitting\LCA.txt'
+input_DCAdx = folder + 'images_detected\Txts_advanced_fitting\RCA.txt'
 
 
 

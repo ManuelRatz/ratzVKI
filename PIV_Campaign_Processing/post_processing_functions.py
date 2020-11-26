@@ -25,6 +25,38 @@ def set_plot_parameters():
     plt.rc('font', family='serif')   # serif as text font
     plt.rc('text', usetex=True)      # enable latex
 
+def read_lvm(path):
+    """
+    Function to read the experimental Labview Files
+
+    Parameters
+    ----------
+    path : string
+        Folder indicating the location ot the files.
+
+    Returns
+    -------
+    list
+        Time and pressure signal after opening the valve.
+
+    """
+    header    = 12
+    value     = 15
+    with open(path) as alldata:
+        line = alldata.readlines()[14]
+    n_samples = int(line.strip().split('\t')[1])
+    time    = []
+    voltage = []
+    for i in range(value):
+        with open(path) as alldata:                       #read the data points with the context manager
+            lines = alldata.readlines()[header+11+i*(n_samples+11):(header+(i+1)*(n_samples+11))]
+        time_temp       = [float(line.strip().split('\t')[0].replace(',','.')) for line in lines] 
+        voltage_temp    = [float(line.strip().split('\t')[1].replace(',','.')) for line in lines]
+        time            = np.append(time,time_temp)
+        voltage         = np.append(voltage,voltage_temp)
+    pressure = voltage*208.73543056621196-11.817265775905382
+    return [time, pressure]
+
 def get_column_amount(Fol_In):
     """
     Function to calculate the amount of columns from the .txt file.

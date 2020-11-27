@@ -131,7 +131,7 @@ def load_txt(Fol_In, idx, nx):
     # return the arrays
     return  x, y, u, v, sig2noise, valid
 
-def get_img_width(Fol_Raw):
+def get_img_shape(Fol_Raw):
     """
     Function to extract the image width in pixels.
 
@@ -149,11 +149,11 @@ def get_img_width(Fol_Raw):
     # get the name of the first image in the folder
     name = Fol_Raw + os.sep +os.listdir(Fol_Raw)[0]
     # load the image
-    img = cv2.imread(name)
+    img = cv2.imread(name,0)
     # take the image width
-    width = img.shape[1] 
+    height, width = img.shape 
     # return the width in pixels
-    return width
+    return height, width
 
 def get_frequency(Fol_Raw):
     """
@@ -219,6 +219,17 @@ def load_h(Fol_In):
     """
     h = np.genfromtxt(Fol_In + os.sep + 'interface_position.txt')
     return h
+
+def separate_name(name):
+    name = name.replace('_', ', ')
+    return name
+
+def cut_processed_name(name):
+    name = name[8:-6]
+    return name
+    
+name = 'Results_R_h1_f1200_1_p10_64_16'
+name_new = cut_processed_name(name) 
 
 def custom_div_cmap(numcolors=11, name='custom_div_cmap',
                     mincol='blue', midcol='white', maxcol='red'):

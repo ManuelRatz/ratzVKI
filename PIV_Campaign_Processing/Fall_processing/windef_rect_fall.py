@@ -14,7 +14,7 @@ from numpy.fft import rfft2, irfft2, fftshift
 import numpy.lib.stride_tricks
 import scipy.ndimage as scn
 from scipy.interpolate import RectBivariateSpline
-from openpiv import process, validation, filters, pyprocess, tools, preprocess, scaling
+from openpiv import validation, filters, pyprocess, tools, preprocess, scaling
 from openpiv import smoothn
 import tools_patch_fall
 import validation_patch

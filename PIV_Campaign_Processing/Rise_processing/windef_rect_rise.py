@@ -11,7 +11,7 @@ from numpy.fft import rfft2, irfft2, fftshift
 import numpy.lib.stride_tricks
 import scipy.ndimage as scn
 from scipy.interpolate import RectBivariateSpline
-from openpiv import process, validation, filters, pyprocess, tools, preprocess,scaling
+from openpiv import validation, filters, pyprocess, tools, preprocess,scaling
 from openpiv import smoothn
 import tools_patch_rise
 import validation_patch
@@ -33,7 +33,12 @@ def piv(settings):
         and then shift the ROI accordingly. If the Interface comes into view,
         the ROI gets shifted
         """
-
+        # delete the following 5 lines later on when testing has commenced
+        settings.ROI[0] = 0
+        settings.ROI[1] = frame_a.shape[0]
+        settings.ROI[2] = 0
+        settings.ROI[3] = frame_a.shape[1]
+        settings.current_pos = settings.ROI[0]
         if counter == settings.beginning_index:
             settings.ROI[0] = frame_a.shape[0]-450
             settings.ROI[1] = frame_a.shape[0]
@@ -221,6 +226,7 @@ def calc_disp(x, v, img_width):
     # pad the v values
     v_padded = np.hstack((dummy_0, v, dummy_0))
     # calculate the mean displacement with np.trapz
+    
     mean_disp = np.mean(np.trapz(v_padded[-5:,:], x_padded[-5:,:]))/img_width
     # return the mean_disp
     return mean_disp
@@ -542,8 +548,21 @@ def multipass_img_deform(frame_a, frame_b, win_width, win_height, overlap_width,
     if do_sig2noise==True and current_iteration==iterations and iterations!=1:
         sig2noise_ratio=sig2noise_ratio_function(correlation, sig2noise_method=sig2noise_method, width=sig2noise_mask)
         sig2noise_ratio = sig2noise_ratio.reshape(shapes)
+        # delete everything below later
+        from mpl_toolkits.mplot3d import Axes3D
+        X = np.arange(0, 16, 1)
+        Y = np.arange(0, 64, 1)
+        X, Y = np.meshgrid(X, Y)
+        fig = plt.figure()
+        tmp = 1513
+        Z = correlation[tmp , :,:]
+        ax = fig.gca(projection='3d')
+        ax.plot_surface(X, Y, Z, cmap=plt.cm.viridis)
+        fig.savefig('Mode_4_idx_%d'%tmp,dpi=400)
     else:
         sig2noise_ratio=np.full_like(u,np.nan)
+
+    
 
     return x, y, u, v,sig2noise_ratio, mask
 

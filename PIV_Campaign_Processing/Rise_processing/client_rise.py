@@ -29,8 +29,8 @@ The idea is to run two different settings:
         settings.window_width = (128, 64, 32)
         settings.overlap_width = (64, 32, 16)
 
-The raw images are stored in a .rar file under the following link (YET TO BE DONE, 24.11.)
-    https://osf.io/vp3cq/
+The raw images are stored in a .zip file under the following link
+    https://osf.io/q6cw4/
 Simply download them and store them in the given data path or change according to your needs.
 
 Currently we are not processing two of the rises:
@@ -96,13 +96,16 @@ settings.dynamic_masking_filter_size = 7
 
 # here we load the file containing the beginning index for every run
 observation_periods = np.genfromtxt('observation_rise.txt', dtype=str)
+p = 4
 
 # iterate over all cases
-for i in range(0, len(observation_periods)):
+run = 20
+for i in range(run, run+1):
+# for i in range(0, len(observation_periods)):
     # set the folder in which the raw images are located
-    settings.filepath_images = 'C:\PIV_Processed\Images_Preprocessed'+os.sep+observation_periods[i,0]
+    settings.filepath_images = 'C:\PIV_Processed\Images_Preprocessed'+os.sep+observation_periods[i,0]+'_%d_modes' %p
     # set the name to the output foler
-    settings.save_folder_suffix = observation_periods[i, 0]
+    settings.save_folder_suffix = observation_periods[i, 0] + '_%d_modes' %p
     # sest the image sequence and the beginning index
     settings.frame_pattern_a = observation_periods[i, 0] + '.*.tif'
     settings.frame_pattern_b = None  

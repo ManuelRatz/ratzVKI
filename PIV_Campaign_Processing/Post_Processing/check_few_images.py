@@ -21,22 +21,24 @@ import imageio                          # for animations
 
 # set the plot parameters
 ppf.set_plot_parameters()
-
+settings = '_64_16'
 Data_Location = 'C:\PIV_Processed' + os.sep
-run_list = os.listdir(Data_Location + 'Images_Processed')
+run_list = os.listdir(Data_Location + 'Images_Processed' + os.sep + 'Rise' + settings)
 PLOT_ROI = True
 PLOT_PROF = True
 
-Fol_ROI_Gifs = ppf.create_folder(Data_Location + 'Images_Postprocessed' + os.sep + 'ROI_Gifs' + os.sep)
-Fol_Profile_Gifs = ppf.create_folder(Data_Location + 'Images_Postprocessed' + os.sep + 'Profile_Gifs' + os.sep)
-Fol_Images = ppf.create_folder(Data_Location + 'Images_Postprocessed' + os.sep + 'Images' + os.sep)
-Fol_Height = ppf.create_folder(Data_Location + 'Images_Postprocessed' + os.sep + 'Height_Predictions' + os.sep)
+
+
+Fol_ROI_Gifs = ppf.create_folder(Data_Location + 'Images_Postprocessed' +settings + os.sep + 'ROI_Gifs' + os.sep)
+Fol_Profile_Gifs = ppf.create_folder(Data_Location + 'Images_Postprocessed' +settings + os.sep + 'Profile_Gifs' + os.sep)
+Fol_Images = ppf.create_folder(Data_Location + 'Images_Postprocessed' +settings + os.sep + 'Images' + os.sep)
+Fol_Height = ppf.create_folder(Data_Location + 'Images_Postprocessed' +settings + os.sep + 'Height_Predictions' + os.sep)
 for i in range(0,len(run_list)):
 # for i in range(0,1):
     run = ppf.cut_processed_name(run_list[i])
     print('Exporting Run ' + run)
     # give the input folder for the data
-    Fol_In = Data_Location + 'Images_Processed\Results_' + run + '_64_16'
+    Fol_In = Data_Location + 'Images_Processed' + os.sep + 'Rise'+settings+ os.sep + 'Results_' + run +settings
     # give the input folder of the raw images (this is required to get the image width and frequency)
     Fol_Raw = Data_Location + 'Images_Preprocessed' + os.sep + run
     # create a folder to store the images
@@ -82,7 +84,7 @@ for i in range(0,len(run_list)):
     
     NX = ppf.get_column_amount(Fol_In) # get the number of columns
     FRAME0 = idx1+1 # starting index of the run
-    STP_SZ = 4 # step size in time
+    STP_SZ = 15 # step size in time
     SECONDS = (idx2-idx1)*DT # how many seconds to observe the whole thing
     N_T = int((SECONDS/DT)/STP_SZ)
     IMAGES_ROI = []
@@ -104,10 +106,10 @@ for i in range(0,len(run_list)):
             fig, ax = plt.subplots(figsize = (2.5,8))
             ax.set_title(ppf.separate_name(run))
             ax.imshow(img, cmap=plt.cm.gray) # show the image
-            ax.set_yticks(np.arange(170,1300,220)) # set custom y ticks (not automatized)
-            ax.set_yticklabels((20,16,12,8,4,0), fontsize=15) # set custom labels (not automatized)
-            ax.set_xticks((0,55,110,165,220,274)) # set custom x ticks (not automatized)
-            ax.set_xticklabels(np.arange(0,6,1), fontsize=15) # set custom y ticks (not automatized)
+            ax.set_yticks(np.arange(img.shape[0]-20*SCALE-1,img.shape[0],4*SCALE)) # set custom y ticks
+            ax.set_yticklabels(np.linspace(0,20,6,dtype=int)[::-1], fontsize=15) # set custom y ticklabels
+            ax.set_xticks(np.linspace(0,IMG_WIDTH-1, 6)) # set custom x ticks 
+            ax.set_xticklabels(np.arange(0,6,1), fontsize=15) # set custom x ticklabels
             ax.set_xlabel('$x$[mm]', fontsize=20) # set x label
             ax.set_ylabel('$y$[mm]', fontsize=20) # set y label
             fig.tight_layout(pad=1.1) # crop edges of the figure to save space
@@ -151,9 +153,9 @@ for i in range(0,len(run_list)):
             plt.close(fig)
             IMAGES_PROF.append(imageio.imread(Name_Out))
     if PLOT_ROI == True:
-        imageio.mimsave(GIF_ROI, IMAGES_ROI, duration = 0.05)
+        imageio.mimsave(GIF_ROI, IMAGES_ROI, duration = 0.075)
     if PLOT_PROF == True:
-        imageio.mimsave(GIF_PROF, IMAGES_PROF, duration= 0.05)
+        imageio.mimsave(GIF_PROF, IMAGES_PROF, duration= 0.075)
 
 # # plot the contour and the quiver, the principle is the same, so not everything is commented
 # if PLOT_QUIV == True:

@@ -29,8 +29,8 @@ The idea is to run two different settings:
         settings.window_width = (48, 24, 12)
         settings.overlap_width = (24, 12, 6) 
 
-The raw images are stored in a .rar file under the following link (YET TO BE DONE, 24.11.)
-    https://osf.io/vp3cq/
+The raw images are stored in a .zip file under the following link
+    https://osf.io/q6cw4/
 Simply download them and store them in the given data path or change according to your needs.
 
 Currently we are not processing two of the rises:
@@ -105,7 +105,7 @@ settings.scale_plot = 200 # select a value to scale the quiver plot of the vecto
 
 observation_periods = np.genfromtxt('observation_fall.txt', dtype=str)
 
-for i in range(2, 3):
+for i in range(0, 1):
     # Folder with the images to process
     settings.filepath_images = 'C:\PIV_Processed\Images_Preprocessed'+os.sep+observation_periods[i,0]
     

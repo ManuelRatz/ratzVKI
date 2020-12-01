@@ -53,7 +53,7 @@ settings = Settings()
 'Data related settings'
 
 # Folder for the outputs
-settings.save_path = 'C:\PIV_Processed\Images_Processed'
+settings.save_path = 'D:\PIV_Processed\Images_Processed'
 settings.ROI = np.array([0,1280,0,500])
 
 
@@ -68,10 +68,11 @@ settings.subpixel_method = 'gaussian'
 settings.correlation_method = 'circular'  # 'circular' or 'linear'
 settings.iterations = 3 # select the number of PIV passes
 # base 2
-settings.window_height = (64, 32, 24)
-settings.overlap_height = (32, 16, 12)
-settings.window_width = (64, 32, 24)
-settings.overlap_width = (32, 16, 12) 
+settings.window_height = (64, 48, 48)
+settings.overlap_height = (32, 24, 24)
+settings.window_width = (48, 24, 12)
+settings.overlap_width = (24, 12, 6) 
+
 
 # sig2noise
 settings.extract_sig2noise = True  # 'True' or 'False' (only for the last pass)
@@ -105,9 +106,10 @@ settings.scale_plot = 200 # select a value to scale the quiver plot of the vecto
 
 observation_periods = np.genfromtxt('observation_fall.txt', dtype=str)
 
-for i in range(0, 1):
+run = 4
+for i in range(run, run+1):
     # Folder with the images to process
-    settings.filepath_images = 'C:\PIV_Processed\Images_Preprocessed'+os.sep+observation_periods[i,0]
+    settings.filepath_images = 'D:\PIV_Processed\Images_Preprocessed'+os.sep+observation_periods[i,0]
     
     # Root name of the output Folder for Result Files
     settings.save_folder_suffix = observation_periods[i, 0]

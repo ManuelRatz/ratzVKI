@@ -34,11 +34,11 @@ def piv(settings):
         the ROI gets shifted
         """
         # delete the following 5 lines later on when testing has commenced
-        settings.ROI[0] = 0
-        settings.ROI[1] = frame_a.shape[0]
-        settings.ROI[2] = 0
-        settings.ROI[3] = frame_a.shape[1]
-        settings.current_pos = settings.ROI[0]
+        # settings.ROI[0] = 0
+        # settings.ROI[1] = frame_a.shape[0]
+        # settings.ROI[2] = 0
+        # settings.ROI[3] = frame_a.shape[1]
+        # settings.current_pos = settings.ROI[0]
         if counter == settings.beginning_index:
             settings.ROI[0] = frame_a.shape[0]-450
             settings.ROI[1] = frame_a.shape[0]
@@ -257,24 +257,36 @@ def correlation_func(cor_win_1, cor_win_2, win_width, win_height ,correlation_me
     the .real is to cut off possible imaginary parts that remains due to finite numerical accuarcy
     
     Manuel: The function is modified to include the different heights and widths
-        for the linear cross correlation, the circular one is not affected by this
+        for the linear cross correlation, the circular one is not affected by this.
+        Also now the mean is subtracted for both circular and linear and the correlation
+        map is normalised
      '''
+    cor_win_1 = cor_win_1-cor_win_1.mean(axis=(1,2)).reshape(cor_win_1.shape[0],1,1)
+    cor_win_2 = cor_win_2-cor_win_2.mean(axis=(1,2)).reshape(cor_win_1.shape[0],1,1)
+    
     if correlation_method=='linear':
-        # still under development
-        cor_win_1 = cor_win_1-cor_win_1.mean(axis=(1,2)).reshape(cor_win_1.shape[0],1,1)
-        cor_win_2 = cor_win_2-cor_win_2.mean(axis=(1,2)).reshape(cor_win_1.shape[0],1,1)
-        cor_win_1[cor_win_1<0]=0
-        cor_win_2[cor_win_2<0]=0
-
-     
         corr = fftshift(irfft2(np.conj(rfft2(cor_win_1,s=(2*win_height,2*win_width))) *
                                   rfft2(cor_win_2,s=(2*win_height,2*win_width))).real, axes=(1, 2))
         corr=corr[:,win_height//2:3*win_height//2,win_width//2:3*win_width//2]
-        
     else:
         corr = fftshift(irfft2(np.conj(rfft2(cor_win_1)) *
                                   rfft2(cor_win_2)).real, axes=(1, 2))
-    return corr
+    
+    """
+    Normalize the whole thing. For that we calculate the vector of length equal
+    to the amount of correlation windows, that contains the following multiplication:
+        
+    simga_A*sigma_B*Window_Height*Window_Width
+    
+    This will give us a maximum of 1 for the correlation peak.
+    """
+    normalizer = (np.std(cor_win_2, axis=(1,2))*np.std(cor_win_1, axis=(1,2))\
+                  *win_width*win_height)
+    # normalize by expanding the dimensions of the normalizer, to be of shape (n_windows, 1, 1)
+    corr_norm = corr / np.expand_dims(normalizer, axis = (1,2))
+    # eliminate the values below 0 to get final correlation map and return it
+    corr_norm[corr_norm<0]=0    
+    return corr_norm
 
 def frame_interpolation(frame, x, y, u, v, interpolation_order=1):
     '''This one is doing the image deformation also known as window deformation
@@ -548,17 +560,6 @@ def multipass_img_deform(frame_a, frame_b, win_width, win_height, overlap_width,
     if do_sig2noise==True and current_iteration==iterations and iterations!=1:
         sig2noise_ratio=sig2noise_ratio_function(correlation, sig2noise_method=sig2noise_method, width=sig2noise_mask)
         sig2noise_ratio = sig2noise_ratio.reshape(shapes)
-        # delete everything below later
-        from mpl_toolkits.mplot3d import Axes3D
-        X = np.arange(0, 16, 1)
-        Y = np.arange(0, 64, 1)
-        X, Y = np.meshgrid(X, Y)
-        fig = plt.figure()
-        tmp = 1513
-        Z = correlation[tmp , :,:]
-        ax = fig.gca(projection='3d')
-        ax.plot_surface(X, Y, Z, cmap=plt.cm.viridis)
-        fig.savefig('Mode_4_idx_%d'%tmp,dpi=400)
     else:
         sig2noise_ratio=np.full_like(u,np.nan)
 
@@ -849,40 +850,50 @@ def sig2noise_ratio_function(corr, sig2noise_method='peak2peak', width=2):
     -------
     sig2noise : np.ndarray 
         the signal to noise ratio from the correlation map.
+        
+    Manuel: 
+        Implemented the possibility to do sig2RMS, which divides the maximum
+        by the standard deviation of the correlation map
     """
 
     corr_max1=np.zeros(corr.shape[0])
     corr_max2=np.zeros(corr.shape[0])
     peak1_i=np.zeros(corr.shape[0])
     peak1_j=np.zeros(corr.shape[0])
-    peak2_i=np.zeros(corr.shape[0])
-    peak2_j = np.zeros(corr.shape[0])
-    for i in range(0,corr.shape[0]):
-        # compute first peak position
-        peak1_i[i], peak1_j[i], corr_max1[i] = pyprocess.find_first_peak(corr[i,:,:])
-        if sig2noise_method == 'peak2peak':
+    if sig2noise_method == 'peak2peak':
+        peak2_i=np.zeros(corr.shape[0])
+        peak2_j = np.zeros(corr.shape[0])
+        for i in range(0,corr.shape[0]):
+            # compute first peak position
+            peak1_i[i], peak1_j[i], corr_max1[i] = pyprocess.find_first_peak(corr[i,:,:])
+            
             # now compute signal to noise ratio
             
-                # find second peak height
-                peak2_i[i], peak2_j[i], corr_max2[i] = pyprocess.find_second_peak(
-                    corr[i,:,:], int(peak1_i[i]), int(peak1_j[i]), width=width)
-        
-                # if it's an empty interrogation window
-                # if the image is lacking particles, totally black it will correlate to very low value, but not zero
-                # if the first peak is on the borders, the correlation map is also
-                # wrong
-                if corr_max1[i] < 1e-3 or (peak1_i[i] == 0 or peak1_j[i] == corr.shape[1] or peak1_j[i] == 0 or peak1_j[i] == corr.shape[2] or
-                                        peak2_i[i] == 0 or peak2_j[i] == corr.shape[1] or peak2_j[i] == 0 or peak2_j[i] == corr.shape[2]):
-                    # return zero, since we have no signal.
-                    corr_max1[i]=0
-        
+            # find second peak height
+            peak2_i[i], peak2_j[i], corr_max2[i] = pyprocess.find_second_peak(
+                corr[i,:,:], int(peak1_i[i]), int(peak1_j[i]), width=width)
     
-        elif sig2noise_method == 'peak2mean':
-            # find mean of the correlation map
-            corr_max2 = corr.mean(axis=(1,2))
-
-        else:
-            raise ValueError('wrong sig2noise_method')
+            # if it's an empty interrogation window
+            # if the image is lacking particles, totally black it will correlate to very low value, but not zero
+            # if the first peak is on the borders, the correlation map is also
+            # wrong
+            if corr_max1[i] < 1e-3 or (peak1_i[i] == 0 or peak1_j[i] == corr.shape[1] or peak1_j[i] == 0 or peak1_j[i] == corr.shape[2] or
+                                    peak2_i[i] == 0 or peak2_j[i] == corr.shape[1] or peak2_j[i] == 0 or peak2_j[i] == corr.shape[2]):
+                # return zero, since we have no signal.
+                corr_max1[i]=0
+    
+    elif sig2noise_method == 'peak2mean':
+        for i in range(0,corr.shape[0]):
+            peak1_i[i], peak1_j[i], corr_max1[i] = pyprocess.find_first_peak(corr[i,:,:])
+        # find mean of the correlation map
+        corr_max2 = corr.mean(axis=(1,2))
+    elif sig2noise_method == 'peak2RMS':
+        for i in range(0,corr.shape[0]):
+            peak1_i[i], peak1_j[i], corr_max1[i] = pyprocess.find_first_peak(corr[i,:,:])            
+        # find the RMS of the correlation map
+        corr_max2 = corr.std(axis=(1,2))
+    else:
+        raise ValueError('wrong sig2noise_method')
 
     # avoid dividing by zero
     corr_max2[corr_max2==0]=np.nan    

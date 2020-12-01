@@ -63,10 +63,10 @@ settings.window_width = (64, 32, 16)
 settings.overlap_width = (32, 16, 8) 
 # sig2noise
 settings.extract_sig2noise = True
-settings.sig2noise_method = 'peak2peak'
+settings.sig2noise_method = 'peak2RMS'
 settings.sig2noise_mask = 3
 settings.do_sig2noise_validation = True 
-settings.sig2noise_threshold = 1.3
+settings.sig2noise_threshold = 7.5
 # validation
 settings.validation_first_pass = True
 settings.MinMax_U_disp = (-3, 3)
@@ -96,21 +96,24 @@ settings.dynamic_masking_filter_size = 7
 
 # here we load the file containing the beginning index for every run
 observation_periods = np.genfromtxt('observation_rise.txt', dtype=str)
-p = 4
+
 
 # iterate over all cases
 run = 20
+import time
+start = time.time()
 for i in range(run, run+1):
 # for i in range(0, len(observation_periods)):
     # set the folder in which the raw images are located
-    settings.filepath_images = 'C:\PIV_Processed\Images_Preprocessed'+os.sep+observation_periods[i,0]+'_%d_modes' %p
+    settings.filepath_images = 'C:\PIV_Processed\Images_Preprocessed'+os.sep+observation_periods[i,0]
     # set the name to the output foler
-    settings.save_folder_suffix = observation_periods[i, 0] + '_%d_modes' %p
+    settings.save_folder_suffix = observation_periods[i, 0]+'_peak2RMS' 
     # sest the image sequence and the beginning index
     settings.frame_pattern_a = observation_periods[i, 0] + '.*.tif'
     settings.frame_pattern_b = None  
     settings.beginning_index = int(observation_periods[i, 1])
     piv(settings)
+print(time.time()-start)
 
 
 

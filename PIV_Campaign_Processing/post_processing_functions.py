@@ -9,6 +9,40 @@ import numpy as np              # for array operations
 import os                       # for file paths
 import cv2                      # for image reading
 
+def shift_grid(x, y):
+    """
+    Function to shift the grid by half the window size for pcolormesh
+
+    Parameters
+    ----------
+    x : 2d np,array 
+        Horizontal coordinates of the interrogation window centres.
+    y : 2d np.array
+        Vertical coordinates of the interrogation window centres.
+
+    Returns
+    -------
+    x : 2d np,array 
+        Horizontal coordinates of the interrogation window edges.
+    y : 2d np.array
+        Vertical coordinates of the interrogation window edges.
+
+    """
+    # calculate half the width and height of the windows
+    half_width = x[0,1] - x[0,0]
+    half_height = y[0,0] - y[1,0]
+    # shift the data so the bottom left corner is at (0,0)
+    x = x-half_width
+    y = y-half_height
+    # stack another row onto the x values and another column onto the y values
+    x = np.vstack((x, x[0,:]))
+    y = np.hstack((y, np.expand_dims(y[:,0], axis = 1)))
+    # expand the arrays along the other axis by a value that is larger than half the interrogation height and width
+    x = np.hstack((x, np.ones((x.shape[0],1))*(np.max(x)+half_width)))
+    y = np.vstack((np.ones((1,y.shape[1]))*(np.max(y)+half_height),y))
+    # return the result
+    return x, y
+    
 def set_plot_parameters():
     """
     Function to set default plot parameters in case they were set differently
@@ -221,15 +255,41 @@ def load_h(Fol_In):
     return h
 
 def separate_name(name):
+    """
+    Function to separate the name and put commas in between
+
+    Parameters
+    ----------
+    name : str
+        Name of the run without the prefix and suffix.
+
+    Returns
+    -------
+    name : str
+        Name of the run without the prefix and suffix separated by commas.
+
+    """
     name = name.replace('_', ', ')
     return name
 
 def cut_processed_name(name):
+    """
+    Function to cute the Results_ part and the window size
+
+    Parameters
+    ----------
+    name : str
+        Name of the folder with the processed data.
+
+    Returns
+    -------
+    name : str
+        Name of the run without the prefix and suffix.
+
+    """
     name = name[8:-6]
     return name
     
-name = 'Results_R_h1_f1200_1_p10_64_16'
-name_new = cut_processed_name(name) 
 
 def custom_div_cmap(numcolors=11, name='custom_div_cmap',
                     mincol='blue', midcol='white', maxcol='red'):

@@ -43,21 +43,29 @@ def shift_grid(x, y):
     # return the result
     return x, y
     
-def set_plot_parameters():
+def set_plot_parameters(SizeLarge, SizeMedium, SizeSmall):
     """
     Function to set default plot parameters in case they were set differently
     in the rc params file
+    Parameters
+    ----------
+    SizeLarge : int
+        Fontsize for large texts.
+    SizeMedium : int
+        Fontsize for medium texts.
+    SizeSmall : int
+        Fontsize for small texts.
     """
-    # define some plot parameters
-    plt.rc('font', size=15)          # controls default text sizes
-    plt.rc('axes', titlesize=15)     # fontsize of the axes title
-    plt.rc('axes', labelsize=15)     # fontsize of the x and y labels
-    plt.rc('xtick', labelsize=15)    # fontsize of the tick labels
-    plt.rc('ytick', labelsize=15)    # fontsize of the tick labels
-    plt.rc('legend', fontsize=15)    # legend fontsize
-    plt.rc('figure', titlesize=20)   # fontsize of the figure title
-    plt.rc('font', family='serif')   # serif as text font
-    plt.rc('text', usetex=True)      # enable latex
+    plt.rc('font', size=SizeMedium)         # controls default text sizes
+    plt.rc('axes', titlesize=SizeSmall)     # fontsize of the axes title
+    plt.rc('axes', labelsize=SizeSmall)     # fontsize of the x and y labels
+    plt.rc('xtick', labelsize=SizeSmall)    # fontsize of the tick labels
+    plt.rc('ytick', labelsize=SizeSmall)    # fontsize of the tick labels
+    plt.rc('legend', fontsize=SizeSmall)    # legend fontsize
+    plt.rc('figure', titlesize=SizeLarge)   # fontsize of the figure title
+    plt.rc('font', family='serif')          # serif as text font
+    plt.rc('text', usetex=True)             # enable latex
+    return
 
 def read_lvm(path):
     """

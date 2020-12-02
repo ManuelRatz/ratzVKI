@@ -55,6 +55,8 @@ def piv(settings):
         settings.height_settings_call = np.array([settings.window_height[0], settings.overlap_height[0]])
         if (5*settings.height_settings_call[1] > (settings.ROI[1]-settings.ROI[0])):
             settings.height_settings_call = (settings.window_height[1], settings.overlap_height[1])
+            if (5*settings.height_settings_call[1] > (settings.ROI[1]-settings.ROI[0])):
+                return settings.current_pos, False
         ' crop to ROI'   
         frame_a =  frame_a[settings.ROI[0]:settings.ROI[1],settings.ROI[2]:settings.ROI[3]]
         frame_b =  frame_b[settings.ROI[0]:settings.ROI[1],settings.ROI[2]:settings.ROI[3]]

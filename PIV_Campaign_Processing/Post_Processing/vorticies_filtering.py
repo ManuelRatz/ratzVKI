@@ -38,26 +38,26 @@ x, y, u, v, ratio, mask = ppf.load_txt(Fol_In, Index, NX)
 Here we start with the filtering of the velocity fields to look for vorticies
 """
 
-# Old code as examplatory testing
-n=200 # amont of samples
-fs = 100 # sampling frequency
-t = np.arange(0, n/fs, 1/fs) # set up the timesteps
-data = np.cos(t*np.pi) # create data
-data = data + np.random.random(n) * 0.2 # make data noisy
+# # Old code as examplatory testing
+# n=200 # amont of samples
+# fs = 100 # sampling frequency
+# t = np.arange(0, n/fs, 1/fs) # set up the timesteps
+# data = np.cos(t*np.pi) # create data
+# data = data + np.random.random(n) * 0.2 # make data noisy
 
-# define the observation windows in the time domain
-fil = sci.firwin(20, 100/fs*2 , window='hamming', fs = 50)
+# # define the observation windows in the time domain
+# fil = sci.firwin(20, 100/fs*2 , window='hamming', fs = 50)
 
-# filter the data with filtfilt
-data_filt = sci.filtfilt(b = fil, a = [1], x = data)
+# # filter the data with filtfilt
+# data_filt = sci.filtfilt(b = fil, a = [1], x = data)
 
-fig, ax = plt.subplots(figsize = (8,5))
-ax.plot(t, data, label = 'Unfiltered', c = 'b')
-ax.plot(t, data_filt, label = 'filtered', c = 'r')
-ax.set_xlabel('t[s]')
-ax.set_ylabel('cos(t)')
-ax.set_xlim([0, n//fs])
-ax.set_ylim(-1, 1.2)
+# fig, ax = plt.subplots(figsize = (8,5))
+# ax.plot(t, data, label = 'Unfiltered', c = 'b')
+# ax.plot(t, data_filt, label = 'filtered', c = 'r')
+# ax.set_xlabel('t[s]')
+# ax.set_ylabel('cos(t)')
+# ax.set_xlim([0, n//fs])
+# ax.set_ylim(-1, 1.2)
 
 
 #%%

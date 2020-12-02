@@ -9,6 +9,17 @@ import numpy as np              # for array operations
 import os                       # for file paths
 import cv2                      # for image reading
 
+def pad(x, v, width):
+    pad_0 = np.zeros((x.shape[0],1))
+    pad_max = np.ones((x.shape[0],1))*width
+    x = np.hstack((pad_0, x, pad_max))
+    v = np.hstack((pad_0, v, pad_0))
+    return x, v
+
+def calc_flux(x, v):
+    q = np.trapz(v, x)
+    return q
+
 def shift_grid(x, y):
     """
     Function to shift the grid by half the window size for pcolormesh
@@ -57,14 +68,15 @@ def set_plot_parameters(SizeLarge, SizeMedium, SizeSmall):
         Fontsize for small texts.
     """
     plt.rc('font', size=SizeMedium)         # controls default text sizes
-    plt.rc('axes', titlesize=SizeSmall)     # fontsize of the axes title
-    plt.rc('axes', labelsize=SizeSmall)     # fontsize of the x and y labels
-    plt.rc('xtick', labelsize=SizeSmall)    # fontsize of the tick labels
-    plt.rc('ytick', labelsize=SizeSmall)    # fontsize of the tick labels
+    plt.rc('axes', titlesize=SizeLarge)     # fontsize of the axes title
+    plt.rc('axes', labelsize=SizeLarge)     # fontsize of the x and y labels
+    plt.rc('xtick', labelsize=SizeMedium)    # fontsize of the tick labels
+    plt.rc('ytick', labelsize=SizeMedium)    # fontsize of the tick labels
     plt.rc('legend', fontsize=SizeSmall)    # legend fontsize
     plt.rc('figure', titlesize=SizeLarge)   # fontsize of the figure title
     plt.rc('font', family='serif')          # serif as text font
     plt.rc('text', usetex=True)             # enable latex
+    plt.rc('')
     return
 
 def read_lvm(path):
@@ -131,7 +143,6 @@ def get_column_amount(Fol_In):
     DAT = IND_X[0]
     # get amount from the index by adding a 1
     return DAT[0] + 1    
-
 
 def load_txt(Fol_In, idx, nx):
     """

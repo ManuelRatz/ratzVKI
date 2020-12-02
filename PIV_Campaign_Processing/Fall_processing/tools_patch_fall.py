@@ -260,9 +260,9 @@ class Multiprocesser():
         # for debugging purposes always use n_cpus = 1,
         # since it is difficult to debug multiprocessing stuff.
         for image_pair in image_pairs:
-            # this is to check whether we have to stop because the roi reached the lowest possible point
             # if(image_pair[2] < 709):
             #     continue
+            # this is to check whether we have to stop because the roi reached the lowest possible point
             h, stop_iteration = func(image_pair)
             h_dum[image_pair[2]-1] = h
             if (stop_iteration == True):

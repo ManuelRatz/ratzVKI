@@ -122,7 +122,7 @@ def global_std( u, v, std_threshold = 3 ):
     
     return u, v, mask
 
-def sig2noise_val( u, v, sig2noise, w=None, threshold_low = 1.3, threshold_high = 15):
+def sig2noise_val( u, v, sig2noise, w=None, threshold_low = 1.3, threshold_high = 50):
     """Eliminate spurious vectors from cross-correlation signal to noise ratio.
     
     Replace spurious vectors with zero if signal to noise ratio
@@ -166,7 +166,6 @@ def sig2noise_val( u, v, sig2noise, w=None, threshold_low = 1.3, threshold_high 
     R. D. Keane and R. J. Adrian, Measurement Science & Technology,1990, 1, 1202-1215.
     
     """
-    threshold_high = 50
     ind = (sig2noise < threshold_low) + (sig2noise > threshold_high)
     u[ind] = np.nan
     v[ind] = np.nan

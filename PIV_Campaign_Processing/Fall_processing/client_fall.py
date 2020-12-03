@@ -78,8 +78,8 @@ settings.overlap_width = (32, 16, 12)
 settings.extract_sig2noise = True  # 'True' or 'False' (only for the last pass)
 settings.sig2noise_method = 'peak2RMS'
 settings.sig2noise_mask = 1
-settings.do_sig2noise_validation = False # This is time consuming
-settings.sig2noise_threshold = 7.5
+settings.do_sig2noise_validation = True# This is time consuming
+settings.sig2noise_threshold = 4.5
 
 # validation
 settings.validation_first_pass = True
@@ -106,19 +106,19 @@ settings.scale_plot = 200 # select a value to scale the quiver plot of the vecto
 
 observation_periods = np.genfromtxt('observation_fall.txt', dtype=str)
 
-run = 2
+run = 4
 for i in range(run, run+1):
     # Folder with the images to process
     settings.filepath_images = 'C:\PIV_Processed\Images_Preprocessed'+os.sep+observation_periods[i,0]
     
     # Root name of the output Folder for Result Files
-    settings.save_folder_suffix = observation_periods[i, 0] + '_peak2RMS'
+    settings.save_folder_suffix = observation_periods[i, 0] + str(settings.sig2noise_threshold)
     # Format and Image Sequence
     settings.frame_pattern_a = observation_periods[i, 0] + '.*.tif'
     settings.frame_pattern_b = None  
     settings.fall_start = int(observation_periods[i, 1]) # index after which the liquid is moving
     settings.roi_shift_start = int(observation_periods[i, 2]) # index after which to shift the ROI
-    settings.process_fall = True
+    settings.process_fall = False
     settings.process_roi_shift = True
     settings.run = 1
     piv(settings)

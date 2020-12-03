@@ -33,14 +33,9 @@ def piv(settings):
         and then shift the ROI accordingly. If the Interface comes into view,
         the ROI gets shifted
         """
-        # delete the following 5 lines later on when testing has commenced
-        # settings.ROI[0] = 0
-        # settings.ROI[1] = frame_a.shape[0]
-        # settings.ROI[2] = 0
-        # settings.ROI[3] = frame_a.shape[1]
-        # settings.current_pos = settings.ROI[0]
+
         if counter == settings.beginning_index:
-            settings.ROI[0] = frame_a.shape[0]-450
+            settings.ROI[0] = frame_a.shape[0]-settings.init_ROI-450
             settings.ROI[1] = frame_a.shape[0]
             settings.ROI[2] = 0
             settings.ROI[3] = frame_a.shape[1]
@@ -162,8 +157,10 @@ def piv(settings):
     # save the settings of the processing
     save_settings(settings, save_path)
     settings.ROI = np.array([0,0,0,0])
+    
     task = tools_patch_rise.Multiprocesser(
         data_dir=settings.filepath_images, pattern_a=settings.frame_pattern_a, pattern_b=settings.frame_pattern_b)
+
     task.run(save_path, func=func, beginning_index = settings.beginning_index, n_cpus=1)
 
 def plot_shifted_ROI(frame_b, counter, interface_position, save_path):
@@ -502,11 +499,24 @@ def multipass_img_deform(frame_a, frame_b, win_width, win_height, overlap_width,
     y_int = y[:, 0]
     y_int = y_int[::-1]
     x_int = x[0, :]
+    
+    """
+    This filters nans that might have been produced while invalid vectors are
+    replaced. This is necessary because the initial ROI differs for different
+    runs because it does not work for some, which is why the ROI is much larger
+    than it should be, which produces nans in the beginning. Here we set them to 0.
+    This is fine because in the beginning we are only interested in the bottom 5 rows
+    """
+    valid = np.isfinite(u_old)
+    invalid = ~valid
+    u_old[invalid] = 0
+    v_old[invalid] = 0
+    
     '''The interpolation function dont like meshgrids as input. Hence, the the edges
     must be extracted to provide the sufficient input. x_old and y_old are the 
     are the coordinates of the old grid. x_int and y_int are the coordiantes
     of the new grid'''
-
+        
     ip = RectBivariateSpline(y_old, x_old, u_old)
     u_pre = ip(y_int, x_int)
     ip2 = RectBivariateSpline(y_old, x_old, v_old)

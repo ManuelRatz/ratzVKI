@@ -66,7 +66,7 @@ settings.extract_sig2noise = True
 settings.sig2noise_method = 'peak2RMS'
 settings.sig2noise_mask = 3
 settings.do_sig2noise_validation = True 
-settings.sig2noise_threshold = 7.5
+settings.sig2noise_threshold = 6.5
 # validation
 settings.validation_first_pass = True
 settings.MinMax_U_disp = (-3, 3)
@@ -99,21 +99,21 @@ observation_periods = np.genfromtxt('observation_rise.txt', dtype=str)
 
 
 # iterate over all cases
-run = 20
-import time
-start = time.time()
+run = 9
+
 for i in range(run, run+1):
 # for i in range(0, len(observation_periods)):
     # set the folder in which the raw images are located
     settings.filepath_images = 'C:\PIV_Processed\Images_Preprocessed'+os.sep+observation_periods[i,0]
     # set the name to the output foler
-    settings.save_folder_suffix = observation_periods[i, 0]+'_peak2RMS' 
+    settings.save_folder_suffix = observation_periods[i, 0]
     # sest the image sequence and the beginning index
     settings.frame_pattern_a = observation_periods[i, 0] + '.*.tif'
     settings.frame_pattern_b = None  
     settings.beginning_index = int(observation_periods[i, 1])
+    settings.init_ROI = int(observation_periods[i, 2])
     piv(settings)
-print(time.time()-start)
+
 
 
 

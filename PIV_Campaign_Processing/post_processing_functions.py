@@ -10,14 +10,58 @@ import os                       # for file paths
 import cv2                      # for image reading
 
 def pad(x, v, width):
+    """
+    Function to pad the velocity field with 0s at the edges
+
+    Parameters
+    ----------
+    x : 2d np.array
+        Horizontal coordinates of the channel in pixels.
+    v : 2d np.array
+        Vertical velocity of the channel.
+    width : int
+        Width of the channel in pixels.
+
+    Returns
+    -------
+    x : TYPE
+        DESCRIPTION.
+    v : TYPE
+        DESCRIPTION.
+
+    """
+    # set up a dummy with 0s of the same height as the velocity field
     pad_0 = np.zeros((x.shape[0],1))
+    # set up a dummy with Img_Width of the same height as the velocity field
     pad_max = np.ones((x.shape[0],1))*width
+    # pad the x coordinates
     x = np.hstack((pad_0, x, pad_max))
+    # pad the y coordinates
     v = np.hstack((pad_0, v, pad_0))
+    # return the result
     return x, v
 
 def calc_flux(x, v):
+    """
+    Function to calculate the flux from the velocity field. Careful, that x and
+    v are padded, meaning we have added v = 0 at the boundary conditions.
+
+    Parameters
+    ----------
+    x : 1d np.array 
+        Horizontal coordinates of the channel in pixels.
+    v : 1d np.array
+        Padded vertical velocity across the width of the channel.
+
+    Returns
+    -------
+    q : int
+        Flux across the width of the channel.
+
+    """
+    # calculate the flux of the padded fields
     q = np.trapz(v, x)
+    # return the result
     return q
 
 def shift_grid(x, y):
@@ -81,7 +125,8 @@ def set_plot_parameters(SizeLarge, SizeMedium, SizeSmall):
 
 def read_lvm(path):
     """
-    Function to read the experimental Labview Files
+    Function to read the experimental Labview Files.
+    This file was created by Domenico
 
     Parameters
     ----------
@@ -251,8 +296,10 @@ def create_folder(Fol_In):
         Location of the input folder.
 
     """
+    # check if the folder exists and create if it doesn't
     if not os.path.exists(Fol_In):
         os.makedirs(Fol_In)
+    # return the name as a string
     return Fol_In
 
 def load_h(Fol_In):

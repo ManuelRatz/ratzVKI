@@ -99,9 +99,9 @@ observation_periods = np.genfromtxt('observation_rise.txt', dtype=str)
 
 
 # iterate over all cases
-run = 9
+run = 19
 
-for i in range(run, run+1):
+for i in range(run, run+3):
 # for i in range(0, len(observation_periods)):
     # set the folder in which the raw images are located
     settings.filepath_images = 'C:\PIV_Processed\Images_Preprocessed'+os.sep+observation_periods[i,0]

@@ -22,8 +22,8 @@ def piv(settings):
         """A function to process each image pair."""
         file_a, file_b, counter = args
         ' read images into numpy arrays'
-        frame_a = tools.imread(os.path.join(settings.filepath_images, file_a))
-        frame_b = tools.imread(os.path.join(settings.filepath_images, file_b))
+        frame_a = tools_patch_rise.imread(os.path.join(settings.filepath_images, file_a))
+        frame_b = tools_patch_rise.imread(os.path.join(settings.filepath_images, file_b))
         
         #%%
         """This is the part for the changing ROI, the new position of the interface
@@ -119,6 +119,8 @@ def piv(settings):
         #%%
         'Calculate the mean displacement, this is the variable that we use at the top'
         settings.current_pos = settings.current_pos - calc_disp(x, v, frame_b.shape[1])
+        if settings.current_pos == np.nan:
+            return settings.current_pos, False
         #%%
         'pixel/frame->pixel/sec'
         u=u/settings.dt
@@ -507,7 +509,7 @@ def multipass_img_deform(frame_a, frame_b, win_width, win_height, overlap_width,
     than it should be, which produces nans in the beginning. Here we set them to 0.
     This is fine because in the beginning we are only interested in the bottom 5 rows
     """
-    valid = np.isfinite(u_old)
+    valid = np.isfinite(v_old)*np.isfinite(u_old)
     invalid = ~valid
     u_old[invalid] = 0
     v_old[invalid] = 0

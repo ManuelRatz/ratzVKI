@@ -8,8 +8,20 @@ import matplotlib.pyplot as plt # for plotting
 import numpy as np              # for array operations
 import os                       # for file paths
 import cv2                      # for image reading
+import scipy.signal as sci 
 
-def pad(x, v, width):
+def calc_qfield(x, y, u, v):
+    # calculate the derivatives
+    ux = np.gradient(u, x[0,:], axis = 1)
+    uy = np.gradient(u, y[:,0], axis = 0)
+    vx = np.gradient(v, x[0,:], axis = 1)
+    vy = np.gradient(v, y[:,0], axis = 0)
+    qfield = -0.5*(ux**2+2*vx*uy+vy**2)
+    return qfield
+
+
+
+def pad(x, y, u, v, width):
     """
     Function to pad the velocity field with 0s at the edges
 
@@ -36,10 +48,14 @@ def pad(x, v, width):
     pad_max = np.ones((x.shape[0],1))*width
     # pad the x coordinates
     x = np.hstack((pad_0, x, pad_max))
-    # pad the y coordinates
+    # expand the y array by two rows
+    y = np.hstack((y, y[:,:2]))
+    # pad the horizontal velocity
+    u = np.hstack((pad_0, u, pad_0))
+    # pad the vertical velocity
     v = np.hstack((pad_0, v, pad_0))
     # return the result
-    return x, v
+    return x, y, u, v
 
 def calc_flux(x, v):
     """
@@ -278,8 +294,6 @@ def get_frequency(Fol_Raw):
     frequency = int(name[:indices[0]])
     # return the value
     return frequency
-Fol =  'C:\PIV_Processed\Images_Preprocessed\R_h1_f1000_1_p13'
-f = get_frequency(Fol)
 
 def create_folder(Fol_In):
     """
@@ -355,7 +369,6 @@ def cut_processed_name(name):
     """
     name = name[8:-6]
     return name
-    
 
 def custom_div_cmap(numcolors=11, name='custom_div_cmap',
                     mincol='blue', midcol='white', maxcol='red'):
@@ -371,3 +384,20 @@ def custom_div_cmap(numcolors=11, name='custom_div_cmap',
                                              colors =[mincol, midcol, maxcol],
                                              N=numcolors)
     return cmap
+
+Fol_In = 'C:\PIV_Processed\Images_Processed\Results_F_h2_f1000_1_q_24_24'
+NX = get_column_amount(Fol_In)
+x, y, u, v, ratio, mask = load_txt(Fol_In, 311, NX)
+x, y, u, v = pad(x, y, u, v, 273)
+# qfield = calc_qfield(x, y, u, v)
+
+idx = 9
+plt.plot(y[:,0], u[:,idx])
+fil = sci.firwin(y.shape[0]//20, 0.0000000005, window='hamming', fs = 2)
+
+u_filt =sci.filtfilt(b = fil, a = [1], x = u, axis = 0, padlen = 3, padtype = 'constant')
+v_filt =sci.filtfilt(b = fil, a = [1], x = v, axis = 0, padlen = 3, padtype = 'constant')
+plt.plot(y[:,0], u_filt[:,idx])
+# fig, ax = plt.subplots()
+# ax.contourf(qfield)
+# ax.set_aspect(1)

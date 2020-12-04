@@ -72,13 +72,12 @@ def export_images(matrix, folder, n_images, shape):
         cv2.imwrite(name, Im2)
 
 # subfolder from which to take the images
-Images_Name = 'R_h3_f1200_1_p13'
+Images_Name = 'R_h1_f750_1_p10'
 
-p = 4
 # Folder in
 Fol_In = 'C:\PIV_Processed\Images_Rotated'+os.sep + Images_Name + os.sep
 # create output folder in case it doesn't exist
-Fol_Out = 'C:\PIV_Processed\Images_Preprocessed'+os.sep + Images_Name+'_'+str(p)+'_modes' + os.sep
+Fol_Out = 'C:\PIV_Processed\Images_Preprocessed'+os.sep + Images_Name + os.sep
 if not os.path.exists(Fol_Out):
     os.mkdir(Fol_Out)
 
@@ -92,7 +91,7 @@ ny, nx = Im.shape
 # load all the image names in the directory and initialize the data matrix
 img_list = os.listdir(Fol_In)
 n_t = len(img_list)
-n_t = 1500; idx0 = 300
+# n_t = 2000; idx0 = 0
 D_a = np.zeros((nx * ny, n_t))
 
 # loop over all the images
@@ -105,7 +104,7 @@ for k in range(0, n_t):
     D_a[:, k] = ImV[:, 0]
 
 
-Ind_S = p  # Number of modes to remove. If 0, the filter is not active!
+Ind_S = 1  # Number of modes to remove. If 0, the filter is not active!
 # Compute the correlation matrix
 print('Computing Correlation Matrices')
 K_a = np.dot(D_a.transpose(), D_a)

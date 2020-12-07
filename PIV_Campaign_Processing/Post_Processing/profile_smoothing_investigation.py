@@ -16,7 +16,7 @@ import os
 import cv2
 
 ppf.set_plot_parameters(20, 15, 10)
-Fol_Sol = 'C:\PIV_Processed\Images_Processed\Rise_64_16\Results_R_h1_f1200_1_p12_64_16'
+Fol_Sol = 'C:\PIV_Processed\Images_Processed\Rise_64_16_peak2RMS\Results_R_h1_f1200_1_p12_64_16'
 Fol_Raw = 'C:\PIV_Processed\Images_Preprocessed\R_h1_f1200_1_p12'+ os.sep
 NX = ppf.get_column_amount(Fol_Sol)
 Height, Width = ppf.get_img_shape(Fol_Raw)
@@ -35,7 +35,7 @@ prof_5 = np.zeros((N_T, NX+2))
 for i in range(0, N_T):
     Load_Index = Frame0 + i
     x, y, u, v, ratio, mask = ppf.load_txt(Fol_Sol, Load_Index, NX)
-    x, v = ppf.pad(x, v, Width)
+    x, y, u, v = ppf.pad(x, y, u, v, Width)
     prof_1[i,:] = v[-1, :]
     prof_2[i,:] = v[-2, :]
     prof_3[i,:] = v[-3, :]

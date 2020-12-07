@@ -31,13 +31,13 @@ Dt = 1/ppf.get_frequency(Fol_Raw) # time between images
 Factor = 1/(Scale*Dt) # conversion factor to go from px/frame to mm/s
 NX = ppf.get_column_amount(Fol_In) # get the number of columns
 # set frame0, the image step size and how many images to process
-Frame0 = 354 # starting index of the run
+Frame0 = 315 # starting index of the run
 Stp_T = 2 # step size in time
 Seconds = 2 # how many seconds to observe the whole thing
 # N_T = int((Seconds/Dt)/Stp_T)
-N_T = 250
+N_T = 1
 
-# set up empty listss to append into and the names of the gifs
+# set up empty lists to append into and the names of the gifs
 IMAGES_ROI = []
 IMAGES_H = []
 IMAGES_CONT = []
@@ -91,23 +91,9 @@ for II in range(0,N_T):
         fig.savefig(Name_Out, dpi = 65)
         plt.close(fig)
         IMAGES_HIST.append(imageio.imread(Name_Out)) # append into list
-    
-    # filter out the invalid rows 
-    mask_nan = np.isfinite(ratio)
-    mask = ~mask.astype('bool')
-    valid = mask*mask_nan
-    N_Rows = u.shape[0]
-    for i in range(0,u.shape[0]):
-        index = u.shape[0]-i-1
-        if np.sum(valid[index,:])/valid.shape[0] < 0.5:
-            v = v[index+2:]
-            u = u[index+2:]
-            x = x[index+2:]
-            y = y[index+2:]
-            ratio = ratio[index+2:]
-            valid = valid[index+2:]
-            break
-    invalid = ~valid.astype('bool')
+        
+    # filter out the invalid rows
+    x, y, u, v, ratio, valid, invalid = ppf.filter_invalid(x, y, u, v, ratio, mask, valid_thresh = 0.9)    
 
     # convert to mm/s
     u = u*Factor

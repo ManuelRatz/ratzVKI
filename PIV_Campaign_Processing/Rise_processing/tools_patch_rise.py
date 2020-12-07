@@ -257,16 +257,15 @@ class Multiprocesser():
         image_pairs = [ (file_a, file_b, i) for file_a, file_b,\
                        i in zip( self.files_a[beginning_index:], self.files_b[beginning_index:], range(beginning_index,self.n_files) ) ]
         index_max = self.n_files
-        # index_max = beginning_index + 50
+        # index_max = beginning_index + 75
         # create a dummy for the loop to fill
         h_dum = np.zeros((index_max,1))
-        index_max = 14+beginning_index
         # for debugging purposes always use n_cpus = 1,
         # since it is difficult to debug multiprocessing stuff.
         for image_pair in image_pairs:
-            # if (image_pair[2] > index_max+5):
+            # if (image_pair[2] > index_max):
             #     print('Hi')
-            #     break
+                # break
             # save the calculated height in the array
             h_dum[image_pair[2]-1], continue_run = func( image_pair )
             if continue_run == False:

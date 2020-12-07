@@ -110,7 +110,7 @@ def piv(settings):
             u, v = filters.replace_outliers( u, v, method=settings.filter_method, max_iter=settings.max_filter_iteration, kernel_size=settings.filter_kernel_size)
         if counter >= settings.roi_shift_start:
             settings.current_pos = settings.current_pos - calc_disp(x, v, frame_b.shape[1])
-            if ((settings.ROI[1]-settings.current_pos) < 250):
+            if ((settings.ROI[1]-settings.current_pos) < 300):
                 return settings.current_pos, True
         # scale the result timewise and lengthwise
         u=u/settings.dt
@@ -131,6 +131,8 @@ def piv(settings):
                 plt.show()
             plt.close('all')
         print('Image Pair ' + str(counter) + ' of ' + settings.save_folder_suffix)
+        if settings.current_pos == np.nan:
+            return settings.current_pos, True
         return settings.current_pos, False
     
     #%%
@@ -496,6 +498,19 @@ def multipass_img_deform(frame_a, frame_b, win_width, win_height, overlap_width,
     y_int = y[:, 0]
     y_int = y_int[::-1]
     x_int = x[0, :]
+    
+    """
+    This filters nans that might have been produced while invalid vectors are
+    replaced. This is necessary because the initial ROI differs for different
+    runs because it does not work for some, which is why the ROI is much larger
+    than it should be, which produces nans in the beginning. Here we set them to 0.
+    This is fine because in the beginning we are only interested in the bottom 5 rows
+    """
+    valid = np.isfinite(v_old)*np.isfinite(u_old)
+    invalid = ~valid
+    u_old[invalid] = 0
+    v_old[invalid] = 0
+    
     '''The interpolation function dont like meshgrids as input. Hence, the the edges
     must be extracted to provide the sufficient input. x_old and y_old are the 
     are the coordinates of the old grid. x_int and y_int are the coordiantes

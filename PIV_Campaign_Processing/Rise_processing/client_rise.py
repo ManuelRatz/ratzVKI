@@ -57,10 +57,10 @@ settings.subpixel_method = 'gaussian'
 settings.correlation_method = 'circular'  # 'circular' because it is faster
 settings.iterations = 3 
 
-settings.window_height = (256, 128, 64)
-settings.overlap_height = (128, 64, 32)
-settings.window_width = (64, 32, 16)
-settings.overlap_width = (32, 16, 8) 
+settings.window_height = (128, 64, 32)
+settings.overlap_height = (64, 32, 16)
+settings.window_width = (64, 64, 32)
+settings.overlap_width = (32, 32, 16)
 # sig2noise
 settings.extract_sig2noise = True
 settings.sig2noise_method = 'peak2RMS'
@@ -99,9 +99,9 @@ observation_periods = np.genfromtxt('observation_rise.txt', dtype=str)
 
 
 # iterate over all cases
-run = 19
+run = 25
 
-for i in range(run, run+3):
+for i in range(run, run+2):
 # for i in range(0, len(observation_periods)):
     # set the folder in which the raw images are located
     settings.filepath_images = 'C:\PIV_Processed\Images_Preprocessed'+os.sep+observation_periods[i,0]

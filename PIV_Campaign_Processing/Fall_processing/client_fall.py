@@ -26,8 +26,8 @@ The idea is to run two different settings:
     One with squares (Do for the 1000 and 1200 Hz runs), the window sizes for this are
         settings.window_height = (64, 48, 48)
         settings.overlap_height = (32, 24, 24)
-        settings.window_width = (48, 24, 12)
-        settings.overlap_width = (24, 12, 6) 
+        settings.window_width = (48, 24, 16)
+        settings.overlap_width = (24, 12, 8) 
 
 The raw images are stored in a .zip file under the following link
     https://osf.io/q6cw4/
@@ -106,19 +106,20 @@ settings.scale_plot = 200 # select a value to scale the quiver plot of the vecto
 
 observation_periods = np.genfromtxt('observation_fall.txt', dtype=str)
 
-run = 4
-for i in range(run, run+1):
+# run = 9
+# for i in range(run, run+3):
+for i in range(0, observation_periods.shape[0]):
     # Folder with the images to process
     settings.filepath_images = 'C:\PIV_Processed\Images_Preprocessed'+os.sep+observation_periods[i,0]
     
     # Root name of the output Folder for Result Files
-    settings.save_folder_suffix = observation_periods[i, 0] + str(settings.sig2noise_threshold)
+    settings.save_folder_suffix = observation_periods[i, 0]
     # Format and Image Sequence
     settings.frame_pattern_a = observation_periods[i, 0] + '.*.tif'
     settings.frame_pattern_b = None  
     settings.fall_start = int(observation_periods[i, 1]) # index after which the liquid is moving
     settings.roi_shift_start = int(observation_periods[i, 2]) # index after which to shift the ROI
-    settings.process_fall = False
+    settings.process_fall = True
     settings.process_roi_shift = True
     settings.run = 1
     piv(settings)

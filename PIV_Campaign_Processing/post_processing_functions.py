@@ -9,6 +9,7 @@ import numpy as np              # for array operations
 import os                       # for file paths
 import cv2                      # for image reading
 import scipy.signal as sci 
+from scipy.ndimage import gaussian_filter
 
 def calc_qfield(x, y, u, v):
     # calculate the derivatives
@@ -100,8 +101,8 @@ def shift_grid(x, y):
 
     """
     # calculate half the width and height of the windows
-    half_width = x[0,1] - x[0,0]
-    half_height = y[0,0] - y[1,0]
+    half_width = (x[0,1] - x[0,0])/2
+    half_height = (y[0,0] - y[1,0])/2
     # shift the data so the bottom left corner is at (0,0)
     x = x-half_width
     y = y-half_height
@@ -109,8 +110,8 @@ def shift_grid(x, y):
     x = np.vstack((x, x[0,:]))
     y = np.hstack((y, np.expand_dims(y[:,0], axis = 1)))
     # expand the arrays along the other axis by a value that is larger than half the interrogation height and width
-    x = np.hstack((x, np.ones((x.shape[0],1))*(np.max(x)+half_width)))
-    y = np.vstack((np.ones((1,y.shape[1]))*(np.max(y)+half_height),y))
+    x = np.hstack((x, np.ones((x.shape[0],1))*(np.max(x)+2*half_width)))
+    y = np.vstack((np.ones((1,y.shape[1]))*(np.max(y)+2*half_height),y))
     # return the result
     return x, y
     
@@ -370,6 +371,222 @@ def cut_processed_name(name):
     name = name[8:-6]
     return name
 
+def get_raw_folder(Fol_In):
+    """
+    Function to navigate to the raw folder.
+    WARNING: Check the data path in the function, might be different for each user
+
+    Parameters
+    ----------
+    Fol_In : string
+        File path of the processed PIV data.
+
+    Returns
+    -------
+    Fol_Raw : str
+        File path of the raw PIV images.
+
+    """
+    # get the indices of the backslashs
+    backslashs = [i for i, a in enumerate(Fol_In) if a == os.sep]
+    # get the name of the results folder
+    result_folder = Fol_In[backslashs[-1]+1:]
+    # cut the suffix and prefix
+    cut_name = cut_processed_name(result_folder)
+    # create the output path
+    Fol_Raw = os.path.join('C:\PIV_Processed\Images_Preprocessed', cut_name)
+    # return the result
+    return Fol_Raw
+
+def load_raw_image(Fol_Raw, idx):
+    """
+    Function to load a raw image of the given index.
+
+    Parameters
+    ----------
+    Fol_Raw : string
+        File path of the raw PIV images.
+    idx : int
+        Index of the image that gets loaded.
+
+    Returns
+    -------
+    img : 2d np.array
+        Greyscale PIV image, flipped, because the origins are different for
+        data and the image.
+
+    """
+    # get the indices of the backslashs
+    backslashs = [i for i, a in enumerate(Fol_Raw) if a == os.sep]
+    # get the name of the current run
+    run = Fol_Raw[backslashs[-1]+1:]
+    # create the image name
+    img_name = Fol_Raw + os.sep + run + '.%06d.tif' %idx
+    # load the image
+    img = cv2.imread(img_name, 0)
+    # flip it
+    img = np.flip(img, axis = 0)
+    # return it
+    return img
+
+def get_max_row(Fol_In, NX):
+    """
+    Function to calculate the maximum number of rows that a given PIV run can have.
+    This is required to initialize a dummy for the smoothing.
+
+    Parameters
+    ----------
+    Fol_In : string
+        File path of the processed PIV data.
+    NX : int
+        Number of columns in the data.
+
+    Returns
+    -------
+    NY : int
+        Maximum number of rows in the data.
+
+    """
+    # create the input folder of the data
+    Fol_In = os.path.join(Fol_In, 'data_files')
+    # create a list of all the files
+    files = os.listdir(Fol_In)
+    # initialize a dummy to fill with the file sizes
+    file_size = np.zeros((len(files)))
+    # iterate over the list
+    for i in range(0,file_size.shape[0]):
+        # calculate the file size
+        file_size[i] = os.stat(os.path.join(Fol_In, files[i])).st_size
+    # get the maximum index
+    idx_max = np.argmax(file_size)
+    # get the name of the file with the largest size
+    file_max = files[idx_max]
+    # get the Number of Rows*Columns
+    NXNY = np.genfromtxt(os.path.join(Fol_In, file_max))
+    # calculate the number of columns
+    NY = NXNY.shape[0]//NX
+    # return the maximum number
+    return NY
+
+def filter_invalid(x, y, u, v, ratio, mask, valid_thresh):
+    """
+    Function to filter out invalid vectors near the top. This is done by calculating
+    the percentage of valid vectors in a row, starting from the bottom. If a 
+    row has less than the given threshold, it and everything above it gets sliced.
+
+    Parameters
+    ----------
+    x : 2d np.array
+        Array containg the x coordinates of the interrogation window centres
+    y : 2d np.array
+        Array containg the y coordinates of the interrogation window centres 
+    u : 2d np.array
+        Array containing the u displacement for every interrogation window
+    v : 2d np.array
+        Array containing the u displacement for every interrogation window
+    ratio : 2d np.array
+        Array containing the sig2noise ratio for every interrogation window.
+    mask : 2d np.array
+        Array containing the bit if the vector was repleaced for every
+        interrogation window
+    valid_thresh : int
+        Threshold for the valid vectors (in percent) under which the row
+        gets filtered out.
+
+    Returns
+    -------
+    x : 2d np.array
+        Array containg the x coordinates of the interrogation window centres
+    y : 2d np.array
+        Array containg the y coordinates of the interrogation window centres 
+    u : 2d np.array
+        Array containing the u displacement for every interrogation window
+    v : 2d np.array
+        Array containing the u displacement for every interrogation window
+    ratio : 2d np.array
+        Array containing the sig2noise ratio for every interrogation window.
+    valid : 2d np.array, boolean
+        Array containing 'True' if the vector was NOT repleaced for every
+        interrogation window
+    invalid : 2d np.array, boolean
+        Array containing 'True' if the vector was repleaced for every
+        interrogation window
+
+    """
+    # create the mask taken from the nans in the sig2noise ratio
+    mask_nan = np.isfinite(ratio)
+    # transform the bit array of the mask from the data into a boolean array
+    mask = ~mask.astype('bool')
+    # calculate the union of the two arrays, it is True if the vector as valid
+    # and False otherwise
+    valid = mask*mask_nan
+    # iterate over all the rows
+    for i in range(0,u.shape[0]):
+        # help index because we are starting from the bottom
+        index = u.shape[0]-i-1
+        # check for validity
+        if np.sum(valid[index,:])/valid.shape[1] < valid_thresh:
+            # slice the arrays if invalid, the +2 is because of the help index
+            v = v[index+2:]
+            u = u[index+2:]
+            x = x[index+2:]
+            y = y[index+2:]
+            ratio = ratio[index+2:]
+            valid = valid[index+2:]
+            # stop iterating
+            break
+    # calculate the array of the invalid vectors by negating the valid array
+    invalid = ~valid.astype('bool')
+    # return the result
+    return x, y, u, v, ratio, valid, invalid
+
+def high_pass(u, v, sigma, truncate):
+    """
+    Function to apply a high pass filter to the velocity field to visualize
+    vorticies. For a more detailed description of truncate and sigma see
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.gaussian_filter.html
+    
+    It is important, that neither u nor v contain any nans, the nan filter
+    should be run before that to ensure this.
+    
+    Parameters
+    ----------
+    u : 2d np.array
+        Array containing the u displacement for every interrogation window
+    v : 2d np.array
+        Array containing the u displacement for every interrogation window
+    sigma : float64
+        Standard deviation for Gaussian kernel.
+    truncate : TYPE
+        Truncate the filter at this many standard deviations.
+
+    Returns
+    -------
+    u_filt : 2d np.array
+        Highpass filtered array containing the u displacement for every
+        interrogation window
+    v_filt : 2d np.array
+        Highpass filtered array containing the u displacement for every
+        interrogation window
+
+    """
+    # get the blurred velocity field
+    u_blur = gaussian_filter(u, sigma = sigma, mode = 'nearest', truncate = truncate)
+    v_blur = gaussian_filter(v, sigma = sigma, mode = 'nearest', truncate = truncate)
+    # subtract to get the high pass filtered velocity field
+    u_filt = u - u_blur
+    v_filt = v - v_blur
+    # return the result
+    return u_filt, v_filt
+
+
+
+# Fol_In = 'C:\PIV_Processed\Images_Processed\Rise_64_16_peak2RMS\Results_R_h1_f1200_1_p15_64_16'
+# NX = get_column_amount(Fol_In)
+# NY_max = get_max_row(Fol_In, NX)
+# # Fol_Raw = get_raw_folder(Fol_In)
+# # img = load_raw_image(Fol_Raw, 50)
+
 def custom_div_cmap(numcolors=11, name='custom_div_cmap',
                     mincol='blue', midcol='white', maxcol='red'):
     """ Create a custom diverging colormap with three colors
@@ -385,19 +602,19 @@ def custom_div_cmap(numcolors=11, name='custom_div_cmap',
                                              N=numcolors)
     return cmap
 
-Fol_In = 'C:\PIV_Processed\Images_Processed\Results_F_h2_f1000_1_q_24_24'
-NX = get_column_amount(Fol_In)
-x, y, u, v, ratio, mask = load_txt(Fol_In, 311, NX)
-x, y, u, v = pad(x, y, u, v, 273)
-# qfield = calc_qfield(x, y, u, v)
+# Fol_In = 'C:\PIV_Processed\Images_Processed\Results_F_h2_f1000_1_q_24_24'
+# NX = get_column_amount(Fol_In)
+# x, y, u, v, ratio, mask = load_txt(Fol_In, 311, NX)
+# x, y, u, v = pad(x, y, u, v, 273)
+# # qfield = calc_qfield(x, y, u, v)
 
-idx = 9
-plt.plot(y[:,0], u[:,idx])
-fil = sci.firwin(y.shape[0]//20, 0.0000000005, window='hamming', fs = 2)
+# idx = 9
+# plt.plot(y[:,0], u[:,idx])
+# fil = sci.firwin(y.shape[0]//20, 0.0000000005, window='hamming', fs = 2)
 
-u_filt =sci.filtfilt(b = fil, a = [1], x = u, axis = 0, padlen = 3, padtype = 'constant')
-v_filt =sci.filtfilt(b = fil, a = [1], x = v, axis = 0, padlen = 3, padtype = 'constant')
-plt.plot(y[:,0], u_filt[:,idx])
-# fig, ax = plt.subplots()
-# ax.contourf(qfield)
-# ax.set_aspect(1)
+# u_filt =sci.filtfilt(b = fil, a = [1], x = u, axis = 0, padlen = 3, padtype = 'constant')
+# v_filt =sci.filtfilt(b = fil, a = [1], x = v, axis = 0, padlen = 3, padtype = 'constant')
+# plt.plot(y[:,0], u_filt[:,idx])
+# # fig, ax = plt.subplots()
+# # ax.contourf(qfield)
+# # ax.set_aspect(1)

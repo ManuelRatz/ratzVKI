@@ -13,7 +13,7 @@ import numpy as np          # for array operations
 import os                   # for filepaths
 import matplotlib.pyplot as plt # to check if the angle calculation is okay
 import time                 # for calculating runtime
-
+from matplotlib.patches import Rectangle
 def get_angle(img_avg):
     """
     Function to calculate the angle of tilt for the average image
@@ -34,10 +34,48 @@ def get_angle(img_avg):
         Help function for the linear fit of the images
         """
         return a*x+b
+    x1 = 200
+    x2 = 400
+    y1 = 500
+    y2 = 500+int(200*1280/800)
     # get a dummy for fitting purposes
     x = np.arange(1,img_avg.shape[0]+1,1)
     # get the left edge of the channel
     peak_left = np.argmax(img_avg[:,:400], axis = 1).astype(np.float64)
+    #%%
+    """
+    to be deleted later, only relevant for the plots for the report
+    """
+    # the averaged image
+    fig = plt.figure(frameon=False)
+    w = 4
+    h = 6.4
+    fig.set_size_inches(w,h)
+    ax = plt.Axes(fig, [0., 0., 1., 1.])
+    ax.set_axis_off()
+    fig.add_axes(ax)
+    ax.imshow(img_avg, cmap = plt.cm.gray, aspect='auto')
+    ax.axis('off')
+    rect = Rectangle((x1, y1), width = (x2-x1), height = (y2-y1), fill = False, color = 'red')
+    ax.add_patch(rect)
+    plt.show()
+    fig.savefig('averaged_image.png', dpi = 400)
+    
+    # the averaged image
+    fig = plt.figure(frameon=False)
+    w = 4
+    h = 6.4
+    fig.set_size_inches(w,h)
+    ax = plt.Axes(fig, [0., 0., 1., 1.])
+    ax.set_axis_off()
+    fig.add_axes(ax)
+    ax.imshow(img_avg[y1:y2,x1:x2], cmap = plt.cm.gray, aspect='auto')
+    ax.scatter(peak_left[y1:y2-2]-x1, x[y1:y2-2]-y1, marker='o', lw=0, s=(80./fig.dpi)**27, c = 'red')
+    ax.axis('off')
+    plt.show()
+    fig.savefig('detected_peaks.png', dpi = 400)
+    #%%
+    
     # get the median for filtering
     median = np.median(peak_left)
     # filter out by replacing outliers with nans
@@ -50,6 +88,22 @@ def get_angle(img_avg):
     a,b = np.polyfit(x[idx],peak_left[idx], 1) 
     # calculate the angle
     angle_left = np.abs(np.arctan((linear(a,b,1280)-b)/1280))
+    
+    # the averaged image
+    fig = plt.figure(frameon=False)
+    w = 4
+    h = 6.4
+    fig.set_size_inches(w,h)
+    ax = plt.Axes(fig, [0., 0., 1., 1.])
+    ax.set_axis_off()
+    fig.add_axes(ax)
+    ax.imshow(img_avg[y1:y2,x1:x2], cmap = plt.cm.gray, aspect='auto')
+    # ax.scatter(peak_left[:-2], x[:-2], marker="x", s=(15./fig.dpi)**2, c = 'red')
+    ax.plot(linear(a, b, x)[y1:y2-2]-x1, x[y1:y2-2]-y1, lw = 2, c = 'red')
+    ax.axis('off')
+    plt.show()
+    fig.savefig('linear_fit.png', dpi = 400)
+    # 
     return angle_left
 
 def get_avg_image(folder, name_sliced, idx0):
@@ -292,27 +346,27 @@ Fol_Out = 'C:\PIV_Processed\Images_Rotated' + os.sep + run + os.sep
 wallcut_file = np.genfromtxt('wallcuts.txt', dtype = str)
 crop_final, crop_rot, angle, name_sliced, img_amount, idx0, images_exist =\
             get_process_params(Fol_In, wallcut_file)
-if(images_exist):
-    Fol_Out = 'C:\PIV_Processed\Images_Rotated'+os.sep+name_sliced+os.sep
-    # create the folder in case it doesn't exist
-    if not os.path.exists(Fol_Out):
-        os.mkdir(Fol_Out)
-    img_amount = len(os.listdir(Fol_In))
-    # img_amount = 5
-    idx0 = idx0 -5
-    # iterate over all the images
-    for i in range(idx0, img_amount+idx0):
-        img_name = name_sliced + '.%06d.tif' %i # get the image name
-        img = cv2.imread(Fol_In + img_name,0) # read the image
-        img_processed = rotate_and_crop(img, crop_final, crop_rot, angle) # rotate and crop the image
-        name_out = name_sliced + '.%06d.tif' %i # crop the name for the output
-        cv2.imwrite(Fol_Out + name_out ,img_processed) # write the cropped images to the output folder
-        MEX = 'Cropping Image ' + str(i+1-idx0) + ' of ' + str(img_amount)\
-            + ' for run %s' %name_sliced# update the user
-        print(MEX)
-else:
-    MEX = 'No images found in directory %s' %Fol_In
-    print(MEX)
+# if(images_exist):
+#     Fol_Out = 'C:\PIV_Processed\Images_Rotated'+os.sep+name_sliced+os.sep
+#     # create the folder in case it doesn't exist
+#     if not os.path.exists(Fol_Out):
+#         os.mkdir(Fol_Out)
+#     img_amount = len(os.listdir(Fol_In))
+#     # img_amount = 5
+#     idx0 = idx0 -5
+#     # iterate over all the images
+#     for i in range(idx0, img_amount+idx0):
+#         img_name = name_sliced + '.%06d.tif' %i # get the image name
+#         img = cv2.imread(Fol_In + img_name,0) # read the image
+#         img_processed = rotate_and_crop(img, crop_final, crop_rot, angle) # rotate and crop the image
+#         name_out = name_sliced + '.%06d.tif' %i # crop the name for the output
+#         cv2.imwrite(Fol_Out + name_out ,img_processed) # write the cropped images to the output folder
+#         MEX = 'Cropping Image ' + str(i+1-idx0) + ' of ' + str(img_amount)\
+#             + ' for run %s' %name_sliced# update the user
+#         print(MEX)
+# else:
+#     MEX = 'No images found in directory %s' %Fol_In
+#     print(MEX)
     
 """
 This part calculates the rotated images for ALL the files

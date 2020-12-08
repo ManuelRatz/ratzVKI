@@ -137,6 +137,7 @@ def piv(settings):
     
     #%%
     settings.current_pos = 0
+    settings.ROI = np.array([0,1280,0,500])
     # initialize the saving path for the images and the txts in case they dont exist
     save_path=os.path.join(settings.save_path,'Results_'+settings.save_folder_suffix+'_'\
                            +str(settings.window_height[settings.iterations-1])+'_'+str(settings.window_width[settings.iterations-1]))

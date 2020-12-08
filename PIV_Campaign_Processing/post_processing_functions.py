@@ -11,33 +11,30 @@ import cv2                      # for image reading
 import scipy.signal as sci 
 from scipy.ndimage import gaussian_filter
 
-def calc_qfield(x, y, u, v):
-    # calculate the derivatives
-    ux = np.gradient(u, x[0,:], axis = 1)
-    uy = np.gradient(u, y[:,0], axis = 0)
-    vx = np.gradient(v, x[0,:], axis = 1)
-    vy = np.gradient(v, y[:,0], axis = 0)
-    qfield = -0.5*(ux**2+2*vx*uy+vy**2)
-    return qfield
-
-
-
 def pad(x, y, u, v, width):
     """
-    Function to pad the velocity field with 0s at the edges
+    Function to pad the velocity profiles with 0s at the walls
 
     Parameters
     ----------
-    x : 2d np.array
-        Horizontal coordinates of the channel in pixels.
-    v : 2d np.array
-        Vertical velocity of the channel.
-    width : int
-        Width of the channel in pixels.
+    x : TYPE
+        DESCRIPTION.
+    y : TYPE
+        DESCRIPTION.
+    u : TYPE
+        DESCRIPTION.
+    v : TYPE
+        DESCRIPTION.
+    width : TYPE
+        DESCRIPTION.
 
     Returns
     -------
     x : TYPE
+        DESCRIPTION.
+    y : TYPE
+        DESCRIPTION.
+    u : TYPE
         DESCRIPTION.
     v : TYPE
         DESCRIPTION.
@@ -48,20 +45,21 @@ def pad(x, y, u, v, width):
     # set up a dummy with Img_Width of the same height as the velocity field
     pad_max = np.ones((x.shape[0],1))*width
     # pad the x coordinates
-    x = np.hstack((pad_0, x, pad_max))
+    x_p = np.hstack((pad_0, x, pad_max))
     # expand the y array by two rows
-    y = np.hstack((y, y[:,:2]))
+    y_p = np.hstack((y, y[:,:2]))
     # pad the horizontal velocity
-    u = np.hstack((pad_0, u, pad_0))
+    u_p = np.hstack((pad_0, u, pad_0))
     # pad the vertical velocity
-    v = np.hstack((pad_0, v, pad_0))
+    v_p = np.hstack((pad_0, v, pad_0))
     # return the result
-    return x, y, u, v
+    return x_p, y_p, u_p, v_p
 
 def calc_flux(x, v):
     """
     Function to calculate the flux from the velocity field. Careful, that x and
     v are padded, meaning we have added v = 0 at the boundary conditions.
+    The result is not converted to mm, we integrate with pixels
 
     Parameters
     ----------
@@ -87,17 +85,25 @@ def shift_grid(x, y):
 
     Parameters
     ----------
-    x : 2d np,array 
-        Horizontal coordinates of the interrogation window centres.
+    x : 2d np.array
+        Array containing the x coordinates of the interrogation window centres.
     y : 2d np.array
-        Vertical coordinates of the interrogation window centres.
+        Array containing the y coordinates of the interrogation window centres.
+    u : 2d np.array
+        Array containing the u component for every interrogation window.
+    v : 2d np.array
+        Array containing the v component for every interrogation window.
 
     Returns
     -------
-    x : 2d np,array 
-        Horizontal coordinates of the interrogation window edges.
-    y : 2d np.array
-        Vertical coordinates of the interrogation window edges.
+    x_p : 2d np.array
+        Array containing the padded x coordinates of the interrogation window centres.
+    y_p : 2d np.array
+        Array containing the padded y coordinates of the interrogation window centres.
+    u_p : 2d np.array
+        Array containing the padded u component for every interrogation window.
+    v_p : 2d np.array
+        Array containing the padded v component for every interrogation window.
 
     """
     # calculate half the width and height of the windows
@@ -579,6 +585,12 @@ def high_pass(u, v, sigma, truncate):
     # return the result
     return u_filt, v_filt
 
+def fill_zeros(u, v, NY_max):
+    missing_rows = NY_max - u.shape[0]
+    dummy_zeros = np.zeros((missing_rows, u.shape[1]))
+    u = np.vstack((dummy_zeros, u))
+    v = np.vstack((dummy_zeros, v))
+    return u, v
 
 
 # Fol_In = 'C:\PIV_Processed\Images_Processed\Rise_64_16_peak2RMS\Results_R_h1_f1200_1_p15_64_16'
@@ -602,19 +614,52 @@ def custom_div_cmap(numcolors=11, name='custom_div_cmap',
                                              N=numcolors)
     return cmap
 
-# Fol_In = 'C:\PIV_Processed\Images_Processed\Results_F_h2_f1000_1_q_24_24'
+
+def calc_qfield(x, y, u, v):
+    # calculate the derivatives
+    ux = np.gradient(u, x[0,:], axis = 1)
+    uy = np.gradient(u, y[:,0], axis = 0)
+    vx = np.gradient(v, x[0,:], axis = 1)
+    vy = np.gradient(v, y[:,0], axis = 0)
+    qfield = -0.5*(ux**2+2*vx*uy+vy**2)
+    return qfield
+
+
+# Fol_In = 'C:\PIV_Processed\Images_Processed\Fall_24_24_peak2RMS\Results_F_h4_f1200_1_s_24_24'
 # NX = get_column_amount(Fol_In)
-# x, y, u, v, ratio, mask = load_txt(Fol_In, 311, NX)
-# x, y, u, v = pad(x, y, u, v, 273)
-# # qfield = calc_qfield(x, y, u, v)
+# Fol_Img = create_folder('Temp')
+# Frame0 = 822
+# N_T = 240
+# # idx = 9
+# # plt.plot(y[:,0], u[:,idx])
+# # fil = sci.firwin(y.shape[0]//20, 0.0000000005, window='hamming', fs = 2)
 
-# idx = 9
-# plt.plot(y[:,0], u[:,idx])
-# fil = sci.firwin(y.shape[0]//20, 0.0000000005, window='hamming', fs = 2)
-
-# u_filt =sci.filtfilt(b = fil, a = [1], x = u, axis = 0, padlen = 3, padtype = 'constant')
-# v_filt =sci.filtfilt(b = fil, a = [1], x = v, axis = 0, padlen = 3, padtype = 'constant')
-# plt.plot(y[:,0], u_filt[:,idx])
-# # fig, ax = plt.subplots()
-# # ax.contourf(qfield)
-# # ax.set_aspect(1)
+# # u_filt =sci.filtfilt(b = fil, a = [1], x = u, axis = 0, padlen = 3, padtype = 'constant')
+# # v_filt =sci.filtfilt(b = fil, a = [1], x = v, axis = 0, padlen = 3, padtype = 'constant')
+# # plt.plot(y[:,0], u_filt[:,idx])
+# import imageio
+# IMAGES_CONT = []
+# Gifname = 'qfield.gif'
+# for i in range(0, N_T):
+#     Load_Idx = Frame0+ i*1
+#     x, y, u, v, ratio, mask = load_txt(Fol_In, Load_Idx, NX)
+#     x, y, u, v = pad(x, y, u, v, 273)
+#     qfield = calc_qfield(x, y, u, v)
+#     fig, ax = plt.subplots(figsize = (4,8))
+#     cs = plt.pcolormesh(x,y,qfield, vmin=-0.0005, vmax=0, cmap = plt.cm.viridis) # create the contourplot using pcolormesh
+#     ax.set_aspect('equal') # set the correct aspect ratio
+#     clb = fig.colorbar(cs, pad = 0.2) # get the colorbar
+#     # clb.set_ticks(np.linspace(-100, 0, 6)) # set the colorbarticks
+#     clb.ax.set_title('Q Field \n [1/s$^2$]', pad=15) # set the colorbar title
+#     ax.contourf(qfield)
+#     ax.set_aspect(1)
+#     ax.set_ylim(0,1271)
+#     fig.tight_layout(pad=0.5)
+#     Name_Out = Fol_Img+os.sep+'contour%06d.png'%Load_Idx
+#     fig.savefig(Name_Out, dpi=65)
+#     plt.close(fig)
+#     IMAGES_CONT.append(imageio.imread(Name_Out))
+#     print('Image %d of %d'%((i+1), N_T))
+# imageio.mimsave(Gifname, IMAGES_CONT, duration = 0.05)
+# import shutil
+# shutil.rmtree(Fol_Img)

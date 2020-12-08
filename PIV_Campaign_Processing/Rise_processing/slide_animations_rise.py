@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore")
 ppf.set_plot_parameters(20, 15, 20)
 
 # give the input folder for the data
-Fol_In = 'C:\PIV_Processed\Images_Processed\Rise_64_16_peak2RMS\Results_R_h2_f1200_1_p13_64_16'
+Fol_In = 'C:\PIV_Processed\Images_Processed\Rise_64_16_peak2RMS\Results_R_h1_f1200_1_p10_64_16'
 # give the input folder of the raw images (this is required to get the image width and frequency)
 Fol_Raw = ppf.get_raw_folder(Fol_In)
 
@@ -31,11 +31,17 @@ Dt = 1/ppf.get_frequency(Fol_Raw) # time between images
 Factor = 1/(Scale*Dt) # conversion factor to go from px/frame to mm/s
 NX = ppf.get_column_amount(Fol_In) # get the number of columns
 # set frame0, the image step size and how many images to process
-Frame0 = 315 # starting index of the run
+Frame0 = 337 # starting index of the run
 Stp_T = 2 # step size in time
 Seconds = 2 # how many seconds to observe the whole thing
 # N_T = int((Seconds/Dt)/Stp_T)
-N_T = 1
+N_T = 165
+
+# these are the ticks and ticklabels to go from pixel -> mm for the coordinates
+y_ticks = np.arange(0,Height,4*Scale)
+y_ticklabels = np.arange(0, 4*(Height/Width+1), 4, dtype = int)
+x_ticks = np.linspace(0,Width-1, 6)
+x_ticklabels = np.arange(0,6,1)
 
 # set up empty lists to append into and the names of the gifs
 IMAGES_ROI = []
@@ -45,13 +51,14 @@ IMAGES_PROF = []
 IMAGES_FLUX = []
 IMAGES_HIGHPASS = []
 IMAGES_HIST = []
-GIF_ROI = 'changing_roi_%d.gif' %(N_T)
-GIF_H = 'h_%d.gif'%(N_T)
-GIF_QUIV = 'contour_%d.gif'%(N_T)
-GIF_PROF = 'profiles_%d.gif'%(N_T)
-GIF_FLUX = 'flux_%d.gif'%(N_T)
-GIF_HIGHPASS = 'highpass_filtered_%d.gif'%(N_T)
-GIF_HIST = 'histogram_%d.gif'%(N_T)
+Gif_Suffix = '_slow_rise.gif' 
+GIF_ROI = 'changing_roi' + Gif_Suffix
+GIF_H = 'h' + Gif_Suffix
+GIF_QUIV = 'contour' + Gif_Suffix
+GIF_PROF = 'profiles' + Gif_Suffix
+GIF_FLUX = 'flux' + Gif_Suffix
+GIF_HIGHPASS = 'highpass_filtered' + Gif_Suffix
+GIF_HIST = 'histogram' + Gif_Suffix
 # create a folder to store the images
 Fol_Img = ppf.create_folder('images')
 
@@ -85,7 +92,7 @@ for II in range(0,N_T):
         ax.grid(b = True)
         ax.set_xlabel('Signal to noise ratio')
         ax.set_ylabel('Probability')
-        ax.plot((6.5, 6.5), (0, 0.3), c = 'r', label = 'Treshold')
+        ax.plot((6.5, 6.5), (0, 0.3), c = 'r', label = 'Threshold')
         ax.legend(loc = 'upper right')
         Name_Out = Fol_Img+os.sep+'s2n%06d.png'%LOAD_IDX  
         fig.savefig(Name_Out, dpi = 65)
@@ -93,7 +100,7 @@ for II in range(0,N_T):
         IMAGES_HIST.append(imageio.imread(Name_Out)) # append into list
         
     # filter out the invalid rows
-    x, y, u, v, ratio, valid, invalid = ppf.filter_invalid(x, y, u, v, ratio, mask, valid_thresh = 0.9)    
+    x, y, u, v, ratio, valid, invalid = ppf.filter_invalid(x, y, u, v, ratio, mask, valid_thresh = 0.5)    
 
     # convert to mm/s
     u = u*Factor
@@ -108,17 +115,21 @@ for II in range(0,N_T):
     if PLOT_ROI == True:
         # create the figure
         fig, ax = plt.subplots(figsize = (2.5,8))
-        ax.imshow(np.flip(img, axis = 0), cmap=plt.cm.gray) # show the image
-        ax.set_yticks(np.arange(Height-20*Scale-1,img.shape[0],4*Scale)) # set custom y ticks
-        ax.set_yticklabels(np.linspace(0,20,6,dtype=int)[::-1], fontsize=15) # set custom y ticklabels
-        ax.set_xticks(np.linspace(0,Width-1, 6)) # set custom x ticks 
-        ax.set_xticklabels(np.arange(0,6,1), fontsize=15) # set custom x ticklabels
+        ax.set_ylim(0,Height)
+        ax.set_xlim(0,Width)        
+        ax.imshow(img, cmap=plt.cm.gray) # show the image
+        ax.set_yticks(y_ticks) # set custom y ticks
+        ax.set_yticklabels(y_ticklabels) # set custom y ticklabels
+        ax.set_xticks(x_ticks) # set custom x ticks 
+        ax.set_xticklabels(x_ticklabels) # set custom x ticklabels
         ax.set_xlabel('$x$[mm]') # set x label
         ax.set_ylabel('$y$[mm]') # set y label
-        fig.tight_layout(pad=1.1) # crop edges of the figure to save space
+        fig.tight_layout(pad=0.5) # crop edges of the figure to save space
         # plot a horizontal line of the predicted interface in case it is visible
+        ax.set_ylim(0,Height)
+        ax.set_xlim(0,Width)
         if h[LOAD_IDX] > 0:
-            interface_line = np.ones((img.shape[1],1))*h[LOAD_IDX]
+            interface_line = np.ones((img.shape[1],1))*(Height-h[LOAD_IDX])
             ax.plot(interface_line, lw = 1, c='r')
         Name_Out = Fol_Img+os.sep+'roi%06d.png'%LOAD_IDX # set the output name
         fig.savefig(Name_Out, dpi = 65) # save the figure

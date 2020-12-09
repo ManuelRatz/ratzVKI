@@ -40,7 +40,7 @@ N_T = 165
 # these are the ticks and ticklabels to go from pixel -> mm for the coordinates
 y_ticks = np.arange(0,Height,4*Scale)
 y_ticklabels = np.arange(0, 4*(Height/Width+1), 4, dtype = int)
-x_ticks = np.linspace(0,Width-1, 6)
+x_ticks = np.linspace(0,Width, 6)
 x_ticklabels = np.arange(0,6,1)
 
 # set up empty lists to append into and the names of the gifs

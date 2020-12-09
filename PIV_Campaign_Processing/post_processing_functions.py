@@ -628,49 +628,67 @@ def calc_qfield(x, y, u, v):
     return qfield, u_smo, v_smo
 
 
-Fol_In = 'D:\PIV_Processed\Images_Processed\Results_F_h4_f1200_1_s_24_24'
-Fol_Raw = 'D:\PIV_Processed\Images_Preprocessed\F_h4_f1200_1_s'
-NX = get_column_amount(Fol_In)
-Fol_Img = create_folder('Temp')
-Frame0 = 900
-N_T = 1
-# idx = 9
-# plt.plot(y[:,0], u[:,idx])
-# fil = sci.firwin(y.shape[0]//20, 0.0000000005, window='hamming', fs = 2)
+# Fol_In = 'C:\PIV_Processed\Images_Processed\Fall_24_24_peak2RMS\Results_F_h4_f1200_1_s_24_24'
+# Fol_Raw = get_raw_folder(Fol_In)
+# Height, Width = get_img_shape(Fol_Raw)
+# Scale = Width/5
+# NX = get_column_amount(Fol_In)
+# Fol_Img = create_folder('Temp')
+# Frame0 = 823
+# N_T = 240
 
-# u_filt =sci.filtfilt(b = fil, a = [1], x = u, axis = 0, padlen = 3, padtype = 'constant')
-# v_filt =sci.filtfilt(b = fil, a = [1], x = v, axis = 0, padlen = 3, padtype = 'constant')
-# plt.plot(y[:,0], u_filt[:,idx])
-import imageio
-IMAGES_CONT = []
-Gifname = 'qfield.gif'
-for i in range(0, N_T):
-    Load_Idx = Frame0+ i*1
-    img = cv2.imread(Fol_Raw + os.sep + 'F_h4_f1200_1_s.%06d.tif'%Load_Idx, 0)
-    x, y, u, v, ratio, mask = load_txt(Fol_In, Load_Idx, NX)
-    u, v = high_pass(u, v, 3, 3)
-    x, y, u, v = pad(x, y, u, v, 273)
-    qfield, u_smo, v_smo = calc_qfield(x, y, u, v)
-    fig, ax = plt.subplots(figsize = (4,8))
-    # ax.imshow(np.flip(img, axis = 0), cmap = plt.cm.gray)
-    ax.quiver(u_smo, v_smo, scale =3, color = 'lime')
-    # ax.invert_yaxis()
-    fig.savefig('test.jpg',dpi = 400)
-    fig, ax = plt.subplots()
-    cs = plt.pcolormesh(x,y,qfield, vmin=-0.0001, vmax=0, cmap = plt.cm.viridis) # create the contourplot using pcolormesh
-    ax.set_aspect('equal') # set the correct aspect ratio
-    clb = fig.colorbar(cs, pad = 0.2) # get the colorbar
-    # clb.set_ticks(np.linspace(-100, 0, 6)) # set the colorbarticks
-    clb.ax.set_title('Q Field \n [1/s$^2$]', pad=15) # set the colorbar title
-    ax.contourf(qfield)
-    ax.set_aspect(1)
-    ax.set_ylim(0,1271)
-    fig.tight_layout(pad=0.5)
-    Name_Out = Fol_Img+os.sep+'contour%06d.png'%Load_Idx
-    # fig.savefig(Name_Out, dpi=65)
-    # # plt.close(fig)
-    # IMAGES_CONT.append(imageio.imread(Name_Out))
-    # print('Image %d of %d'%((i+1), N_T))
+# y_ticks = np.arange(0,Height,4*Scale)
+# y_ticklabels = np.arange(0, 4*(Height/Width+1), 4, dtype = int)
+# x_ticks = np.linspace(0,Width-1, 6)
+# x_ticklabels = np.arange(0,6,1)
+# set_plot_parameters(20, 15, 10)
+
+# # idx = 9
+# # plt.plot(y[:,0], u[:,idx])
+# # fil = sci.firwin(y.shape[0]//20, 0.0000000005, window='hamming', fs = 2)
+
+# # u_filt =sci.filtfilt(b = fil, a = [1], x = u, axis = 0, padlen = 3, padtype = 'constant')
+# # v_filt =sci.filtfilt(b = fil, a = [1], x = v, axis = 0, padlen = 3, padtype = 'constant')
+# # plt.plot(y[:,0], u_filt[:,idx])
+
+# import imageio
+# IMAGES_CONT = []
+# Gifname = 'qfield.gif'
+# for i in range(0, N_T):
+#     Load_Idx = Frame0+ i*1
+#     # img = cv2.imread(Fol_Raw + os.sep + 'F_h4_f1200_1_s.%06d.tif'%Load_Idx, 0)
+#     x, y, u, v, ratio, mask = load_txt(Fol_In, Load_Idx, NX)
+
+#     # u, v = high_pass(u, v, 3, 3)
+#     x, y, u, v = pad(x, y, u, v, Width)
+#     qfield, u_smo, v_smo = calc_qfield(x, y, u, v)
+#     x,y = shift_grid(x, y)
+#     # fig, ax = plt.subplots(figsize = (3,8))
+#     # # ax.imshow(np.flip(img, axis = 0), cmap = plt.cm.gray)
+#     # ax.quiver(u_smo, v_smo, scale =3, color = 'lime')
+#     # # ax.invert_yaxis()
+#     # fig.savefig('test.jpg',dpi = 400)
+#     fig, ax = plt.subplots(figsize = (4.5, 8))
+#     cs = plt.pcolormesh(x,y,qfield, vmin=-0.0002, vmax=0.0005, cmap = plt.cm.viridis) # create the contourplot using pcolormesh
+#     ax.set_aspect('equal') # set the correct aspect ratio
+#     clb = fig.colorbar(cs, pad = 0.2) # get the colorbar
+#     # clb.set_ticks(np.linspace(-100, 0, 6)) # set the colorbarticks
+#     clb.ax.set_title('Q Field \n [1/s$^2$]', pad=15) # set the colorbar title
+#     ax.set_aspect(1)
+#     ax.set_ylim(0,Height)
+#     ax.set_xlim(0,Width)        
+#     ax.set_yticks(y_ticks) # set custom y ticks
+#     ax.set_yticklabels(y_ticklabels) # set custom y ticklabels
+#     ax.set_xticks(x_ticks) # set custom x ticks 
+#     ax.set_xticklabels(x_ticklabels) # set custom x ticklabels
+#     ax.set_xlabel('$x$[mm]') # set x label
+#     ax.set_ylabel('$y$[mm]') # set y label
+#     fig.tight_layout(pad=0.1) # crop edges of the figure to save space
+#     Name_Out = Fol_Img+os.sep+'contour%06d.png'%Load_Idx
+#     fig.savefig(Name_Out, dpi=65)
+#     plt.close(fig)
+#     IMAGES_CONT.append(imageio.imread(Name_Out))
+#     print('Image %d of %d'%((i+1), N_T))
 # imageio.mimsave(Gifname, IMAGES_CONT, duration = 0.05)
 # import shutil
 # shutil.rmtree(Fol_Img)

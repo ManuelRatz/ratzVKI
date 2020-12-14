@@ -33,10 +33,10 @@ Fol_PP = ppf.create_folder('C:\PIV_Processed\Images_Postprocessed' + settings + 
 ######## enable or disable the creation of individual gifs ###################
 ##############################################################################
 
-PLOT_ROI = True
-PLOT_PROF = True
-PLOT_H = True
-PLOT_FLUX = True
+PLOT_ROI = False
+PLOT_PROF = False
+PLOT_H = False
+PLOT_FLUX = False
 
 ##############################################################################
 ################ set some cosmetics ##########################################
@@ -50,8 +50,8 @@ duration = 0.05 # duration of each image in the gif
 ################ iterate over all the runs ###################################
 ##############################################################################
 
-for i in range(0,len(run_list)):
-# for i in range(0,3):
+# for i in range(0,len(run_list)):
+for i in range(0,1):
     run = ppf.cut_processed_name(run_list[i])
     Fol_Out = ppf.create_folder(Fol_PP + run + os.sep)
     print('Exporting Run ' + run)
@@ -78,8 +78,8 @@ for i in range(0,len(run_list)):
     # calculate the number of columns and some other constants
     NX = ppf.get_column_amount(Fol_In) # get the number of columns
     Frame0 = idx1+1 # starting index of the run
-    SECONDS = (idx2-idx1)*Dt # how many seconds to observe the whole thing
-    N_T = int((SECONDS/Dt)/Stp_T)
+    Seconds = (idx2-idx1)*Dt # how many seconds to observe the whole thing
+    N_T = int((Seconds/Dt)/Stp_T)
     
     # these are the ticks and ticklabels to go from pixel -> mm for the coordinates
     y_ticks = np.arange(0,Height,4*Scale)
@@ -93,7 +93,11 @@ for i in range(0,len(run_list)):
     GIF_PROF = Fol_Out + 'Profiles' + Gif_Suffix
     GIF_H = Fol_Out + 'H_of_t' + Gif_Suffix
     # create a folder to store the images
-    Fol_Gif_Images = ppf.create_folder(Fol_Out + os.sep + 'Images_'+run + os.sep)
+    Fol_Gif_ROI = ppf.create_folder(Fol_Out + os.sep + 'Images_ROI_'+run + os.sep)
+    Fol_Gif_Hist = ppf.create_folder(Fol_Out + os.sep + 'Images_Hist_'+run + os.sep)
+    Fol_Gif_H = ppf.create_folder(Fol_Out + os.sep + 'Images_h_'+run + os.sep)
+    Fol_Gif_Prof = ppf.create_folder(Fol_Out + os.sep + 'Images_Prof_'+run + os.sep)
+    Fol_Gif_Prof = ppf.create_folder(Fol_Out + os.sep + 'Images_Flux_'+run + os.sep)
     
     # create empty lists to append the images into
     IMAGES_ROI = []
@@ -137,7 +141,7 @@ for i in range(0,len(run_list)):
             if h[LOAD_IDX] > 0:
                 interface_line = np.ones((img.shape[1],1))*(Height-h[LOAD_IDX])
                 ax.plot(interface_line, lw = 1, c='r')
-            Name_Out = Fol_Gif_Images+os.sep+'roi%06d.png'%LOAD_IDX # set the output name
+            Name_Out = Fol_Gif_ROI+os.sep+'roi%06d.png'%LOAD_IDX # set the output name
             fig.savefig(Name_Out, dpi = 65) # save the figure
             plt.close(fig) # close to not overcrowd
             IMAGES_ROI.append(imageio.imread(Name_Out)) # append into list
@@ -163,7 +167,7 @@ for i in range(0,len(run_list)):
             ax.set_yticks(np.arange(0, 35, 5))
             fig.tight_layout(pad=1.1)
             ax.legend(loc='upper right')
-            Name_Out = Fol_Gif_Images + os.sep+'h%06d.png'%LOAD_IDX
+            Name_Out = Fol_Gif_H + os.sep+'h%06d.png'%LOAD_IDX
             fig.savefig(Name_Out, dpi=65)
             plt.close(fig)
             IMAGES_H.append(imageio.imread(Name_Out))
@@ -191,7 +195,7 @@ for i in range(0,len(run_list)):
             ax.set_xticks(x_ticks)
             ax.set_xticklabels(x_ticklabels)
             fig.tight_layout(pad=0.5)
-            Name_Out = Fol_Gif_Images+os.sep+'profiles_'+run +'_%06d.png' %LOAD_IDX
+            Name_Out = Fol_Gif_Prof+os.sep+'profiles_'+run +'_%06d.png' %LOAD_IDX
             fig.savefig(Name_Out, dpi=65)
             plt.close(fig)
             IMAGES_PROF.append(imageio.imread(Name_Out))
@@ -213,7 +217,7 @@ for i in range(0,len(run_list)):
             ax.set_ylabel('$q$[mm$^2$/s]', fontsize = 20)
             ax.grid(b=True)
             fig.tight_layout(pad=0.5)
-            Name_Out = Fol_Gif_Images+os.sep+'flux%06d.png'%LOAD_IDX
+            Name_Out = Fol_Gif_Flux+os.sep+'flux%06d.png'%LOAD_IDX
             fig.savefig(Name_Out, dpi=65)
             plt.close(fig)
             IMAGES_FLUX.append(imageio.imread(Name_Out))        

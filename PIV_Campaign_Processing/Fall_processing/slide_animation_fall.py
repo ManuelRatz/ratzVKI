@@ -33,16 +33,17 @@ Dt = 1/ppf.get_frequency(Fol_Raw) # time between images
 Factor = 1/(Scale*Dt) # conversion factor to go from px/frame to mm/s
 NX = ppf.get_column_amount(Fol_In) # get the number of columns
 # set frame0, the image step size and how many images to process
-Frame0 = 823# starting index of the run
-Stp_T = 1 # step size in time
+Frame0 = 520# starting index of the run
+Stp_T = 3 # step size in time
 Seconds = 2 # how many seconds to observe the whole thing
 # N_T = int((Seconds/Dt)/Stp_T)
-N_T = 240
+N_T = 173
+# N_T = 1
 
 # these are the ticks and ticklabels to go from pixel -> mm for the coordinates
 y_ticks = np.arange(0,Height,4*Scale)
 y_ticklabels = np.arange(0, 4*(Height/Width+1), 4, dtype = int)
-x_ticks = np.linspace(0,Width, 6)
+x_ticks = np.linspace(0,Width-1, 6)
 x_ticklabels = np.arange(0,6,1)
 
 # set up empty lists to append into and the names of the gifs
@@ -71,10 +72,10 @@ t = np.linspace(0,Seconds,int(Seconds/Dt)+1)[::Stp_T]
 custom_map = ppf.custom_div_cmap(100, mincol='indigo', midcol='darkcyan' ,maxcol='yellow')
 
 # enable or disable the plots
-PLOT_ROI = True
+PLOT_ROI = False
 PLOT_QUIV = False
 PLOT_PROF = False
-PLOT_FLUX = False
+PLOT_FLUX = True
 PLOT_HIGHPASS = False
 PLOT_HIST = False
 
@@ -84,8 +85,9 @@ for i in range(0,N_T):
     # calculate the loading index and load the data
     LOAD_IDX = Frame0 + Stp_T*i
     x, y, u, v, ratio, mask = ppf.load_txt(Fol_In, LOAD_IDX, NX)
-    x, y, u, v, ratio, valid, invalid = ppf.filter_invalid(x, y, u, v, ratio, mask, valid_thresh = 0.7)
-    
+
+    x, y, u, v, ratio, valid, invalid = ppf.filter_invalid(x, y, u, v, ratio, mask, valid_thresh = 0.5)
+    qfield = ppf.calc_qfield(x, y, u, v)    
     if PLOT_HIST == True:
         fig, ax = plt.subplots(figsize = (8, 5))
         ax.hist(ratio.ravel(), bins = 100, density = True)
@@ -113,7 +115,7 @@ for i in range(0,N_T):
     # start with the animation of the changing ROI
     if PLOT_ROI == True:
         # create the figure
-        fig, ax = plt.subplots(figsize = (2.5,8))
+        fig, ax = plt.subplots(figsize = (4,8))
         ax.imshow(img, cmap=plt.cm.gray) # show the image
         ax.set_yticks(y_ticks) # set custom y ticks
         ax.set_yticklabels(y_ticklabels) # set custom y ticklabels
@@ -121,8 +123,8 @@ for i in range(0,N_T):
         ax.set_xticklabels(x_ticklabels) # set custom x ticklabels
         ax.set_xlabel('$x$[mm]') # set x label
         ax.set_ylabel('$y$[mm]') # set y label
-        ax.set_ylim(0,Height)
-        ax.set_xlim(0,Width)
+        ax.set_ylim(0,Height-1)
+        ax.set_xlim(0,Width-1)
         fig.tight_layout(pad=0.5) # crop edges of the figure to save space
         # plot a horizontal line of the predicted interface in case it is visible
         if h[LOAD_IDX] > 0:
@@ -136,7 +138,7 @@ for i in range(0,N_T):
     # plot the contour and the quiver, the principle is the same, so not everything is commented
     if PLOT_QUIV == True:
         fig, ax = plt.subplots(figsize = (4, 8))
-        cs = plt.pcolormesh(x,y,v, vmin=-100, vmax=0, cmap = custom_map) # create the contourplot using pcolormesh
+        cs = plt.pcolormesh(x_pco,y_pco,v, vmin=-100, vmax=0, cmap = plt.cm.viridis) # create the contourplot using pcolormesh
         ax.set_aspect('equal') # set the correct aspect ratio
         clb = fig.colorbar(cs, pad = 0.2) # get the colorbar
         clb.set_ticks(np.linspace(-100, 0, 6)) # set the colorbarticks
@@ -151,7 +153,7 @@ for i in range(0,N_T):
         ax.set_xticklabels(x_ticklabels) # set custom x ticklabels
         ax.set_xlabel('$x$[mm]') # set x label
         ax.set_ylabel('$y$[mm]') # set y label
-        ax.set_ylim(0,Height)
+        ax.set_ylim(0,Height-1)
         fig.tight_layout(pad=0.5)
         Name_Out = Fol_Img+os.sep+'contour%06d.png'%LOAD_IDX
         fig.savefig(Name_Out, dpi=65)
@@ -170,7 +172,7 @@ for i in range(0,N_T):
         # ax.scatter(x_pad[Y_IND[0],:], v_pad[Y_IND[0],:], c='r', marker='x', s=(300./fig.dpi)**2)
         # ax.scatter(x_pad[Y_IND[1],:], v_pad[Y_IND[1],:], c='b', marker='x', s=(300./fig.dpi)**2)
         # ax.scatter(x_pad[Y_IND[2],:], v_pad[Y_IND[2],:], c='g', marker='x', s=(300./fig.dpi)**2)
-        ax.set_xlim(0, Width)
+        ax.set_xlim(0, Width-1)
         ax.set_ylim(-120, 0)
         ax.set_xlabel('$x$[mm]')
         ax.set_ylabel('$v$[mm/s]')
@@ -188,12 +190,12 @@ for i in range(0,N_T):
     if PLOT_FLUX == True:
         fig, ax = plt.subplots(figsize=(9, 5))
         # integrate using trapz
-        q = np.trapz(v, x)/Width
+        q = ppf.calc_flux(x_pad, v_pad, Scale)
         ax.set_title('$t$ = %03d [ms]' %(t[i]*1000))
         ax.scatter(y[:,0], q, c='r', marker='x', s=(300./fig.dpi)**2)
         ax.plot(y[:,0], q, c='r')
-        ax.set_ylim(-90,0)
-        ax.set_yticks(np.linspace(-90,0,7))
+        ax.set_ylim(-500,0)
+        ax.set_yticks(np.linspace(-500,0,5))
         ax.set_xlim(0, Height)
         ax.set_xticks(y_ticks)
         ax.set_xticklabels(y_ticklabels)
@@ -209,12 +211,17 @@ for i in range(0,N_T):
     if PLOT_HIGHPASS == True:
         fig, ax = plt.subplots(figsize = (4, 8))
         ax.imshow(img, cmap=plt.cm.gray) # show the image
+        # cs = plt.pcolormesh(x_pco, y_pco, qfield, cmap = plt.cm.viridis, vmin=-0.0003, vmax = 0.0005) # create the contourplot using pcolormesh
+        # ax.set_aspect('equal') # set the correct aspect ratio
+        # clb = fig.colorbar(cs, pad = 0.2) # get the colorbar
+        # # clb.set_ticks(np.linspace(-100, 0, 6)) # set the colorbarticks
+        # clb.ax.set_title('Q Field \n [1/s$^2$]', pad=15) # set the colorbar title
         STEPY= 1
         STEPX = 1
         plt.quiver(x[(len(x)+1)%2::STEPY, ::STEPX], y[(len(x)+1)%2::STEPY, ::STEPX], u_hp[(len(x)+1)%2::STEPY, ::STEPX],\
                    v_hp[(len(x)+1)%2::STEPY, ::STEPX], color='lime', scale=350, width=0.005,headwidth=4, headaxislength = 6)
-        ax.set_ylim(0,Height)
-        ax.set_xlim(0,Width)
+        ax.set_ylim(0,Height-1)
+        ax.set_xlim(0,Width-1)
         ax.set_yticks(y_ticks) # set custom y ticks
         ax.set_yticklabels(y_ticklabels) # set custom y ticklabels
         ax.set_xticks(x_ticks) # set custom x ticks 

@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore")
 ppf.set_plot_parameters(20, 15, 20)
 
 # give the input folder for the data
-Fol_In = 'C:\PIV_Processed\Images_Processed\Rise_64_16_peak2RMS\Results_R_h1_f1200_1_p10_64_16'
+Fol_In = 'C:\PIV_Processed\Images_Processed\Rise_64_16_peak2RMS\Results_R_h2_f1200_1_p13_64_16'
 # give the input folder of the raw images (this is required to get the image width and frequency)
 Fol_Raw = ppf.get_raw_folder(Fol_In)
 
@@ -31,11 +31,11 @@ Dt = 1/ppf.get_frequency(Fol_Raw) # time between images
 Factor = 1/(Scale*Dt) # conversion factor to go from px/frame to mm/s
 NX = ppf.get_column_amount(Fol_In) # get the number of columns
 # set frame0, the image step size and how many images to process
-Frame0 = 337 # starting index of the run
+Frame0 = 291 # starting index of the run
 Stp_T = 2 # step size in time
-Seconds = 2 # how many seconds to observe the whole thing
-# N_T = int((Seconds/Dt)/Stp_T)
-N_T = 165
+Seconds = 0.33 # how many seconds to observe the whole thing
+N_T = int((Seconds/Dt)/Stp_T)
+# N_T = 100
 
 # these are the ticks and ticklabels to go from pixel -> mm for the coordinates
 y_ticks = np.arange(0,Height,4*Scale)
@@ -51,7 +51,7 @@ IMAGES_PROF = []
 IMAGES_FLUX = []
 IMAGES_HIGHPASS = []
 IMAGES_HIST = []
-Gif_Suffix = '_slow_rise.gif' 
+Gif_Suffix = '_slow_rise_h2.gif' 
 GIF_ROI = 'changing_roi' + Gif_Suffix
 GIF_H = 'h' + Gif_Suffix
 GIF_QUIV = 'contour' + Gif_Suffix
@@ -72,12 +72,12 @@ custom_map = ppf.custom_div_cmap(100, mincol='indigo', midcol='darkcyan' ,maxcol
 
 # enable or disable the plots
 PLOT_ROI = True
-PLOT_HT = True
-PLOT_QUIV = True
-PLOT_PROF = True
-PLOT_FLUX = True
-PLOT_HIGHPASS = True
-PLOT_HIST = True
+PLOT_HT = False
+PLOT_QUIV = False
+PLOT_PROF = False
+PLOT_FLUX = False
+PLOT_HIGHPASS = False
+PLOT_HIST = False
 
 for II in range(0,N_T):
     print('Image %d of %d' %((II+1,N_T)))
@@ -126,8 +126,8 @@ for II in range(0,N_T):
         ax.set_ylabel('$y$[mm]') # set y label
         fig.tight_layout(pad=0.5) # crop edges of the figure to save space
         # plot a horizontal line of the predicted interface in case it is visible
-        ax.set_ylim(0,Height)
-        ax.set_xlim(0,Width)
+        ax.set_ylim(0,Height-1)
+        ax.set_xlim(0,Width-1)
         if h[LOAD_IDX] > 0:
             interface_line = np.ones((img.shape[1],1))*(Height-h[LOAD_IDX])
             ax.plot(interface_line, lw = 1, c='r')
@@ -148,11 +148,11 @@ for II in range(0,N_T):
         ax.set_title('$t$ = %03d [ms]' %(t[II]*1000))
         ax.scatter(t[II],(-h_dum[II]+Height)/Scale, c='r', marker='x', s=(300./fig.dpi)**2)
         ax.set_ylim(0,30)
-        ax.set_xlim(0,1)
+        ax.set_xlim(0,2)
         ax.set_xlabel('$t$[s]')
         ax.set_ylabel('$h$[mm]')
         ax.grid(b=True)
-        ax.set_xticks(np.arange(0, 2.1 ,0.2))
+        ax.set_xticks(np.arange(0, 0.35 ,0.05))
         ax.set_yticks(np.arange(0, 35, 5))
         fig.tight_layout(pad=1.1)
         ax.legend(loc='upper right')
@@ -175,7 +175,7 @@ for II in range(0,N_T):
         # ax.scatter(x_pad[Y_IND[1],:], v_pad[Y_IND[1],:], c='b', marker='x', s=(300./fig.dpi)**2)
         # ax.scatter(x_pad[Y_IND[2],:], v_pad[Y_IND[2],:], c='g', marker='x', s=(300./fig.dpi)**2)
         ax.set_xlim(0, Width)
-        ax.set_ylim(-200, 300)
+        ax.set_ylim(-150, 225)
         ax.set_xlabel('$x$[mm]')
         ax.set_ylabel('$v$[mm/s]')
         ax.legend(prop={'size': 12}, ncol = 3, loc='lower center')
@@ -196,8 +196,8 @@ for II in range(0,N_T):
         ax.set_title('$t$ = %03d [ms]' %(t[II]*1000))
         ax.scatter(y[:,0], q, c='r', marker='x', s=(300./fig.dpi)**2)
         ax.plot(y[:,0], q, c='r')
-        ax.set_ylim(-800,1200)
-        ax.set_yticks(np.linspace(-800,1200,11))
+        ax.set_ylim(-500,1000)
+        ax.set_yticks(np.linspace(-500,1000,7))
         ax.set_xlim(0, Height)
         ax.set_xticks(np.arange(0,Height,4*Scale))
         ax.set_xticklabels(np.linspace(0,20,6,dtype=int), fontsize=15)
@@ -213,10 +213,10 @@ for II in range(0,N_T):
     # plot the contour and the quiver, the principle is the same, so not everything is commented
     if PLOT_QUIV == True:
         fig, ax = plt.subplots(figsize = (4, 8))
-        cs = plt.pcolormesh(x_pco,y_pco,v, vmin=-300, vmax=300, cmap = custom_map) # create the contourplot using pcolormesh
+        cs = plt.pcolormesh(x_pco,y_pco,v, vmin=-150, vmax=200, cmap = custom_map) # create the contourplot using pcolormesh
         ax.set_aspect('equal') # set the correct aspect ratio
         clb = fig.colorbar(cs, pad = 0.2) # get the colorbar
-        clb.set_ticks(np.linspace(-300, 300, 11)) # set the colorbarticks
+        clb.set_ticks(np.linspace(-150, 200, 11)) # set the colorbarticks
         clb.ax.set_title('Velocity \n [mm/s]', pad=15) # set the colorbar title
         STEPY= 2
         STEPX = 1
@@ -273,47 +273,4 @@ if PLOT_HIGHPASS == True:
 if PLOT_HIST == True:
     imageio.mimsave(GIF_HIST, IMAGES_HIST, duration=duration)
 # delete the folder with the gif images
-# shutil.rmtree(Fol_Img)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+shutil.rmtree(Fol_Img)

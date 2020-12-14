@@ -56,7 +56,7 @@ def pad(x, y, u, v, width):
     # return the result
     return x_p, y_p, u_p, v_p
 
-def calc_flux(x, v):
+def calc_flux(x, v, Scale):
     """
     Function to calculate the flux from the velocity field. Careful, that x and
     v are padded, meaning we have added v = 0 at the boundary conditions.
@@ -67,16 +67,16 @@ def calc_flux(x, v):
     x : 1d np.array 
         Horizontal coordinates of the channel in pixels.
     v : 1d np.array
-        Padded vertical velocity across the width of the channel.
+        Padded vertical velocity across the width of the channel in mm/s.
 
     Returns
     -------
     q : int
-        Flux across the width of the channel.
+        Flux across the width of the channel in mm^2/s.
 
     """
     # calculate the flux of the padded fields
-    q = np.trapz(v, x)
+    q = np.trapz(v, x)/Scale
     # return the result
     return q
 
@@ -191,7 +191,7 @@ def get_column_amount(Fol_In):
 
     Returns
     -------
-    ny : int
+    nx : int
         Amount of columns in the fields.
 
     """
@@ -586,9 +586,9 @@ def high_pass(u, v, sigma, truncate):
     # return the result
     return u_filt, v_filt
 
-def fill_zeros(u, v, NY_max):
+def fill_dummy(u, v, NY_max):
     missing_rows = NY_max - u.shape[0]
-    dummy_zeros = np.zeros((missing_rows, u.shape[1]))
+    dummy_zeros = np.ones((missing_rows, u.shape[1]))*1000
     u = np.vstack((dummy_zeros, u))
     v = np.vstack((dummy_zeros, v))
     return u, v
@@ -625,8 +625,20 @@ def calc_qfield(x, y, u, v):
     vx = np.gradient(v_smo, x[0,:], axis = 1)
     vy = np.gradient(v_smo, y[:,0], axis = 0)
     qfield = -0.5*(ux**2+2*vx*uy+vy**2)
-    return qfield, u_smo, v_smo
+    return qfield
 
+def get_frame0(Fol_In):
+    Fol = os.path.join(Fol_In, 'data_files')
+    data_list = os.listdir(Fol)
+    run0 = data_list[0]
+    frame0 = int(run0[6:12])
+    return frame0
+
+def get_NT(Fol_In):
+    N_T = len(os.listdir(os.path.join(Fol_In, 'data_files')))
+    return N_T
+
+Fill_Dum = 1000
 
 # Fol_In = 'C:\PIV_Processed\Images_Processed\Fall_24_24_peak2RMS\Results_F_h4_f1200_1_s_24_24'
 # Fol_Raw = get_raw_folder(Fol_In)

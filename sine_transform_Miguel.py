@@ -10,7 +10,7 @@ Created on Mon Dec 14 08:07:36 2020
 """
 
 import sys
-sys.path.append('C:\\Users\manue\Documents\GitHub\\ratzVKI\PIV_Campaign_Processing')
+sys.path.append('\PIV_Campaign_Processing')
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -87,3 +87,48 @@ ax.set_xlim(0, x_coordinates[-1])
 ax.set_ylim(-80, 0)
 ax.grid(b=True)
 ax.legend(loc = 'upper center')
+
+
+
+
+#%%  Miguel Check.
+# We will look for the coefficients in the coarse mesh,
+# but then use the in the fine mesh (fundamentals of 'super-resolution')
+# We create the basis; I put 15 vectors
+N_V=15
+# Initialize the matrix
+Psi_S_Coarse=np.zeros([x_coordinates.shape[0],N_V])
+L=x_coordinates.max()
+# Loop over columns for construction
+for r in range(1,N_V):
+  psi=np.sin(np.pi*x_coordinates*r/(L))  
+  Psi_S_Coarse[:,r-1]=psi/np.linalg.norm(psi)
+
+# Show the bases
+plt.plot(Psi_S_Coarse[:,0])
+plt.plot(Psi_S_Coarse[:,1])
+plt.plot(Psi_S_Coarse[:,2])
+
+# We orthonormalize it:
+q, r = np.linalg.qr(Psi_S_Coarse)
+plt.plot(q[:,0])
+plt.plot(q[:,1])
+plt.plot(q[:,2])
+
+
+#%% We compute the coefficients of the projection,
+# based on an approximation
+q_tilde=q[:,0:20]
+
+U=profile_unsmoothed[50,20,:]
+check=np.matmul(q_tilde.T, q_tilde)
+Coeffs=np.matmul(q_tilde.T, U)
+U_tilde=np.matmul(q_tilde,Coeffs)
+
+plt.plot(x_coordinates,U,'ko')
+plt.plot(x_coordinates,U_tilde,'b--')
+
+    
+
+
+

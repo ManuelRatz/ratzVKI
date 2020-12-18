@@ -59,7 +59,7 @@ def detect_triggersHS(folder):
     return frame0, pressure_signal
 
 
-def edge_detection_grad(crop_img,treshold_pos,wall_cut,threshold_outlier, do_mirror):
+def edge_detection_grad(crop_img, threshold_pos, wall_cut, threshold_outlier, do_mirror):
     """
     Function to get the the edges of the interface
 
@@ -90,13 +90,19 @@ def edge_detection_grad(crop_img,treshold_pos,wall_cut,threshold_outlier, do_mir
     y_index  = (np.asarray([])) 
     
     Profiles   = crop_img[:,wall_cut+3:len(crop_img[1])-wall_cut] # analyse the region where no spots from the wall disturb detection
-    Profiles_s = savgol_filter(Profiles, 5, 3, axis =0)        # intensity profile smoothened
-    Profiles_d = np.gradient(Profiles_s, axis = 0)              # calculate gradient of smoothend intensity along the vertical direction
-    idx_maxima = np.argmax(Profiles_d, axis = 0)                # find positions of all the maxima in the gradient
+    # Profiles_s = savgol_filter(Profiles, 15, 2, axis =0)        # intensity profile smoothened
+    Profiles_d = np.gradient(Profiles, axis = 0)              # calculate gradient of smoothend intensity along the vertical direction
+    idx_maxima = np.zeros((Profiles.shape[1]),dtype = int)
+    for i in range(0,Profiles_d.shape[1]):
+        if np.max(Profiles_d[:,i]) < threshold_pos:
+            idx_maxima[i] = int(np.argmax(Profiles_d[:,i]))
+        else:
+            idx_maxima[i] = int(np.argmax(Profiles_d[:,i] > threshold_pos))               # find positions of all the maxima in the gradient
+    # idx_maxima = np.argmax(Profiles_d > 10, axis = 0)                # find positions of all the maxima in the gradient
     #mean_a = np.mean(Profiles_s, axis=0)
     for j in range(Profiles_d.shape[1]):
         # accept only the gradient peaks that are above the threeshold (it avoids false detections lines where the interface is not visible)  
-        if Profiles_d[idx_maxima[j],j] > treshold_pos:
+        if Profiles_d[idx_maxima[j],j] > 1:
             grad_img[idx_maxima[j],j+wall_cut+3] = 1 # binarisation
         # else:
             # print('Below Threshold')
@@ -316,19 +322,21 @@ def fitting_advanced(grad_img,pix2mm,l,sigma_f,sigma_y):
     """
     right_flip_img = np.flipud(grad_img) # flipping the image
     i_y, i_x = np.where(right_flip_img==1) # coordinates of the edge
+    # i_x = i_x-0.5
     i_y_mm = i_y*pix2mm # y coordinate of the edge in mm
     i_x_mm = i_x*pix2mm # x coordinate of the edge in mm
-    img_width_mm = len(grad_img[1])*pix2mm # width of the image in mm 
-   
+    img_width_mm = grad_img.shape[1]*pix2mm # width of the image in mm 
+    
     X_t=i_x_mm; X_train=np.expand_dims(X_t, axis=1)
     Y_t=i_y_mm; Y_train=np.expand_dims(Y_t, axis=1)
     #y_c=data['y_c'] # This is the clean data.
-    X=np.linspace(0, img_width_mm, 1000, endpoint=True)
+    X=np.linspace(0, 5, 1000, endpoint=True)
+    X = X-0.5*pix2mm
     X_test=np.expand_dims(X, axis=1)
     # Note that the vectors are augmented to be of sixe n x 1
     
     # This is the Gaussian Fit
-    mu_s, cov_s = aFitting.posterior_predictive(X_test, X_train, Y_train,l,sigma_f,sigma_y)
+    mu_s, cov_s = aFitting.posterior_predictive(X_test, X_train, Y_train, img_width_mm,sigma_f,sigma_y)
     # This is an example of sampling possibe solutions of the regressions
     #samples = np.random.multivariate_normal(mu_s.ravel(), cov_s, 3)
     
@@ -338,7 +346,7 @@ def fitting_advanced(grad_img,pix2mm,l,sigma_f,sigma_y):
     #             s=10,label='Data')
     # aFitting.plot_gp(mu_s, cov_s, X_test)
     # plt.xlim([0,5])
-    # #plt.ylim([30,40])
+    # plt.ylim([30,40])
     
 
     return mu_s,i_x,i_y,i_x_mm,i_y_mm,X,img_width_mm

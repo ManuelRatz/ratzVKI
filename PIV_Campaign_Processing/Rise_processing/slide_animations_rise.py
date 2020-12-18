@@ -71,15 +71,16 @@ t = np.linspace(0,Seconds,int(Seconds/Dt)+1)[::Stp_T]
 custom_map = ppf.custom_div_cmap(100, mincol='indigo', midcol='darkcyan' ,maxcol='yellow')
 
 # enable or disable the plots
-PLOT_ROI = True
+PLOT_ROI = False
 PLOT_HT = False
 PLOT_QUIV = False
 PLOT_PROF = False
 PLOT_FLUX = False
-PLOT_HIGHPASS = False
+PLOT_HIGHPASS = True
 PLOT_HIST = False
 
-for II in range(0,N_T):
+# for II in range(0,N_T):
+for II in range(50, 51):
     print('Image %d of %d' %((II+1,N_T)))
     # calculate the loading index and load the data
     LOAD_IDX = Frame0 + Stp_T*II
@@ -108,7 +109,7 @@ for II in range(0,N_T):
     # pad the data using the no slip boundary condition
     x_pad, y_pad, u_pad, v_pad = ppf.pad(x, y, u, v, Width)   
     x_pco, y_pco = ppf.shift_grid(x, y)
-    u_hp, v_hp = ppf.high_pass(u, v, sigma = 3, truncate = 3)
+    u_hp, v_hp = ppf.high_pass(u, v, sigma = 3, truncate = 3, padded = False)
     img = ppf.load_raw_image(Fol_Raw, LOAD_IDX)
     
     # start with the animation of the changing ROI
@@ -161,7 +162,6 @@ for II in range(0,N_T):
         plt.close(fig)
         IMAGES_H.append(imageio.imread(Name_Out))
     
-
     # plot the velocity profiles, the principle is the same, so not everything is commented
     if PLOT_PROF == True:
         fig, ax = plt.subplots(figsize=(8,5))
@@ -223,7 +223,7 @@ for II in range(0,N_T):
         plt.quiver(x[(len(x)+1)%2::STEPY, ::STEPX], y[(len(x)+1)%2::STEPY, ::STEPX], u[(len(x)+1)%2::STEPY, ::STEPX],\
                    v[(len(x)+1)%2::STEPY, ::STEPX], color='k', scale=600, width=0.005,headwidth=4, headaxislength = 6)
         ax.set_ylim(0,Height)
-        ax.set_xlim(0,Width)
+        ax.set_xlim(0,Width-1)
         ax.set_yticks(np.arange(0,Height,4*Scale)) # set custom y ticks
         ax.set_yticklabels(np.linspace(0,20,6,dtype=int)) # set custom y ticklabels
         ax.set_xticks(np.linspace(0, Width, 6)) # set custom x ticks 
@@ -244,7 +244,7 @@ for II in range(0,N_T):
         plt.quiver(x[(len(x)+1)%2::STEPY, ::STEPX], y[(len(x)+1)%2::STEPY, ::STEPX], u_hp[(len(x)+1)%2::STEPY, ::STEPX],\
                    v_hp[(len(x)+1)%2::STEPY, ::STEPX], color='lime', scale=100, width=0.005,headwidth=4, headaxislength = 6)
         ax.set_ylim(0,Height)
-        ax.set_xlim(0,Width)
+        ax.set_xlim(0,Width-1)
         ax.set_yticks(np.arange(0,Height,4*Scale)) # set custom y ticks
         ax.set_yticklabels(np.linspace(0,20,6,dtype=int)) # set custom y ticklabels
         ax.set_xticks(np.linspace(0, Width, 6)) # set custom x ticks 
@@ -253,24 +253,24 @@ for II in range(0,N_T):
         ax.set_ylabel('$y$[mm]')
         fig.tight_layout(pad=0.5)
         Name_Out = Fol_Img+os.sep+'highpass%06d.png'%LOAD_IDX
-        fig.savefig(Name_Out, dpi=65)
-        plt.close(fig)
-        IMAGES_HIGHPASS.append(imageio.imread(Name_Out))
-# # render the gifs
-duration = 0.05
-if PLOT_FLUX == True:
-    imageio.mimsave(GIF_FLUX, IMAGES_FLUX, duration=duration)
-if PLOT_PROF == True:
-    imageio.mimsave(GIF_PROF, IMAGES_PROF, duration=duration)
-if PLOT_QUIV == True:
-    imageio.mimsave(GIF_QUIV, IMAGES_CONT, duration=duration)
-if PLOT_ROI == True:
-    imageio.mimsave(GIF_ROI, IMAGES_ROI, duration=duration)
-if PLOT_HT == True:
-    imageio.mimsave(GIF_H, IMAGES_H, duration=duration)
-if PLOT_HIGHPASS == True:
-    imageio.mimsave(GIF_HIGHPASS, IMAGES_HIGHPASS, duration=duration)
-if PLOT_HIST == True:
-    imageio.mimsave(GIF_HIST, IMAGES_HIST, duration=duration)
-# delete the folder with the gif images
-shutil.rmtree(Fol_Img)
+        # fig.savefig(Name_Out, dpi=65)
+        # plt.close(fig)
+        # IMAGES_HIGHPASS.append(imageio.imread(Name_Out))
+# # # render the gifs
+# duration = 0.05
+# if PLOT_FLUX == True:
+#     imageio.mimsave(GIF_FLUX, IMAGES_FLUX, duration=duration)
+# if PLOT_PROF == True:
+#     imageio.mimsave(GIF_PROF, IMAGES_PROF, duration=duration)
+# if PLOT_QUIV == True:
+#     imageio.mimsave(GIF_QUIV, IMAGES_CONT, duration=duration)
+# if PLOT_ROI == True:
+#     imageio.mimsave(GIF_ROI, IMAGES_ROI, duration=duration)
+# if PLOT_HT == True:
+#     imageio.mimsave(GIF_H, IMAGES_H, duration=duration)
+# if PLOT_HIGHPASS == True:
+#     imageio.mimsave(GIF_HIGHPASS, IMAGES_HIGHPASS, duration=duration)
+# if PLOT_HIST == True:
+#     imageio.mimsave(GIF_HIST, IMAGES_HIST, duration=duration)
+# # delete the folder with the gif images
+# shutil.rmtree(Fol_Img)

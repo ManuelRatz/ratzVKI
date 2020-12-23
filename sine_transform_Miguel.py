@@ -88,6 +88,12 @@ ax.set_ylim(-80, 0)
 ax.grid(b=True)
 ax.legend(loc = 'upper center')
 
+#%% POD Filter
+D=np.zeros()
+
+
+
+
 
 
 

@@ -79,7 +79,7 @@ settings.extract_sig2noise = True  # 'True' or 'False' (only for the last pass)
 settings.sig2noise_method = 'peak2RMS'
 settings.sig2noise_mask = 1
 settings.do_sig2noise_validation = True# This is time consuming
-settings.sig2noise_threshold = 4.5
+settings.sig2noise_threshold = 5.5
 
 # validation
 settings.validation_first_pass = True

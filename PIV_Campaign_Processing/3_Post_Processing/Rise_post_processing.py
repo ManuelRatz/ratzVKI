@@ -2,9 +2,19 @@
 """
 Created on Fri Nov 20 11:46:08 2020
 
-@author: manue
-@description: Create animations for the slide. These are animations for
-    the R_h2_f1200_1_p13 
+@author: Manuel Ratz
+@description: Create animations for all the Rises. Here
+    we load all the smoothed velocity profiles and animate
+    different things for the large 3d tensor
+    
+    Animations include:
+        - Raw image with current ROI
+        - 3 Velocity profiles at different y values of the channel
+        - Predicted Height as a function of time
+        - Mass flux across the height of the channel
+        - Signal to noise ratio of the current image
+        - Highpass filtered velocity quiver with the Q field as a contourplot
+        - Velocity quiver with the vertical velocity as a contour
 """
 
 import sys

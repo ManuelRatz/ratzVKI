@@ -2,10 +2,11 @@
 """
 Created on Fri Oct  4 14:04:04 2019
 
-@author: Ratz
-@description: This is a modified version of the windef_rect file.
-    It includes the option to process a complete fall or just the fall with 
-    full roi or moving roi respectively.
+@author: Manuel Ratz
+@description: This is a modified version of the windef file. It
+    adds to the functions of the windef file by using an adaptive
+    ROI based on the mass flux. Another major difference is the
+    possibility of rectangular windows
 """
 
 import os

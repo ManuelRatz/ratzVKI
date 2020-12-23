@@ -3,8 +3,10 @@
 """
 Created on Thu Oct 29 09:52:25 2020
 
-@author: ratz
-@description: functions for rotating the raw PIV images
+@author: Manuel Ratz
+@description: Code to rotate the PIV images and crop them to the
+    channel width. Works for either all the falls, all the rises
+    or one specific case depending on what is commented
 """
 
 import cv2                  # for reading the images

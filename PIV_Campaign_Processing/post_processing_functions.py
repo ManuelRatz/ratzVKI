@@ -1,8 +1,12 @@
 """
 Created on Fri Nov 13 09:40:18 2020
 
-@author: Manuel
-@description: Functions for post processing
+@author: Manuel Ratz
+@description: All possible functions used in the post processing.
+    This includes many things, such as smoothing of the profiles,
+    loading of the raw images and help functions to create folders 
+    or get the image height. All of the functions are used in the
+    files that are in the 3_Post_Processing folder
 """
 import matplotlib.pyplot as plt # for plotting
 import numpy as np              # for array operations

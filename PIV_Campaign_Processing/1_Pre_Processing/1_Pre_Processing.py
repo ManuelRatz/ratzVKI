@@ -2,7 +2,11 @@
 """
 Created on Thu Sep 26 11:37:58 2019
 
-@author: mendez, torres
+@author: Manuel Ratz
+@description: Code to preprocess all the rotated PIV images. Depending on
+    the RAM of your PC the array calculation is too much. In this case 
+    split each run into two parts. There is no loop to iterate, again
+    because of the RAM
 """
 
 import os  # This is to understand which separator in the paths (/ or \)

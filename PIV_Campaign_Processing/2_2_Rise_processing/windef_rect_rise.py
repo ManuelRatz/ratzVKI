@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Oct  4 14:04:04 2019
-@author: Theo
+
+@author: Manuel Ratz
+@description: This is a modified version of the windef file. It
+    adds to the functions of the windef file by using an adaptive
+    ROI based on the mass flux. Another major difference is the
+    possibility of rectangular windows. Run R_h1_f750_p15 should
+    be skipped becauses the displacement is too large.
 """
 
 

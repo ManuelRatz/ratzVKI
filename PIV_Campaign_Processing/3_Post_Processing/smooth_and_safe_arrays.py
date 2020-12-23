@@ -3,6 +3,10 @@
 Created on Tue Dec 15 13:30:17 2020
 
 @author: Manuel Ratz
+@description: Code to execute the smoothing for all the runs
+    by iterating over them. This is done by using 3d smoothing
+    of the velocity tensor. See post_processing_functions.py
+    for a detailed explanation of each step
 """
 
 import sys

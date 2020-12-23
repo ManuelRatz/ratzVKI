@@ -2,43 +2,11 @@
 """
 Created on Wed Sep 18 16:42:13 2019
 
-@author: Manuel
-@description
-##############################################################################
-
- IMPORTANT READ ME           IMPORTANT READ ME              IMPORTANT READ ME
-                               
-##############################################################################
-
-This code contains the power to process all the rises of the piv campaign. To
-use it simply clone the github repository and you will have all the files. In
-the end there is a loop. To process all the images simply let the file run as is.
-
-This will likely result in an error. You have to restart the kernel after a few
-runs depending on the power of your computer. To be sure restart after every run.
-
-The idea is to run two different settings:
-    One with rectangles (Do for ALL images), the window sizes for this are 
-        settings.window_height = (256, 128, 64)
-        settings.overlap_height = (128, 64, 32)
-        settings.window_width = (64, 32, 16)
-        settings.overlap_width = (32, 16, 8) 
-    One with squares (Do for the 1000 and 1200 Hz runs), the window sizes for this are
-        settings.window_height = (128, 64, 32)
-        settings.overlap_height = (64, 32, 16)
-        settings.window_width = (128, 64, 32)
-        settings.overlap_width = (64, 32, 16)
-
-The raw images are stored in a .zip file under the following link
-    https://osf.io/q6cw4/
-Simply download them and store them in the given data path or change according to your needs.
-
-Currently we are not processing two of the rises:
-    - R_h1_f750_p10 - because the displacement is too high
-    - R_h1_f1000_1_p14 - because two images have been replaced by dummys which
-                         will mess up the ROI prediction
-                         
-Except for the settings in the loop, no other ones should be changed.
+@author: Manuel Ratz
+@description: Code to process all the Rises from the
+    experimental PIV campaign on the channel. Loaded
+    functions are specific to this very case, so care
+    about using them
 """
 
 import os

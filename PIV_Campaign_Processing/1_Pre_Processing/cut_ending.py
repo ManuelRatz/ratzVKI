@@ -2,10 +2,10 @@
 """
 Created on Mon Nov  2 09:17:12 2020
 
-@author: ratz
-@description: Code to cut the ending given by the dantec files. Due to the
-different nomenclature we take the same loop twice, once for the fall and once
-for the rise
+@author: Manuel Ratz
+@description: Code to cut the ending given by the dantec files.
+    Due to the different nomenclature we take the same loop twice,
+    once for the fall and once for the rise
 """
 import os # for data paths and renaming
 

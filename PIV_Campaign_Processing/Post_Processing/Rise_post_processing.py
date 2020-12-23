@@ -30,19 +30,19 @@ Fol_PP = ppf.create_folder('C:\PIV_Processed\Images_Postprocessed' + Settings + 
 ######## enable or disable the creation of individual gifs ###################
 ##############################################################################
 
-PLOT_ROI = True # working
-PLOT_PROF = True # working
-PLOT_H = True # working
-PLOT_FLUX = True # working 
-PLOT_S2N = True # working
-PLOT_HP = True # working
-PLOT_QUIV = True # working
+PLOT_ROI = False # working
+PLOT_PROF = False # working
+PLOT_H = False # working
+PLOT_FLUX = False # working 
+PLOT_S2N = False # working
+PLOT_HP = False # working
+PLOT_QUIV = False # working
 
 ##############################################################################
 ################ set some cosmetics ##########################################
 ##############################################################################
 
-Stp_T = 8 # step size in time
+# Stp_T = 800 # step size in time
 Duration = 0.05 # duration of each image in the gif
 Dpi = 65 # dpi of the figures
 
@@ -50,8 +50,8 @@ Dpi = 65 # dpi of the figures
 ################ iterate over all the runs ###################################
 ##############################################################################
 
-for i in range(24,len(Run_List)):
-# for i in range(20, 24):
+for i in range(0,len(Run_List)):
+# for i in range(13, 17):
     Run = ppf.cut_processed_name(Run_List[i]) # current run
     print('Exporting Run ' + Run)
     # give the input folder for the data
@@ -71,8 +71,15 @@ for i in range(24,len(Run_List)):
     # set the constants of the images to go from px/frame to mm/s
     Height, Width = ppf.get_img_shape(Fol_Raw) # image width in pixels
     Scale = Width/5 # scaling factor in px/mm
-    Dt = 1/ppf.get_frequency(Fol_Raw) # time between images
+    Freq = ppf.get_frequency(Fol_Raw) # acquisition frequency of the images 
+    Dt = 1/Freq # time between images
     Factor = 1/(Scale*Dt) # conversion factor to go from px/frame to mm/s
+    
+    # different time steps for low acquisition frequency
+    if Freq == 750:
+        Stp_T = 5
+    else:
+        Stp_T = 8
     
     # load the data of the predicted height
     H = ppf.load_h(Fol_In)
@@ -171,27 +178,26 @@ for i in range(24,len(Run_List)):
         
         # plot the s2n histogram
         if PLOT_S2N == True:
-            fig, ax = plt.subplots(figsize = (6.9, 4.5))
-            ax.hist(s2n.ravel(), bins = 100, density = True)
-            ax.set_xlim(0, 25)
-            ax.set_ylim(0, 0.3)
-            ax.grid(b = True)
-            ax.set_xlabel('Signal to noise ratio')
-            ax.set_ylabel('Probability')
-            ax.plot((6.5, 6.5), (0, 0.3), c = 'orange', label = 'Threshold')
-            ax.legend(prop={'size': 15}, loc = 'upper right')
-            Name_Out = Fol_Gif_s2n+os.sep+'s2n%06d.png'% Image_Idx
-            fig.tight_layout(pad=0.5)
-            fig.savefig(Name_Out, dpi = Dpi)
-            plt.close(fig)
+            fig, ax = plt.subplots(figsize = (6.9, 4.5)) # create the figure
+            ax.hist(s2n.ravel(), bins = 100, density = True) # plot the histogram
+            ax.set_xlim(0, 25) # set x limit
+            ax.set_ylim(0, 0.3) # set y limit
+            ax.grid(b = True) # enable the grid
+            ax.set_xlabel('Signal to noise ratio') # set x label
+            ax.set_ylabel('Probability') # set y lable
+            ax.plot((6.5, 6.5), (0, 0.3), c = 'orange', label = 'Threshold') # plot the threshold
+            ax.legend(prop={'size': 15}, loc = 'upper right') # show the legend
+            Name_Out = Fol_Gif_s2n+os.sep+'s2n%06d.png'% Image_Idx # output name
+            fig.tight_layout(pad=0.5) # crop figure edges
+            fig.savefig(Name_Out, dpi = Dpi) # save the figure
+            plt.close(fig) # close it in the plot window
             IMAGES_S2N.append(imageio.imread(Name_Out)) # append into list
         
         # plot the changing ROI on the Raw Image
         if PLOT_ROI == True:
-            # create the figure
-            fig, ax = plt.subplots(figsize = (2.5,7.5))
-            ax.set_ylim(0,Height)
-            ax.set_xlim(0,Width)
+            fig, ax = plt.subplots(figsize = (2.5,7.5)) # create the figure
+            ax.set_ylim(0,Height) # set x limit
+            ax.set_xlim(0,Width) # set y limit
             ax.imshow(img, cmap=plt.cm.gray) # show the image
             ax.set_yticks(y_ticks) # set custom y ticks
             ax.set_yticklabels(y_ticklabels) # set custom y ticklabels
@@ -206,132 +212,141 @@ for i in range(24,len(Run_List)):
                 ax.plot(interface_line, lw = 1, c='red')
             Name_Out = Fol_Gif_ROI+os.sep+'roi%06d.png' % Image_Idx # set the output name
             fig.savefig(Name_Out, dpi = Dpi) # save the figure
-            plt.close(fig) # close to not overcrowd
+            plt.close(fig) # close it in the plot window
             IMAGES_ROI.append(imageio.imread(Name_Out)) # append into list
             
         # plots of the changing height
         if PLOT_H == True:
             fig, ax = plt.subplots(figsize=(6.9,4.5))
-            # plot the height, convert it to mm and shift to have the beginning height at the top of the image
+            # plot the height with one point at the end
             ax.plot(t[:j+1], h_mm[:j+1], c='red', label = 'Interface Height')
-            # ax.set_title('$t$ = %03d [ms]' %(t[j]*1000))
             ax.scatter(t[j], h_mm[j], c='red', marker='x', s=(300./fig.dpi)**2)
-            ax.set_ylim(0, hmax_mm)
-            ax.set_xlim(0, t[-1])
-            ax.set_xlabel('$t$[s]')
-            ax.set_ylabel('$h$[mm]')
-            ax.grid(b=True)
-            ax.set_yticks(h_ticks_mm)
-            fig.tight_layout(pad=1.1)
-            ax.legend(prop={'size': 15}, loc='upper right')
-            Name_Out = Fol_Gif_H + os.sep+'h%06d.png' % Image_Idx
-            fig.savefig(Name_Out, dpi = Dpi)
-            plt.close(fig)
-            IMAGES_H.append(imageio.imread(Name_Out))
+            ax.set_ylim(0, hmax_mm) # set y limit
+            ax.set_xlim(0, t[-1]) # set x limit
+            ax.set_xlabel('$t$[s]') # set x label
+            ax.set_ylabel('$h$[mm]') # set y label
+            ax.grid(b=True) # enable the grid
+            ax.set_yticks(h_ticks_mm) # set the y ticks
+            fig.tight_layout(pad=1.1) # crop the figure edges
+            ax.legend(prop={'size': 15}, loc='upper right') # show the legend
+            Name_Out = Fol_Gif_H + os.sep+'h%06d.png' % Image_Idx # set the output name
+            fig.savefig(Name_Out, dpi = Dpi) # save the figure
+            plt.close(fig) # close it in the plot window
+            IMAGES_H.append(imageio.imread(Name_Out)) # append into list
          
         # plots of the velocity profiles    
         if PLOT_PROF == True:
-            fig, ax = plt.subplots(figsize=(6.9, 4.5))
+            fig, ax = plt.subplots(figsize=(6.9, 4.5)) # create the figure
             # initialize array with values every 25% of the ROI
             Y_IND = np.array([int((x_pad.shape[0]*0.25)-1),int((x_pad.shape[0]*0.5)-1),int((x_pad.shape[0]*0.75)-1)])
+            # plot the three profiles and label them
             ax.plot(x_pad[Y_IND[0],:], v_pad[Y_IND[0],:], c='r', label='75\% ROI')
             ax.plot(x_pad[Y_IND[1],:], v_pad[Y_IND[1],:], c='b', label='50\% ROI')
             ax.plot(x_pad[Y_IND[2],:], v_pad[Y_IND[2],:], c='g', label='25\% ROI')
-            ax.set_xlim(0, Width-1)
-            ax.set_ylim(vmin, vmax)
-            ax.set_xlabel('$x$[mm]')
-            ax.set_ylabel('$v$[mm/s]')
-            ax.legend(prop={'size': 12}, ncol = 3, loc='lower center')
-            ax.grid(b=True)
-            ax.set_xticks(x_ticks)
-            ax.set_xticklabels(x_ticklabels)
-            ax.set_yticks(vticks_expanded)
-            fig.tight_layout(pad=0.5)
-            Name_Out = Fol_Gif_Prof+os.sep+'profiles%06d.png' % Image_Idx
-            fig.savefig(Name_Out, dpi = Dpi)
-            plt.close(fig)
-            IMAGES_PROF.append(imageio.imread(Name_Out))
+            ax.set_xlim(0, Width-1) # set x limit
+            ax.set_ylim(vmin, vmax) # set y limit
+            ax.set_xlabel('$x$[mm]') # set x label
+            ax.set_ylabel('$v$[mm/s]') # set y label
+            ax.legend(prop={'size': 12}, ncol = 3, loc='lower center') # show the legend
+            ax.grid(b=True) # enable the grid
+            ax.set_xticks(x_ticks) # set custom x ticks
+            ax.set_xticklabels(x_ticklabels) # set custom x ticklabels
+            ax.set_yticks(vticks_expanded) # set custom v ticks
+            fig.tight_layout(pad=0.5) # crop the figure edges
+            Name_Out = Fol_Gif_Prof+os.sep+'profiles%06d.png' % Image_Idx # set the output name
+            fig.savefig(Name_Out, dpi = Dpi) # save the figure
+            plt.close(fig) # close the figure in the plot window
+            IMAGES_PROF.append(imageio.imread(Name_Out)) # append into list
         
         if PLOT_FLUX == True:
-            fig, ax = plt.subplots(figsize=(7, 4.5))
-            # integrate using trapz
+            fig, ax = plt.subplots(figsize=(7, 4.5)) # create the figure
+            # calculate the current flux as a funciton of y
             flux = np.trapz(v_pad, x_pad)/Scale
+            # plot the flux with plot and scatter
             ax.scatter(y_pad[:,0], flux, c='r', marker='x', s=(300./fig.dpi)**2)
             ax.plot(y_pad[:,0], flux, c='r')
-            ax.set_ylim(flux_min,flux_max)
-            ax.set_yticks(flux_ticks)
-            ax.set_xlim(0, Height)
-            ax.set_xticks(y_ticks)
-            ax.set_xticklabels(y_ticklabels)
-            ax.set_xlabel('$y$[mm]')
-            ax.set_ylabel('$q$[mm$^2$/s]')
-            ax.grid(b=True)
-            fig.tight_layout(pad=0.5)
-            Name_Out = Fol_Gif_Flux+os.sep+'flux%06d.png' % Image_Idx
-            fig.savefig(Name_Out, dpi = Dpi)
-            plt.close(fig)
-            IMAGES_FLUX.append(imageio.imread(Name_Out))   
+            ax.set_ylim(flux_min,flux_max) # set y limits
+            ax.set_yticks(flux_ticks) # set y ticks
+            ax.set_xlim(0, Height) # set x limits
+            ax.set_xticks(y_ticks) # set x ticks (this is the vertical image axis, don't be confused)
+            ax.set_xticklabels(y_ticklabels) # set custom x ticklabels
+            ax.set_xlabel('$y$[mm]') # set x label
+            ax.set_ylabel('$q$[mm$^2$/s]') # set y label
+            ax.grid(b=True) # enable the grid
+            fig.tight_layout(pad=0.5) # crop the figure edges
+            Name_Out = Fol_Gif_Flux+os.sep+'flux%06d.png' % Image_Idx # set the output name
+            fig.savefig(Name_Out, dpi = Dpi) # save the figure
+            plt.close(fig) # close it in the plot window
+            IMAGES_FLUX.append(imageio.imread(Name_Out)) # append into list   
         
         # plot the flux as a function of y
         if PLOT_QUIV == True:     
-            fig, ax = plt.subplots(figsize = (3.8, 7.58))
-            cs = plt.pcolormesh(x_pco, y_pco, v, vmin=vmin, vmax=vmax, cmap = plt.cm.viridis, alpha = 1) # create the contourplot using pcolormesh
-            ax.set_aspect('equal') # set the correct aspect ratio
+            fig, ax = plt.subplots(figsize = (3.8, 7.58)) # create the figure
+            # create the contourplot using pcolormesh
+            cs = plt.pcolormesh(x_pco, y_pco, v, vmin=vmin, vmax=vmax, cmap = plt.cm.viridis, alpha = 1)
+            ax.set_aspect('equal') # equal aspect ratio for proper scaling
             clb = fig.colorbar(cs, pad = 0.1) # get the colorbar
             clb.set_ticks(vticks) # set the colorbarticks
-            ticklabs = clb.ax.get_yticklabels()
-            clb.ax.set_yticklabels(ticklabs)
-            clb.set_label('Velocity [mm/s]') # set the colorbar title
-            clb.set_alpha(1)
-            clb.draw_all()
-            STEPY= 2
-            STEPX = 1
+            ticklabs = clb.ax.get_yticklabels() # get the ticklabels of the colorbar
+            clb.ax.set_yticklabels(ticklabs) # set them (in case they have to be customized)
+            clb.set_label('Velocity [mm/s]') # set the colorbar label
+            clb.set_alpha(1) # figure should not be opaque
+            clb.draw_all() # in case the alpha is different
+            
+            STEPY= 4 # step size along the y axis
+            STEPX = 1 # step size along the x axis
+            # create the quiver plot with custom scaling to not overlap between the rows
             plt.quiver(x[(x.shape[0]+1)%2::STEPY, ::STEPX], y[(x.shape[0]+1)%2::STEPY, ::STEPX],\
                        u[(x.shape[0]+1)%2::STEPY, ::STEPX], v[(x.shape[0]+1)%2::STEPY, ::STEPX],\
-                       color='k', units = 'width', scale_units = 'y', scale = 1.1*v_max_quiv/y_spacing/STEPY,\
-                       )
-            ax.set_ylim(0, Height)
-            ax.set_xlim(0, Width-1)
+                       color='k', units = 'width', scale_units = 'y', width = 0.005,\
+                           scale = 1.1*v_max_quiv/y_spacing/STEPY)
+            ax.set_ylim(0, Height) # set the y limit
+            ax.set_xlim(0, Width-1) # set the x limit
             ax.set_yticks(y_ticks) # set custom y ticks
             ax.set_yticklabels(y_ticklabels) # set custom y ticklabels
             ax.set_xticks(x_ticks) # set custom x ticks 
             ax.set_xticklabels(x_ticklabels) # set custom x ticklabels
-            ax.set_xlabel('$x$[mm]')
-            # ax.set_ylabel('$y$[mm]')
-            fig.tight_layout(pad=0.5)
-            Name_Out = Fol_Gif_Quiv + os.sep + 'quiver%06d.png'% Image_Idx
-            fig.savefig(Name_Out, dpi = Dpi)
-            plt.close(fig)
-            IMAGES_QUIV.append(imageio.imread(Name_Out))
-
+            ax.set_xlabel('$x$[mm]') # set the x label
+            # ax.set_ylabel('$y$[mm]'), this is not done because they are all
+            # shown in one power point
+            fig.tight_layout(pad=0.5) # crop the figure edges
+            Name_Out = Fol_Gif_Quiv + os.sep + 'quiver%06d.png'% Image_Idx # set the output name
+            fig.savefig(Name_Out, dpi = Dpi) # save the figure
+            plt.close(fig) # close the figure in the plot window
+            IMAGES_QUIV.append(imageio.imread(Name_Out)) # append into list
+            
         if PLOT_HP == True:
-            qfield = ppf.calc_qfield(x, y, u, v)
-            x_pco, y_pco = ppf.shift_grid(x, y, padded = False)
-            fig, ax = plt.subplots(figsize = (3.8, 7.58))
-            cs = plt.pcolormesh(x_pco, y_pco, qfield, cmap = plt.cm.viridis, alpha = 1, vmin = -0.02, vmax = 0.015) # create the contourplot using pcolormesh
+            qfield = ppf.calc_qfield(x, y, u, v) # calculate the qfield
+            fig, ax = plt.subplots(figsize = (3.8, 7.58)) # create the figure
+            # create the contourplot using pcolormesh
+            cs = plt.pcolormesh(x_pco, y_pco, qfield, cmap = plt.cm.viridis, alpha = 1, vmin = -0.1, vmax = 0.06) 
             ax.set_aspect('equal') # set the correct aspect ratio
             clb = fig.colorbar(cs, pad = 0.1, drawedges = False, alpha = 1) # get the colorbar
-            clb.set_label('Q Field [1/s$^2$]')
-            ax.set_xlim(0,Width-1)
-            ax.set_ylim(0,Height)
-            ax.set_xticks(x_ticks)
-            ax.set_xticklabels(x_ticklabels)
-            ax.set_yticks(y_ticks)
-            ax.set_yticklabels(y_ticklabels)
-            ax.set_xlabel('$x$[mm]')
-            # ax.set_ylabel('$y$[mm]')
-            fig.tight_layout(pad=0.5)
-            u_hp, v_hp = ppf.high_pass(u, v, 3, 3, padded = False)
-            StpX = 1
-            StpY = 1
-            ax.grid(b = False)
+            clb.set_label('Q Field [1/s$^2$]') # set the colorbar label
+            ax.set_xlim(0,Width-1) # set x limit
+            ax.set_ylim(0,Height) # set y limit
+            ax.set_xticks(x_ticks) # set custom x ticks
+            ax.set_xticklabels(x_ticklabels) # set custom x ticklabels
+            ax.set_yticks(y_ticks) # set custom y ticks
+            ax.set_yticklabels(y_ticklabels) # set custom y ticklabels
+            ax.set_xlabel('$x$[mm]') # set x label
+            # ax.set_ylabel('$y$[mm]'), this is not done because they are all
+            # shown in one power point
+            fig.tight_layout(pad=0.5) # crop the figure edges
+            u_hp, v_hp = ppf.high_pass(u, v, 3, 3, padded = False) # calculate the highpass filtered velocity field
+            StpY= 1 # step size along the y axis
+            StpX = 1 # step size along the x axis
+            ax.grid(b = False) # disable the grid
+            # create the quiver with custom scaling, this is not adaptive 
+            # becauses the highpass filtered velocity field is purely for 
+            # visualization purposes
             ax.quiver(x[(x.shape[0]+1)%2::StpY,::StpX], y[(x.shape[0]+1)%2::StpY,::StpX],\
                       u_hp[(x.shape[0]+1)%2::StpY,::StpX], v_hp[(x.shape[0]+1)%2::StpY,::StpX],\
                       scale = 300, color = 'k', scale_units = 'height', units = 'width', width = 0.005)
-            Name_Out = Fol_Gif_HP + os.sep + 'test%06d.png' % Image_Idx
-            fig.savefig(Name_Out, dpi = Dpi)
-            plt.close(fig)
-            IMAGES_HP.append(imageio.imread(Name_Out))
+            Name_Out = Fol_Gif_HP + os.sep + 'test%06d.png' % Image_Idx # set the output name
+            fig.savefig(Name_Out, dpi = Dpi) # save the figure
+            plt.close(fig) # close it in the plot window
+            IMAGES_HP.append(imageio.imread(Name_Out)) # append into list
         
     # render the gifs if desired
     if PLOT_ROI == True:

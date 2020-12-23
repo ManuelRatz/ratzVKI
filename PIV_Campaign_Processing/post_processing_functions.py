@@ -1098,23 +1098,25 @@ def calc_qfield(x, y, u, v):
 
     Parameters
     ----------
-    x : TYPE
-        DESCRIPTION.
-    y : TYPE
-        DESCRIPTION.
-    u : TYPE
-        DESCRIPTION.
-    v : TYPE
-        DESCRIPTION.
+    x : 2d np.array
+        Array containg the unpadded x coordinates of the interrogation window centres
+    y : 2d np.array
+        Array containg the unpadded y coordinates of the interrogation window centres 
+    u : 2d np.array
+        Array containing the unpadded u displacement for every interrogation window
+    v : 2d np.array
+        Array containing the unpadded u displacement for every interrogation window
 
     Returns
     -------
-    qfield : TYPE
-        DESCRIPTION.
+    qfield : 2d np.array
+        2nd Invariant of a flow indicating vorticies.
 
     """
+    # copy the arrays into dummys
     u_copy = np.copy(u)
     v_copy = np.copy(v)
+    # smooth the velocities heavily
     u_smo, dum, dum, dum = smoothn(u_copy, s = 7.5)
     v_smo, dum, dum, dum = smoothn(v_copy, s = 7.5)
     # calculate the derivatives
@@ -1122,7 +1124,9 @@ def calc_qfield(x, y, u, v):
     uy = np.gradient(u_smo, y[:,0], axis = 0)
     vx = np.gradient(v_smo, x[-1,:], axis = 1)
     vy = np.gradient(v_smo, y[:,0], axis = 0)
+    # calculate the qfield
     qfield = -0.5*(ux**2+2*vx*uy+vy**2)
+    # return it
     return qfield
 
 def high_pass(u, v, sigma, truncate, padded = True):
@@ -1184,6 +1188,11 @@ def flux_parameters(smoothed_profile, x, Scale, case):
         Two cases, Rise or Fall, this influences the maximum, as it should be
         0 for a fall.
 
+    Raises
+    ------
+    ValueError
+        Error in case the wrong case is used.
+        
     Returns
     -------
     q_max : int
@@ -1203,21 +1212,58 @@ def flux_parameters(smoothed_profile, x, Scale, case):
         maximum_flux = np.nanmax(flux_tot) 
     else:
         raise ValueError('Invalid Case, must be Rise or Fall')
+    # calculate the minimum flux
     minimum_flux = np.nanmin(flux_tot)
+    # calculate the increments
     if (maximum_flux-minimum_flux) > 1500:
         increments = 250        
     elif (maximum_flux-minimum_flux) > 1000:
         increments = 200
     else:
         increments = 100
+    # calculate the max divider to set the ticks
     divider_max = int(np.ceil(maximum_flux/increments))
+    # calculate the maximum as a multiple of the increments
     flux_max = divider_max*increments
+    # calculate the min divider to set the ticks
     divider_min = int(np.floor(minimum_flux/increments))
+    # calculate the minimum as a multiple of the increments
     flux_min = divider_min*increments
+    # calculate the ticks
     flux_ticks = np.linspace(flux_min, flux_max, divider_max - divider_min+1)
+    # return the min, max and the ticks
     return  flux_max, flux_min, flux_ticks
 
 def profile_parameters(smoothed_profile, case):
+    """
+    Function to get the parameters of the velocities axis
+
+    Parameters
+    ----------
+    smoothed_profile : 3d np.array
+        3d Tensor containing the smoothed vertical velocity component of the
+        field of every timestep. The invalid positions are filled with nans.
+    case : str
+        Indicating 'Rise' or 'Fall'.
+
+    Raises
+    ------
+    ValueError
+        Error in case the wrong case is used.
+
+    Returns
+    -------
+    v_max : int
+        Upper ceiling of the velocity.
+    v_min : int
+        Lower floor of the velocity.
+    v_ticks : 1d np.array
+        Ticks for the colorbar.
+    v_ticks_expanded : 1d np.array
+        Ticks for the profile y-axis, extended by one increment to allow the 
+        legend below it to be readable.
+
+    """
     # increments of the vertical axis
     increments = 50
     # calculate the maximum and minimum velocity of the profile
@@ -1245,6 +1291,23 @@ def profile_parameters(smoothed_profile, case):
     return v_max, v_min, v_ticks, v_ticks_expanded
 
 def height_parameters(h_mm):
+    """
+    Function to get the ticks and max height for the h(t) plot
+
+    Parameters
+    ----------
+    h_mm : 1d np.array
+        Array containing the height values in mm, already flipped to be in the 
+        global coordinate system and not the image one.
+
+    Returns
+    -------
+    h_max : int
+        Upper limit of the height as a multiple of the increments.
+    h_ticks : 1d np.array
+        Ticks for the y-axis in the height plot.
+
+    """
     # set the increments of the vertical axis
     increments = 5
     # calculate the maximum h
@@ -1258,19 +1321,66 @@ def height_parameters(h_mm):
     return h_max, h_ticks
     
 def first_valid_row(array):
+    """
+    Function to get the first valid row in a 2d array
+
+    Parameters
+    ----------
+    array : 2d np.array
+        Arbitrary array that is filled with nans from the top. At some point 
+        there is a row with no nans.
+
+    Returns
+    -------
+    valid_row : int
+        Index of the first valid row.
+
+    """
     # get the indices of the nans
     nans = np.argwhere(np.isnan(array[:,5]))
-    # return the length of this array, this will be the first index, that is not a nan
-    return nans.shape[0]
+    # calculate the length of this array, this will be the first index, that
+    # is not a nan
+    valid_row = nans.shape[0]
+    # return the index
+    return valid_row
 
 def get_v_avg_max(profiles, x_tensor, Width, case):
+    """
+    Function to get the maximum velocity averaged over the channel width
+
+    Parameters
+    ----------
+    profiles : 3d np.array
+        3d Tensor containing the smoothed vertical velocity component of the
+        field of every timestep. The invalid positions are filled with nans.
+    x_tensor : 3d np.array
+        3d Tensor containing the x coordinates of the interrogation window 
+        centers of the field of every timestep. The invalid positions are
+        filled with nans.
+    Width : int
+        Width of the image in px.
+    case : str
+        Indicating 'Rise' or 'Fall'.
+
+    Raises
+    ------
+    ValueError
+        Error in case the x and profile array are not 3d.
+
+    Returns
+    -------
+    mean_vel_max : float64
+        Maximum velocity averaged across the channel width.
+
+    """
     # check that a valid profile was given
     if (len(profiles.shape) != 3) or (len(x_tensor.shape) != 3):
         raise ValueError('Velocity and X values must be a 3d tensor')
+    valid_row = first_valid_row(profiles[0,:,:])
     # check the case
     if case == 'Rise':
         # calculate the average velocity of the bottom 5 rows at timestep 0
-        v_avg_max = np.trapz(profiles[0,-5:,:], x_tensor[0,-1,:], axis = -1)/Width
+        v_avg_max = np.trapz(profiles[0,valid_row:,:], x_tensor[0,-1,:], axis = -1)/Width
         # average the 5 velocities
         mean_vel_max = np.mean(v_avg_max)
     elif case == 'Fall':
@@ -1311,7 +1421,38 @@ def get_acc_max(profiles, x_tensor, Dt, Width, case):
     return acc_max
 
 def save_run_params(path, run, vmax, t_end, frame0, nx, frequency, scale, height, width, accel):
+    """
+    Function to save the run parameters in a txt file
+
+    Parameters
+    ----------
+    path : str
+        File path were to store the .txt file.
+    run : str
+        Nomenclature of the run.
+    vmax : float64
+        Maximum velocity averaged across the width of the channel.
+    t_end : float64
+        Duration of the PIV measurement in seconds.
+    frame0 : int
+        Image index from which on the PIV interrogation begins.
+    nx : int
+        Number of rows in the PIV interrogation.
+    frequency : int
+        Acquisition frequency of the images.
+    scale : float64
+        Scaling factor in px/mm.
+    height : int
+        Height of the images in Px.
+    width : int
+        Height of the images in Px.
+    accel : float64
+        Maximum acceleration of the run.
+
+    """
+    # set the format of the floats
     geo_format = '{:=7.4f}'
+    # generate the output string
     header = """Run:                     """ + run + """
 Duration:               """ + geo_format.format(t_end) + ' (s)' +"""
 Frame 0:                 """ + str(frame0) + """
@@ -1322,6 +1463,6 @@ Image Height:            """ + str(height) + ' (Px)' +"""
 Image Width:             """ + str(width) + ' (Px)' + """
 Max Avg. Velocity:       """ + geo_format.format(vmax) + ' (m/s)' +"""
 Max Avg. Acceleration:   """ + geo_format.format(accel) + ' (m/s²)' 
-
+    # open the file and write the output string
     with open(path,"w+") as thefile:
         thefile.write(header) # write the header

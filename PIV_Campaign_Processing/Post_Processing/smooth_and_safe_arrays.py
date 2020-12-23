@@ -47,14 +47,3 @@ for i in range(1, len(runs)):
     np.save(os.path.join(Fol_Out, 'v_values_raw'), v_tensor_raw)
     np.save(os.path.join(Fol_Out, 'v_values_smoothed'), v_tensor_smo)
     print('\n')
-#%%
-
-# import matplotlib.pyplot as plt
-
-# fig, ax = plt.subplots()
-# ax.plot(v_tensor_smo[:,80,2])
-# ax.plot(v_tensor_raw[:,80,2])
-
-# fig, ax = plt.subplots()
-# ax.plot(v_tensor_smo[170,-5,:])
-# ax.plot(v_tensor_raw[170,-5,:])

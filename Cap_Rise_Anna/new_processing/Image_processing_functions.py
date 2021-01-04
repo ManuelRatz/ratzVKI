@@ -208,6 +208,34 @@ def fitting_polynom4(grad_img,pix2mm):
 
     return func,popt_cons,i_x,i_y,i_x_mm,i_y_mm,x,img_width_mm
 
+def fitting_cosh(x_data, y_data):
+    """
+    Function to fit the experimental data to a hyperbolic cosine. The data has
+    to be already extracted from the image to only be x and y values
+
+    Parameters
+    ----------
+    x_data : 1d np.array
+        X values of the channel centered around 0, not normalized.
+    y_data : 1d np.array
+        Y values of the detected interface, mean subtracted.
+
+    Returns
+    -------
+    y_fit : 1d np.array
+        Fitted y values of the detected interface, mean subtracted.
+
+    """
+    # define the help function
+    def func(x_func,a,b):
+        return np.cosh(np.abs(x_func)**a/b)-1
+    # calculate the values of the fit
+    popt_cons, _ = curve_fit(func, x_data, y_data, bounds = ([-np.inf,-np.inf],[np.inf,np.inf]))
+    # calculate the fitted data
+    y_fit = func(x_data, popt_cons[0], popt_cons[1])
+    # return it
+    return y_fit
+
 def fitting_polynom6(grad_img,pix2mm):
     """
     Function to fit a 2nd order polynom for the meniscus with a constrain
@@ -415,6 +443,7 @@ def contact_angle(y,x,side):
             angle = 90+alfa_deg
     #angle_rad = np.radians(angle)
     return angle
+
 
 
 #%%

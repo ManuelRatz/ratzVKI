@@ -17,7 +17,7 @@ import cv2
 import imageio
 from scipy.signal import find_peaks
 import Fitting_tool_functions as aFitting
-
+from scipy.ndimage import gaussian_filter
 
 def detect_triggersHS(folder):
     
@@ -58,8 +58,50 @@ def detect_triggersHS(folder):
     frame0 = (t_valve[idx_start_valve]-t_cam[idx_start_cam])*f_acq
     return frame0, pressure_signal
 
+def load_image(name, crop_index, idx, load_idx):
+    """
+    Function to load the image and highpass filter them for edge detection.
 
-def edge_detection_grad(crop_img, threshold_pos, wall_cut, threshold_outlier, do_mirror):
+    Parameters
+    ----------
+    name : str
+        Data path and prefix of the current run.
+    crop_index : tuple of int
+        4 coordinates to crop the images to.
+    idx : int
+        Current step counting from the beginning index.
+    load_idx : int
+        Current step counting from 0.
+
+    Returns
+    -------
+    img_hp : 2d np.array of int
+        Highpass filtered image.
+
+    """
+    # set the image name
+    Image_name = name + '%05d' % load_idx + '.png'
+    # load the image
+    img=cv2.imread(Image_name,0)
+    # crop the image
+    img = img[crop_index[2]:crop_index[3],crop_index[0]:crop_index[1]]
+    # at the beginning we need to cheat a little with cv2 because the highpass
+    # filtered image alone is not enough so we do a little denoising for the 
+    # first 10 steps
+    if (idx < 10):
+        img = cv2.fastNlMeansDenoising(img.astype('uint8'),2,2,7,21)
+    # convert the image to integer to avoid bound errors
+    img = img.astype(np.int)
+    # calculate the blurred image
+    blur = gaussian_filter(img, sigma = 7, mode = 'nearest', truncate = 3)
+    # subtract the blur yielding the interface
+    img_hp = img - blur
+    # subtract values below 3, this is still noise, so we kill it
+    img_hp[img_hp<3] = 0
+    # return the image
+    return img_hp
+
+def edge_detection_grad(crop_img, threshold_pos, wall_cut, threshold_outlier, kernel_threshold, do_mirror):
     """
     Function to get the the edges of the interface
 
@@ -89,21 +131,23 @@ def edge_detection_grad(crop_img, threshold_pos, wall_cut, threshold_outlier, do
     grad_img = np.zeros(crop_img.shape)
     y_index  = (np.asarray([])) 
     
-    Profiles   = crop_img[:,wall_cut+3:len(crop_img[1])-wall_cut] # analyse the region where no spots from the wall disturb detection
+    Profiles = crop_img[:,wall_cut:len(crop_img[1])-wall_cut] # analyse the region where no spots from the wall disturb detection
     # Profiles_s = savgol_filter(Profiles, 15, 2, axis =0)        # intensity profile smoothened
     Profiles_d = np.gradient(Profiles, axis = 0)              # calculate gradient of smoothend intensity along the vertical direction
     idx_maxima = np.zeros((Profiles.shape[1]),dtype = int)
     for i in range(0,Profiles_d.shape[1]):
-        if np.max(Profiles_d[:,i]) < threshold_pos:
-            idx_maxima[i] = int(np.argmax(Profiles_d[:,i]))
+        # if i == 132:
+        #     print('Stop')
+        if np.max(Profiles_d[:,i]) <= threshold_pos:
+            idx_maxima[i] = int(np.argmax(Profiles_d[5:,i]))+5
         else:
-            idx_maxima[i] = int(np.argmax(Profiles_d[:,i] > threshold_pos))               # find positions of all the maxima in the gradient
+            idx_maxima[i] = int(np.argmax(Profiles_d[5:,i] > threshold_pos))+5             # find positions of all the maxima in the gradient
     # idx_maxima = np.argmax(Profiles_d > 10, axis = 0)                # find positions of all the maxima in the gradient
     #mean_a = np.mean(Profiles_s, axis=0)
     for j in range(Profiles_d.shape[1]):
         # accept only the gradient peaks that are above the threeshold (it avoids false detections lines where the interface is not visible)  
         if Profiles_d[idx_maxima[j],j] > 1:
-            grad_img[idx_maxima[j],j+wall_cut+3] = 1 # binarisation
+            grad_img[idx_maxima[j],j+wall_cut] = 1 # binarisation
         # else:
             # print('Below Threshold')
     if do_mirror == True:
@@ -117,26 +161,72 @@ def edge_detection_grad(crop_img, threshold_pos, wall_cut, threshold_outlier, do
     # filter out outliers
     y_average  = np.median(y_index)
     for k in range(len(y_index)):
-        # print((y_index[k]-y_average)/np.median(y_index))
+        kernel_size = 2 # amount of points to sample for median
+        y_kernel=get_kernel(k, y_index,kernel_size)
+        if np.abs(y_index[k]-np.median(y_kernel))/np.median(y_kernel) > kernel_threshold:
+            grad_img[int(y_index[k]),x_index[k]] = 0
         if np.abs(y_index[k]-y_average)/np.median(y_index)>threshold_outlier:
             grad_img[int(y_index[k]),x_index[k]] = 0
-        # this is a test to filter out some faulty drops on the left side
-        if(k<5 or k>(len(y_index)-6)):
-            kernel_size = 2 # amount of points to sample for median
-            y_kernel=get_kernel(k, y_index,kernel_size)
-            if np.abs(y_index[k]-np.median(y_kernel))/np.median(y_kernel) > 0.02:
-                grad_img[int(y_index[k]),x_index[k]] = 0
-
+    
     return grad_img, y_index, x_index
 
 def mirror_right_side(array):
+    """
+    Function to mirror the right side of the image
+
+    Parameters
+    ----------
+    array : 2d np.array
+        Image to be mirrored.
+
+    Returns
+    -------
+    mirrored : 2d np.array
+        Mirrored image.
+
+    """
     # take the right side of the array
     right = array[:,array.shape[1]//2+array.shape[1]%2:]
+    # check if the width in pixels is even, if yes return the mirror
     if (array.shape[1]%2 == 0):
-        return np.hstack((np.fliplr(right), right))
+        mirrored = np.hstack((np.fliplr(right), right))
+        # return the mirrored array
+        return mirrored
+    # if not we have to take the middle column
     middle = np.expand_dims(array[:,array.shape[1]//2], 1)
-    return np.hstack((np.fliplr(right), middle,right))
+    # and add the right side to it, once normal and once flipped
+    mirrored = np.hstack((np.fliplr(right), middle,right))
+    # return the mirrored array
+    return mirrored
 
+def saveTxt(Fol_Out,h_mm, h_cl_l, h_cl_r, angle_l, angle_r):                
+    """
+    Function to save the calculated arrays in .txt files
+
+    Parameters
+    ----------
+    Fol_Out : str
+        Data path to the folder in which to store the images.
+    h_mm : 1d np.array
+        Average height of the meniscus in mm.
+    h_cl_l : 1d np.array
+        Left height of the contact angle in mm.
+    h_cl_r : 1d np.array
+        Right height of the contact line in mm.
+    angle_l : 1d np.array
+        Left contact angle in radians.
+    angle_r : 1d np.array
+        Right contact angle in Radians.
+    """
+    # create the folder if it doesn't exist
+    if not os.path.exists(Fol_Out):
+        os.mkdir(Fol_Out)
+    # save the txts, convert the angle to degrees
+    np.savetxt(Fol_Out + os.sep + 'Disp_avg.txt',h_mm)
+    np.savetxt(Fol_Out + os.sep + 'Disp_left.txt',h_cl_l)
+    np.savetxt(Fol_Out + os.sep + 'Disp_right.txt',h_cl_r)
+    np.savetxt(Fol_Out + os.sep + 'LCA.txt',angle_l*np.pi/180)
+    np.savetxt(Fol_Out + os.sep + 'RCA.txt',angle_r*np.pi/180)
 
 def get_kernel(k,y_index,kernel_size):
     """
@@ -166,47 +256,6 @@ def get_kernel(k,y_index,kernel_size):
     else: # error message to be sure
         print('Error')
         return
-    
-
-def fitting_polynom2(grad_img,pix2mm):
-    """
-    Function to fit a 2nd order polynom for the meniscus with a constrain
-    :grad_img: binary image, 1 at the edge of the meniscus
-    
-    """
-    def func(x, a, b, c):
-      return a*(x)**2+b*x+c
-    
-    right_flip_img = np.flipud(grad_img)   # flipping the image
-    i_y, i_x = np.where(right_flip_img==1) # coordinates of the edge
-    i_y_mm = i_y*pix2mm                    # y coordinate of the edge in mm
-    i_x_mm = i_x*pix2mm                    # x coordinate of the edge in mm
-    img_width_mm = len(grad_img[1])*pix2mm # width of the image in mm
-    i_x_shifted = i_x_mm                   # shifting the coordinates
-    x = np.linspace(0,img_width_mm,100000)
-    popt_cons, _ = curve_fit(func, i_x_shifted, i_y_mm, bounds=([-np.inf, -np.inf, -np.inf], [np.inf, np.inf, np.inf]))
-    return func,popt_cons,i_x,i_y,i_x_mm,i_y_mm,x,img_width_mm
-
-def fitting_polynom4(grad_img,pix2mm):
-    """
-    Function to fit a 2nd order polynom for the meniscus with a constrain
-    :grad_img: binary image, 1 at the edge of the meniscus
-    
-    """
-    from scipy.optimize import curve_fit
-    right_flip_img = np.flipud(grad_img) # flipping the image
-    i_y, i_x = np.where(right_flip_img==1) # coordinates of the edge
-    i_y_mm = i_y*pix2mm # y coordinate of the edge in mm
-    i_x_mm = i_x*pix2mm # x coordinate of the edge in mm
-    img_width_mm = len(grad_img[1])*pix2mm # width of the image in mm
-    i_x_shifted = i_x_mm 
-    x = np.linspace(0,img_width_mm,100000)
-    def func(x, a, b, c, d, e):
-      return a*(x)**4+b*x**3+c*x**2+d*x+e
-    # fitting
-    popt_cons, _ = curve_fit(func, i_x_shifted, i_y_mm, bounds=([-np.inf, -np.inf, -np.inf , -np.inf, -np.inf], [np.inf, np.inf, np.inf, np.inf, np.inf]))
-
-    return func,popt_cons,i_x,i_y,i_x_mm,i_y_mm,x,img_width_mm
 
 def fitting_cosh(x_data, y_data):
     """
@@ -236,112 +285,6 @@ def fitting_cosh(x_data, y_data):
     # return it
     return y_fit
 
-def fitting_polynom6(grad_img,pix2mm):
-    """
-    Function to fit a 2nd order polynom for the meniscus with a constrain
-    :grad_img: binary image, 1 at the edge of the meniscus
-    
-    """
-    from scipy.optimize import curve_fit
-    right_flip_img = np.flipud(grad_img) # flipping the image
-    i_y, i_x = np.where(right_flip_img==1) # coordinates of the edge
-    i_y_mm = i_y*pix2mm # y coordinate of the edge in mm
-    i_x_mm = i_x*pix2mm # x coordinate of the edge in mm
-    img_width_mm = len(grad_img[1])*pix2mm # width of the image in mm
-    i_x_shifted = i_x_mm 
-    x = np.linspace(0,img_width_mm,100000)
-    def func(x, a, b, c, d, e, f, g):
-      return a*(x)**6+b*x**5+c*x**4+d*x**3+e*x**2+f*x+g
-    # fitting
-    popt_cons, _ = curve_fit(func, i_x_shifted, i_y_mm, bounds=([-np.inf,-np.inf,-np.inf, -np.inf, -np.inf , -np.inf, -np.inf], [np.inf, np.inf,np.inf,np.inf, np.inf, np.inf, np.inf]))
-
-    return func,popt_cons,i_x,i_y,i_x_mm,i_y_mm,x,img_width_mm
-
-def fitting_ellipse(grad_img,pix2mm):
-    """
-    Function to fit a 2nd order polynom for the meniscus with a constrain
-    :grad_img: binary image, 1 at the edge of the meniscus
-    
-    """
-    
-    right_flip_img = np.flipud(grad_img) # flipping the image
-    i_y, i_x = np.where(right_flip_img==1) # coordinates of the edge
-    i_y_mm = i_y*pix2mm # y coordinate of the edge in mm
-    i_x_mm = i_x*pix2mm # x coordinate of the edge in mm
-    img_width_mm = len(grad_img[1])*pix2mm # width of the image in mm
-    i_x_shifted = i_x_mm #shifting the coordinates
-    x = np.linspace(0,img_width_mm,100000)
-    
-    def func(x, xo, a, yo, b):
-      return yo-b*(abs(1-((x-xo)/a)**2))**0.5
-    # fitting
-    BBm   = [(max(x)-min(x))/2*0.98, (max(x)-min(x))/8,min(i_y_mm)*0.1,(max(i_y_mm)-min(i_y_mm))/8]
-    BBM   = [(max(x)-min(x))/2*1.02, (max(x)-min(x))*10, max(i_y_mm)*1.5, (max(x)-min(x))*5]
-    
-    popt_cons, pcov = curve_fit(func, i_x_shifted, i_y_mm, bounds=(BBm,BBM))
-    perr = np.sqrt(np.diag(pcov))
-    
-    if max(perr)>0.15:
-        # print(perr,'polinomial interpolation')
-        def func(x, *p):
-            return np.polyval(p, x)
-    
-        new_data  = np.stack((np.array(i_x_shifted),np.array(i_y_mm)),axis=-1)
-        data_sort = new_data[new_data[:,0].argsort()]
-        
-        weights  = np.ones(len(data_sort[:,0]))
-        popt_cons = np.polyfit(data_sort[:,0], data_sort[:,1],2,w=weights)
-        # popt_cons, pcov = curve_fit(func, i_x_shifted, i_y_mm)
-    #else: print('ellipse interpolation')
-    return func,popt_cons,i_x,i_y,i_x_mm,i_y_mm,x,img_width_mm
-
-def fitting_wall(grad_img,pix2mm):
-    """
-    Function to fit a 2nd order polynom for the meniscus with a constrain
-    :grad_img: binary image, 1 at the edge of the meniscus
-    
-    """
-    from scipy.optimize import curve_fit
-    right_flip_img = np.flipud(grad_img) # flipping the image
-    i_y, i_x = np.where(right_flip_img==1) # coordinates of the edge
-    i_y_mm = i_y*pix2mm # y coordinate of the edge in mm
-    i_x_mm = i_x*pix2mm # x coordinate of the edge in mm
-    img_width_mm = len(grad_img[1])*pix2mm # width of the image in mm
-    x = np.linspace(0,img_width_mm,100000)
-    #i_x_smallest = heapq.nsmallest(10, i_x_mm)
-    n = 30
-    i_x_smallest = np.zeros([n])
-    i_y_smallest = np.zeros([n])
-
-    for i in range(n):
-        idx = np.argmin(i_x_mm)
-        i_x_smallest[i] = np.amin(i_x_mm)
-        i_y_smallest[i] = i_y_mm[idx]
-        # remove for the next iteration the last smallest value:
-        i_x_mm = np.delete(i_x_mm, idx)
-    i_x_largest = np.zeros([n])
-    i_y_largest = np.zeros([n])
-
-    for i in range(n):
-        idx = np.argmax(i_x_mm)
-        i_x_largest[i] = np.amax(i_x_mm)
-        i_y_largest[i] = i_y_mm[idx]
-        # remove for the next iteration the last smallest value:
-        i_x_mm = np.delete(i_x_mm, idx)
-      
-
-    # def func(x, a, b, c):
-    #   return a * np.exp(b * x) + c
-    # fitting
-    def func_s(x, a, b, c):
-      return a*(x)**2+b*x+c
-    popt_cons_s, _ = curve_fit(func_s, i_x_smallest, i_y_smallest, maxfev = 10000)
-    def func_l(x, a, b, c):
-      return a*(x)**2+b*x+c
-    popt_cons_l, _ = curve_fit(func_l, i_x_smallest, i_y_smallest, maxfev = 10000)
-
-    return func_s, popt_cons_s ,func_l, popt_cons_l, x
-
 def fitting_advanced(grad_img,pix2mm,l,sigma_f,sigma_y):
     """
     Function to fit a 2nd order polynom for the meniscus with a constrain
@@ -365,6 +308,7 @@ def fitting_advanced(grad_img,pix2mm,l,sigma_f,sigma_y):
     
     # This is the Gaussian Fit
     mu_s, cov_s = aFitting.posterior_predictive(X_test, X_train, Y_train, img_width_mm,sigma_f,sigma_y)
+    mu_s = mu_s[:,0]
     # This is an example of sampling possibe solutions of the regressions
     #samples = np.random.multivariate_normal(mu_s.ravel(), cov_s, 3)
     
@@ -378,21 +322,6 @@ def fitting_advanced(grad_img,pix2mm,l,sigma_f,sigma_y):
     
 
     return mu_s,i_x,i_y,i_x_mm,i_y_mm,X,img_width_mm
-
-def check_validity6(x,y):
-    """
-    Function to check if 6th order polynom is good
-    
-    """
-    minima, _ = find_peaks(-1*y)
-    maxima, _ = find_peaks(y)
-    # plt.figure()
-    # plt.plot(minima, y[minima], "x")
-    # plt.plot(maxima, y[maxima], "x")
-    # plt.plot(y)
-    length = len(minima)+ len(maxima)
-    
-    return length
 
 def vol_average(y,x,img_width_mm):
     """
@@ -443,34 +372,3 @@ def contact_angle(y,x,side):
             angle = 90+alfa_deg
     #angle_rad = np.radians(angle)
     return angle
-
-
-
-#%%
-def animation(GIFNAME,Fol_Out,n_t,n_exp):
-    """
-    Function to Create a Gif
-    :GIFNAME: Name of the Gif
-    :Fol_Out: Folder of the images
-    :n_t: Number of frames
-    
-    """
-    
-    if not os.path.exists(Fol_Out):
-        os.mkdir(Fol_Out)  
-     
-    images=[] 
-     
-    for k in range(n_exp,n_t,1):
-    
-        MEX= 'Mounting Im '+ str(k)+' of ' + str(n_t)
-        print(MEX)
-        FIG_NAME=Fol_Out+os.sep+'Step_'+str(k)+'.png'
-        images.append(imageio.imread(FIG_NAME))
-        # assembly the video
-    imageio.mimsave(GIFNAME, images,duration=0.01)
-    # import shutil  #  delete a folder and its content
-    # shutil.rmtree(Fol_Out)
-
-    MEX='Animation'+GIFNAME+'Ready'
-    print(MEX)

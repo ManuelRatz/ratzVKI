@@ -84,17 +84,17 @@ for k in range(0,1):
     images.append(imageio.imread(NAME_OUT))
 
 # imageio.mimsave(GIFNAME, images, duration = 0.05)
-# def saveTxt(Fol_Out,h_mm, h_cl_l, h_cl_r, angle_l, angle_r):                
+def saveTxt(Fol_Out,h_mm, h_cl_l, h_cl_r, angle_l, angle_r):                
     
-#     if not os.path.exists(Fol_Out):
-#         os.mkdir(Fol_Out)
-#     np.savetxt(Fol_Out + os.sep + 'Displacement.txt',h_mm)
+    if not os.path.exists(Fol_Out):
+        os.mkdir(Fol_Out)
+    np.savetxt(Fol_Out + os.sep + 'Disp_avg.txt',h_mm)
     
-#     np.savetxt(Fol_Out + os.sep + 'Displacement_CLsx.txt',h_cl_l)
-#     np.savetxt(Fol_Out + os.sep + 'Displacement_CLdx.txt',h_cl_r)
+    np.savetxt(Fol_Out + os.sep + 'Disp_left.txt',h_cl_l)
+    np.savetxt(Fol_Out + os.sep + 'Disp_right.txt',h_cl_r)
     
-#     np.savetxt(Fol_Out + os.sep + 'LCA.txt',angle_l*np.pi/180)
-#     np.savetxt(Fol_Out + os.sep + 'RCA.txt',angle_r*np.pi/180)
+    np.savetxt(Fol_Out + os.sep + 'LCA.txt',angle_l*np.pi/180)
+    np.savetxt(Fol_Out + os.sep + 'RCA.txt',angle_r*np.pi/180)
     
 # Fol_Out_Adv= os.path.abspath(Fol_Out + os.sep + 'Txts_advanced_fitting')
 # if not os.path.exists(Fol_Out_Adv):

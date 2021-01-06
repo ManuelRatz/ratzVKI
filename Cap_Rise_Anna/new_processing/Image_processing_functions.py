@@ -9,56 +9,60 @@ Created on Thu Sep  3 11:59:47 2020
 ###############################################################################
 
 import numpy as np
-from matplotlib import pyplot as plt
 from scipy.signal import savgol_filter
 from scipy.optimize import curve_fit
 import os
 import cv2
-import imageio
-from scipy.signal import find_peaks
-import Fitting_tool_functions as aFitting
 from scipy.ndimage import gaussian_filter
+from numpy.linalg import inv
 
-def detect_triggersHS(folder):
-    
-    def read_lvm(path):
-    
-    #path_cam = folder + 'test-THS-cam_001.lvm'
-        header    = 12  # number of header rows
-        value     = 15  # gives the number of the loop
-        with open(path) as alldata:
-            line = alldata.readlines()[14]
-        n_samples = int(line.strip().split('\t')[1])
-    
-        t = []
-        v = []
-        for i in range(value):
-            with open(path) as alldata:                       #read the data points with the context manager
-                lines = alldata.readlines()[header+11+i*(n_samples+11):(header+(i+1)*(n_samples+11))]
-            t_temp        = [float(line.strip().split('\t')[0]) for line in lines] 
-            v_temp        = [float(line.strip().split('\t')[1]) for line in lines]
-            t             = np.append(t,t_temp)
-            v             = np.append(v,v_temp)
-        
-        return t,v
-    
-    # paths
-    path_cam = folder + '/test-HS-cam_001.lvm'
-    t_cam,v_cam = read_lvm(path_cam)
-    path_pr = folder + '/test-HS-pressure_001.lvm'
-    t_pr,v_pr = read_lvm(path_pr)
-    path_valve = folder + '/test-HS-valve_001.lvm'
-    t_valve,v_valve = read_lvm(path_valve)
-    
-    
-    f_acq = int(len(t_cam)/t_cam[-1])
-    idx_start_cam = np.argwhere(v_cam > 3)[0]
-    idx_start_valve = np.argwhere(v_valve > 4)[0]
-    pressure_signal = v_pr[int(idx_start_valve):]
-    frame0 = (t_valve[idx_start_valve]-t_cam[idx_start_cam])*f_acq
-    return frame0, pressure_signal
+def create_folder(Fol_In):
+    """
+    Function to create a folder and return the name.
 
-def load_image(name, crop_index, idx, load_idx):
+    Parameters
+    ----------
+    Fol_In : string
+        Location of the input folder.
+
+    Returns
+    -------
+    Fol_In : string
+        Location of the input folder.
+
+    """
+    # check if the folder exists and create if it doesn't
+    if not os.path.exists(Fol_In):
+        os.makedirs(Fol_In)
+    # return the name as a string
+    return Fol_In
+
+def get_parameters(test_case, case, fluid):
+    Path_Matrix = 'C:\Anna' + os.sep + case + os.sep + fluid
+    Matrix = np.genfromtxt(Path_Matrix + os.sep + case + '_Matrix_' + fluid + '.txt', dtype = str)
+    for i in range(Matrix.shape[0]):
+        if Matrix[i,0] == test_case:
+            break
+    if case == 'Rise':
+        Fol_Data = 'C:\Anna' + os.sep + case + os.sep + fluid + os.sep + test_case[:-2] + os.sep + test_case[-1:]
+        Pressure = int(test_case[1:5])
+        H_Final = float(Matrix[i,1])
+        Speed = None
+    elif case == 'Fall':
+        invert = test_case[::-1]
+        cut = invert[2:]
+        Speed = cut[::-1]
+        Fol_Data = 'C:\Anna' + os.sep + case + os.sep + fluid + os.sep + Speed + os.sep + test_case[-1:]
+        Pressure = None
+        H_Final = None
+    else:
+        raise ValueError('Invalid Case, must be *Rise* or *Fall*')
+    Run = test_case[-1:]
+    Frame0 = int(Matrix[i,2])
+    Crop = np.array([Matrix[i,3], Matrix[i,4]], dtype = int)
+    return Fol_Data, Pressure, Run, H_Final, Frame0, Crop, Speed
+
+def load_image(name, crop_index, idx, load_idx, pressure, run, speed):
     """
     Function to load the image and highpass filter them for edge detection.
 
@@ -77,14 +81,21 @@ def load_image(name, crop_index, idx, load_idx):
     -------
     img_hp : 2d np.array of int
         Highpass filtered image.
+    img : 2d np.array of int
+        Raw Image.
 
     """
-    # set the image name
-    Image_name = name + '%05d' % load_idx + '.png'
+    if pressure is not None:
+        Image_name = name + os.sep + 'images' + os.sep + str(pressure) + '_' + run + '%05d' % load_idx + '.png'
+    elif speed is not None:
+        Image_name = name + os.sep + 'images' + os.sep + speed + '_' + run + '%04d' % load_idx + '.png'
+    else:
+        raise ValueError('No pressure or speed defined, can not identify case')
+    
     # load the image
     img=cv2.imread(Image_name,0)
     # crop the image
-    img = img[crop_index[2]:crop_index[3],crop_index[0]:crop_index[1]]
+    img = img[:,crop_index[0]:crop_index[1]]
     # at the beginning we need to cheat a little with cv2 because the highpass
     # filtered image alone is not enough so we do a little denoising for the 
     # first 10 steps
@@ -99,7 +110,7 @@ def load_image(name, crop_index, idx, load_idx):
     # subtract values below 3, this is still noise, so we kill it
     img_hp[img_hp<3] = 0
     # return the image
-    return img_hp
+    return img_hp, img
 
 def edge_detection_grad(crop_img, threshold_pos, wall_cut, threshold_outlier, kernel_threshold, do_mirror):
     """
@@ -199,34 +210,16 @@ def mirror_right_side(array):
     # return the mirrored array
     return mirrored
 
-def saveTxt(Fol_Out,h_mm, h_cl_l, h_cl_r, angle_l, angle_r):                
-    """
-    Function to save the calculated arrays in .txt files
-
-    Parameters
-    ----------
-    Fol_Out : str
-        Data path to the folder in which to store the images.
-    h_mm : 1d np.array
-        Average height of the meniscus in mm.
-    h_cl_l : 1d np.array
-        Left height of the contact angle in mm.
-    h_cl_r : 1d np.array
-        Right height of the contact line in mm.
-    angle_l : 1d np.array
-        Left contact angle in radians.
-    angle_r : 1d np.array
-        Right contact angle in Radians.
-    """
-    # create the folder if it doesn't exist
-    if not os.path.exists(Fol_Out):
-        os.mkdir(Fol_Out)
-    # save the txts, convert the angle to degrees
-    np.savetxt(Fol_Out + os.sep + 'Disp_avg.txt',h_mm)
-    np.savetxt(Fol_Out + os.sep + 'Disp_left.txt',h_cl_l)
-    np.savetxt(Fol_Out + os.sep + 'Disp_right.txt',h_cl_r)
-    np.savetxt(Fol_Out + os.sep + 'LCA.txt',angle_l*np.pi/180)
-    np.savetxt(Fol_Out + os.sep + 'RCA.txt',angle_r*np.pi/180)
+def saveTxt(fol_data, h_mm, h_cl_l, h_cl_r, angle_l, angle_r, pressure,\
+            fit_coordinates, test_case):                
+    Fol_txt = create_folder(os.path.join(fol_data,'data_files'))
+    np.savetxt(os.path.join(Fol_txt, test_case + '_h_avg.txt'), h_mm)
+    np.savetxt(os.path.join(Fol_txt, test_case + '_h_cl_r.txt'), h_cl_r)
+    np.savetxt(os.path.join(Fol_txt, test_case + '_h_cl_l.txt'), h_cl_l)
+    np.savetxt(os.path.join(Fol_txt, test_case + '_ca_l.txt'), angle_l)
+    np.savetxt(os.path.join(Fol_txt, test_case + '_ca_r.txt'), angle_r)
+    np.savetxt(os.path.join(Fol_txt, test_case + '_pressure.txt'), pressure)
+    np.savetxt(os.path.join(Fol_txt, test_case + '_gaussfit.txt'), fit_coordinates)
 
 def get_kernel(k,y_index,kernel_size):
     """
@@ -307,19 +300,8 @@ def fitting_advanced(grad_img,pix2mm,l,sigma_f,sigma_y):
     # Note that the vectors are augmented to be of sixe n x 1
     
     # This is the Gaussian Fit
-    mu_s, cov_s = aFitting.posterior_predictive(X_test, X_train, Y_train, img_width_mm,sigma_f,sigma_y)
-    mu_s = mu_s[:,0]
-    # This is an example of sampling possibe solutions of the regressions
-    #samples = np.random.multivariate_normal(mu_s.ravel(), cov_s, 3)
-    
-    # fig, ax = plt.subplots(figsize=(5, 3)) # This creates the figure
-    # plt.scatter(X_train,Y_train,c='white',
-    #             marker='o',edgecolor='black',
-    #             s=10,label='Data')
-    # aFitting.plot_gp(mu_s, cov_s, X_test)
-    # plt.xlim([0,5])
-    # plt.ylim([30,40])
-    
+    mu_s, cov_s = posterior_predictive(X_test, X_train, Y_train, img_width_mm,sigma_f,sigma_y)
+    mu_s = mu_s[:,0]   
 
     return mu_s,i_x,i_y,i_x_mm,i_y_mm,X,img_width_mm
 
@@ -339,7 +321,7 @@ def vol_average(y,x,img_width_mm):
     return h_mm
 
 
-def contact_angle(y,x,side):
+def contact_angle(y, x, side, pix2mm):
     """
     Function to calculate the contact angle
     :x: x coordinate of data for polynomial fitting
@@ -348,27 +330,94 @@ def contact_angle(y,x,side):
     :angle: initialisation for array
     
     """
+    x = x + 0.5*pix2mm
     if side == 0:
-        if np.gradient(y,x)[side]< 0:
-            grad = abs(np.gradient(y,x)[side])
-            alfa = np.arctan(grad)
-            alfa_deg = alfa*180/np.pi
-            angle = 90-alfa_deg
-        else:
-            grad = (np.gradient(y,x)[side])
-            alfa = np.arctan(grad)
-            alfa_deg = alfa*180/np.pi
-            angle = 90+alfa_deg
+        grad = (np.gradient(y,x)[side])
+        alfa = np.arctan(grad)
+        alfa_deg = alfa*180/np.pi
+        angle = 90+alfa_deg
     else:
-        if np.gradient(y,x)[side]> 0:
-            grad = abs(np.gradient(y,x)[side])
-            alfa = np.arctan(grad)
-            alfa_deg = alfa*180/np.pi
-            angle = 90-alfa_deg
-        else:
-            grad = (np.gradient(y,x)[side])
-            alfa = np.arctan(grad)
-            alfa_deg = alfa*180/np.pi
-            angle = 90+alfa_deg
-    #angle_rad = np.radians(angle)
+        grad = (np.gradient(y,x)[side])
+        alfa = np.arctan(grad)
+        alfa_deg = alfa*180/np.pi
+        angle = 90-alfa_deg
     return angle
+
+def load_labview_files(fol_data, test_case):
+    Fps = 500
+    abbrev = test_case[:-2]
+    def read_lvm(path):
+    #path_cam = folder + 'test-THS-cam_001.lvm'
+        header    = 12  # number of header rows
+        value     = 15  # gives the number of the loop
+        with open(path) as alldata:
+            line = alldata.readlines()[14]
+        n_samples = int(line.strip().split('\t')[1])
+    
+        time = []
+        voltages = []
+        for i in range(value):
+            with open(path) as alldata:                       #read the data points with the context manager
+                lines = alldata.readlines()[header+11+i*(n_samples+11):(header+(i+1)*(n_samples+11))]
+            t_temp        = [float(line.strip().split('\t')[0]) for line in lines] 
+            v_temp        = [float(line.strip().split('\t')[1]) for line in lines]
+            time          = np.append(time,t_temp)
+            voltages      = np.append(voltages,v_temp)
+        
+        return time, voltages
+    # paths
+    path_cam = os.path.join(fol_data, test_case+'-cam_001.lvm')
+    t_cam, v_cam = read_lvm(path_cam)
+    path_pr = os.path.join(fol_data, test_case+'-pressure_001.lvm')
+    [time, voltages] = read_lvm(path_pr)
+    p_pressure = [voltage*208.73543056621196-11.817265775905382 for voltage in voltages]
+    path_valve = os.path.join(fol_data, test_case+'-valve_001.lvm')
+    t_valve, v_valve = read_lvm(path_valve)
+    
+    idx_start_cam = np.argwhere(v_cam > 3)[0]
+    idx_start_valve = np.argwhere(v_valve > 4.5)[0]
+    pressure_signal = p_pressure[int(idx_start_valve):]
+    frame0 = int((t_valve[idx_start_valve]-t_cam[idx_start_cam])*Fps)
+    return pressure_signal, frame0
+
+def kernel(X1, X2, l=1.0, sigma_f=1.0):
+    '''
+    Isotropic squared exponential kernel. Computes 
+    a covariance matrix from points in X1 and X2.
+        
+    Args:
+        X1: Array of m points (m x d).
+        X2: Array of n points (n x d).
+    Returns:
+        Covariance matrix (m x n).
+    '''
+    sqdist = np.sum(X1**2, 1).reshape(-1, 1) + np.sum(X2**2, 1) - 2 * np.dot(X1, X2.T)
+    return sigma_f**2 * np.exp(-0.5 / l**2 * sqdist)
+
+def posterior_predictive(X_s, X_train, Y_train, l=1.0, sigma_f=1.0, sigma_y=1e-8):
+    '''  
+    Computes the suffifient statistics of the GP posterior predictive distribution 
+    from m training data X_train and Y_train and n new inputs X_s.
+    
+    Args:
+        X_s: New input locations (n x d).
+        X_train: Training locations (m x d).
+        Y_train: Training targets (m x 1).
+        l: Kernel length parameter.
+        sigma_f: Kernel vertical variation parameter.
+        sigma_y: Noise parameter.
+    
+    Returns:
+        Posterior mean vector (n x d) and covariance matrix (n x n).
+    '''
+    K = kernel(X_train, X_train, l, sigma_f) + sigma_y**2 * np.eye(len(X_train))
+    K_s = kernel(X_train, X_s, l, sigma_f)
+    K_ss = kernel(X_s, X_s, l, sigma_f) + 1e-8 * np.eye(len(X_s))
+    K_inv = inv(K)
+    
+    # Equation (4)
+    mu_s = K_s.T.dot(K_inv).dot(Y_train)
+
+    # Equation (5)
+    cov_s = K_ss - K_s.T.dot(K_inv).dot(K_s)
+    return mu_s, cov_s

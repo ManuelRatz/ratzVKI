@@ -15,6 +15,7 @@ import os
 import cv2
 from scipy.ndimage import gaussian_filter
 from numpy.linalg import inv
+import matplotlib.pyplot as plt
 
 def create_folder(Fol_In):
     """
@@ -62,7 +63,7 @@ def get_parameters(test_case, case, fluid):
     Crop = np.array([Matrix[i,3], Matrix[i,4]], dtype = int)
     return Fol_Data, Pressure, Run, H_Final, Frame0, Crop, Speed
 
-def load_image(name, crop_index, idx, load_idx, pressure, run, speed):
+def load_image(name, crop_index, idx, load_idx, pressure, run, speed, cv2denoise):
     """
     Function to load the image and highpass filter them for edge detection.
 
@@ -99,7 +100,7 @@ def load_image(name, crop_index, idx, load_idx, pressure, run, speed):
     # at the beginning we need to cheat a little with cv2 because the highpass
     # filtered image alone is not enough so we do a little denoising for the 
     # first 10 steps
-    if (idx < 10):
+    if cv2denoise == True:
         img = cv2.fastNlMeansDenoising(img.astype('uint8'),2,2,7,21)
     # convert the image to integer to avoid bound errors
     img = img.astype(np.int)
@@ -213,13 +214,13 @@ def mirror_right_side(array):
 def saveTxt(fol_data, h_mm, h_cl_l, h_cl_r, angle_l, angle_r, pressure,\
             fit_coordinates, test_case):                
     Fol_txt = create_folder(os.path.join(fol_data,'data_files'))
-    np.savetxt(os.path.join(Fol_txt, test_case + '_h_avg.txt'), h_mm)
-    np.savetxt(os.path.join(Fol_txt, test_case + '_h_cl_r.txt'), h_cl_r)
-    np.savetxt(os.path.join(Fol_txt, test_case + '_h_cl_l.txt'), h_cl_l)
-    np.savetxt(os.path.join(Fol_txt, test_case + '_ca_l.txt'), angle_l)
-    np.savetxt(os.path.join(Fol_txt, test_case + '_ca_r.txt'), angle_r)
-    np.savetxt(os.path.join(Fol_txt, test_case + '_pressure.txt'), pressure)
-    np.savetxt(os.path.join(Fol_txt, test_case + '_gaussfit.txt'), fit_coordinates)
+    np.savetxt(os.path.join(Fol_txt, test_case + '_h_avg.txt'), h_mm, fmt='%.6f')
+    np.savetxt(os.path.join(Fol_txt, test_case + '_h_cl_r.txt'), h_cl_r, fmt='%.6f')
+    np.savetxt(os.path.join(Fol_txt, test_case + '_h_cl_l.txt'), h_cl_l, fmt='%.6f')
+    np.savetxt(os.path.join(Fol_txt, test_case + '_ca_l.txt'), angle_l, fmt='%.6f')
+    np.savetxt(os.path.join(Fol_txt, test_case + '_ca_r.txt'), angle_r, fmt='%.6f')
+    np.savetxt(os.path.join(Fol_txt, test_case + '_pressure.txt'), pressure, fmt='%.6f')
+    np.savetxt(os.path.join(Fol_txt, test_case + '_gaussfit.txt'), fit_coordinates, fmt='%.6f')
 
 def get_kernel(k,y_index,kernel_size):
     """
@@ -250,7 +251,36 @@ def get_kernel(k,y_index,kernel_size):
         print('Error')
         return
 
-def fitting_cosh(x_data, y_data):
+def fitting_cosh(x_data, y_data, P0):
+    """
+    Function to fit the experimental data to a hyperbolic cosine. The data has
+    to be already extracted from the image to only be x and y values
+
+    Parameters
+    ----------
+    x_data : 1d np.array
+        X values of the channel centered around 0, not normalized.
+    y_data : 1d np.array
+        Y values of the detected interface, mean subtracted.
+
+    Returns
+    -------
+    y_fit : 1d np.array
+        Fitted y values of the detected interface, mean subtracted.
+
+    """
+    # define the help function
+    def func(x_func,a,b,c,d):
+        return (np.cosh(np.abs(x_func)**a/b)-1)*c+d
+    # calculate the values of the fit
+    popt_cons, _ = curve_fit(func, x_data, y_data, p0 = P0, maxfev=25000, bounds\
+                             = ([-np.inf,-np.inf,-np.inf,-np.inf],[np.inf,np.inf,np.inf,np.inf]))
+    # calculate the fitted data
+    y_fit = func(x_data, popt_cons[0], popt_cons[1], popt_cons[2], popt_cons[3])
+    # return it
+    return popt_cons
+
+def fitting_cosh2(x_data, y_data):
     """
     Function to fit the experimental data to a hyperbolic cosine. The data has
     to be already extracted from the image to only be x and y values
@@ -270,13 +300,36 @@ def fitting_cosh(x_data, y_data):
     """
     # define the help function
     def func(x_func,a,b):
-        return np.cosh(np.abs(x_func)**a/b)-1
+        return (np.cosh(np.abs(x_func)**a/b)-1)
     # calculate the values of the fit
-    popt_cons, _ = curve_fit(func, x_data, y_data, bounds = ([-np.inf,-np.inf],[np.inf,np.inf]))
+    popt_cons, _ = curve_fit(func, x_data, y_data, p0 = [1.2, 2.34], maxfev=25000, bounds\
+                             = ([0.5,0],[10,20]))
     # calculate the fitted data
     y_fit = func(x_data, popt_cons[0], popt_cons[1])
     # return it
     return y_fit
+
+def fitting_cosh3(x_data, y_data):
+    # define the help function
+    def func(x_func,a,b):
+        return (np.cosh(np.abs(x_func)**a/b)-1)
+    # calculate the values of the fit
+    popt_cons, _ = curve_fit(func, x_data, y_data, maxfev=25000, bounds\
+                             = ([0.2,0],[10,20]))
+    # return it
+    return popt_cons
+
+def plot_gp(mu, cov, X, X_train=None, Y_train=None, samples=[]):
+    X = X.ravel()
+    mu = mu.ravel()
+    uncertainty = 1.96 * np.sqrt(np.abs(np.diag(cov)))
+    
+    plt.fill_between(X, mu + uncertainty, mu - uncertainty, alpha=0.5)
+    # plt.plot(X, mu, label='GPR')
+    for i, sample in enumerate(samples):
+        plt.plot(X, sample, lw=1, ls='--', label=f'Sample {i+1}')
+    if X_train is not None:
+        plt.plot(X_train, Y_train, 'rx')
 
 def fitting_advanced(grad_img,pix2mm,l,sigma_f,sigma_y):
     """
@@ -301,8 +354,14 @@ def fitting_advanced(grad_img,pix2mm,l,sigma_f,sigma_y):
     
     # This is the Gaussian Fit
     mu_s, cov_s = posterior_predictive(X_test, X_train, Y_train, img_width_mm,sigma_f,sigma_y)
-    mu_s = mu_s[:,0]   
-
+    
+    # fig, ax = plt.subplots(figsize=(5, 3)) # This creates the figure
+    # # plt.scatter(X_train,Y_train,c='white',
+    # #             marker='o',edgecolor='black',
+    # #             s=10,label='Data')
+    # plot_gp(mu_s, cov_s, X_test)
+    mu_s = mu_s[:,0] 
+    
     return mu_s,i_x,i_y,i_x_mm,i_y_mm,X,img_width_mm
 
 def vol_average(y,x,img_width_mm):
@@ -319,7 +378,6 @@ def vol_average(y,x,img_width_mm):
         vol = np.trapz(y, x)  # integrating the fitted line in 2D (?)
         h_mm = vol/(img_width_mm) 
     return h_mm
-
 
 def contact_angle(y, x, side, pix2mm):
     """
@@ -421,3 +479,4 @@ def posterior_predictive(X_s, X_train, Y_train, l=1.0, sigma_f=1.0, sigma_y=1e-8
     # Equation (5)
     cov_s = K_ss - K_s.T.dot(K_inv).dot(K_s)
     return mu_s, cov_s
+

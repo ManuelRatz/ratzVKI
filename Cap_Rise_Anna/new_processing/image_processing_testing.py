@@ -41,7 +41,7 @@ Denoise = False
 
 """locate the images"""
 # letter of the current run
-Test_Case = 'P1500_C30_A'
+Test_Case = 'P1250_C30_B'
 Case = 'Rise'
 Fluid = 'Water'
 
@@ -96,28 +96,28 @@ for i in range(0,Img_Amount):
     angle_right[Load_Idx]= imp.contact_angle(mu_s,X,-1, Pix2mm)
     fit_coordinates[:,i] = mu_s
     
-    # # plot the result
-    # fig, ax = plt.subplots() # create a figure
-    # mu_s = mu_s/Pix2mm # convert back to pixels
-    # ax.imshow(np.flip(img, axis = 0), cmap=plt.cm.gray) # show the image in greyscale
-    # ax.scatter(i_x, i_y, marker='x', s=(13./fig.dpi)**2) # plot the detected gradient onto the image
-    # ax.plot((X)/(Pix2mm), mu_s, 'r-', linewidth=0.5) # plot the interface fit
-    # ax.invert_yaxis()
-    # ax.set_aspect('equal')
-    # ax.axis('off') # disable the showing of the axis
-    # ax.set_ylim(mu_s[500]-20, mu_s[500]+65)
-    # NAME_OUT = Fol_Images_Detected + os.sep + 'Stp_%05d.png' %(Idx+Frame0)
-    # fig.tight_layout()
-    # fig.savefig(NAME_OUT, dpi= 60) # save image
-    # plt.close(fig) # disable or enable depending on whether you want to see image in the plot window
+    # plot the result
+    fig, ax = plt.subplots() # create a figure
+    mu_s = mu_s/Pix2mm # convert back to pixels
+    ax.imshow(np.flip(img, axis = 0), cmap=plt.cm.gray) # show the image in greyscale
+    ax.scatter(i_x, i_y, marker='x', s=(13./fig.dpi)**2) # plot the detected gradient onto the image
+    ax.plot((X)/(Pix2mm), mu_s, 'r-', linewidth=0.5) # plot the interface fit
+    ax.invert_yaxis()
+    ax.set_aspect('equal')
+    ax.axis('off') # disable the showing of the axis
+    ax.set_ylim(mu_s[500]-20, mu_s[500]+65)
+    NAME_OUT = Fol_Images_Detected + os.sep + 'Stp_%05d.png' %(Idx+Frame0)
+    fig.tight_layout()
+    fig.savefig(NAME_OUT, dpi= 60) # save image
+    plt.close(fig) # disable or enable depending on whether you want to see image in the plot window
     # images.append(imageio.imread(NAME_OUT))
 # imageio.mimsave(GIFNAME, images, duration = 0.10)
 
 pressure, f0 = imp.load_labview_files(Fol_Data, Test_Case)
 
-h_mm_avg = h_mm_avg[Frame0:]
-h_cl_left = h_cl_left[Frame0:]
-h_cl_right = h_cl_right[Frame0:]
+h_mm_avg = h_mm_avg[Frame0:]+H_Final
+h_cl_left = h_cl_left[Frame0:]+H_Final
+h_cl_right = h_cl_right[Frame0:]+H_Final
 angle_left = angle_left[Frame0:]
 angle_right = angle_right[Frame0:]
 pressure = pressure[Frame0-f0:Frame0-f0+Img_Amount]

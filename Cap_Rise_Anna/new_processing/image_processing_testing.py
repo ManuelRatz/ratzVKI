@@ -37,6 +37,7 @@ Threshold_Kernel= 0.02
 Wall_Cut = 3
 # whether to mirror the right side onto the left
 Do_Mirror = True
+Denoise = False
 
 """locate the images"""
 # letter of the current run
@@ -64,18 +65,21 @@ fit_coordinates = np.zeros((1000,Img_Amount))
 """gif setup"""
 images = [] # empty list to append into
 GIFNAME = 'Detected_interface.gif' # name of the gif
-
+import time
+start = time.time()
 # loop over all the images
 for i in range(0,Img_Amount):
     # get the index starting from N_T
     Idx = i
+    if Idx < 20:
+        Denoise = True
     # get the index starting from 0
     Load_Idx = Frame0+Idx
     MEX= 'Exporting Im '+ str(i+1)+' of ' + str(Img_Amount) # update on progress
     print(MEX) 
     # load the image and highpass filter it
     img_hp, img = imp.load_image(Fol_Data, Crop_Index, Idx, Load_Idx,\
-                                 Pressure, Run, Speed)
+                                 Pressure, Run, Speed, Denoise)
     # calculate the detected interface position
     grad_img,y_index, x_index = imp.edge_detection_grad(img_hp,\
            Threshold_Gradient, Wall_Cut, Threshold_Outlier, Threshold_Kernel,
@@ -92,21 +96,21 @@ for i in range(0,Img_Amount):
     angle_right[Load_Idx]= imp.contact_angle(mu_s,X,-1, Pix2mm)
     fit_coordinates[:,i] = mu_s
     
-    # plot the result
-    fig, ax = plt.subplots() # create a figure
-    mu_s = mu_s/Pix2mm # convert back to pixels
-    ax.imshow(np.flip(img, axis = 0), cmap=plt.cm.gray) # show the image in greyscale
-    ax.scatter(i_x, i_y, marker='x', s=(13./fig.dpi)**2) # plot the detected gradient onto the image
-    ax.plot((X)/(Pix2mm), mu_s, 'r-', linewidth=0.5) # plot the interface fit
-    ax.invert_yaxis()
-    ax.set_aspect('equal')
-    ax.axis('off') # disable the showing of the axis
-    ax.set_ylim(mu_s[500]-20, mu_s[500]+65)
-    NAME_OUT = Fol_Images_Detected + os.sep + 'testing_%05d.png' %Idx
-    fig.tight_layout()
-    fig.savefig(NAME_OUT, dpi= 60) # save image
-    plt.close(fig) # disable or enable depending on whether you want to see image in the plot window
-    images.append(imageio.imread(NAME_OUT))
+    # # plot the result
+    # fig, ax = plt.subplots() # create a figure
+    # mu_s = mu_s/Pix2mm # convert back to pixels
+    # ax.imshow(np.flip(img, axis = 0), cmap=plt.cm.gray) # show the image in greyscale
+    # ax.scatter(i_x, i_y, marker='x', s=(13./fig.dpi)**2) # plot the detected gradient onto the image
+    # ax.plot((X)/(Pix2mm), mu_s, 'r-', linewidth=0.5) # plot the interface fit
+    # ax.invert_yaxis()
+    # ax.set_aspect('equal')
+    # ax.axis('off') # disable the showing of the axis
+    # ax.set_ylim(mu_s[500]-20, mu_s[500]+65)
+    # NAME_OUT = Fol_Images_Detected + os.sep + 'Stp_%05d.png' %(Idx+Frame0)
+    # fig.tight_layout()
+    # fig.savefig(NAME_OUT, dpi= 60) # save image
+    # plt.close(fig) # disable or enable depending on whether you want to see image in the plot window
+    # images.append(imageio.imread(NAME_OUT))
 # imageio.mimsave(GIFNAME, images, duration = 0.10)
 
 pressure, f0 = imp.load_labview_files(Fol_Data, Test_Case)
@@ -121,3 +125,4 @@ t = np.linspace(0,len(h_mm_avg)/Fps,len(h_mm_avg)+1)[Frame0-f0:]
 
 imp.saveTxt(Fol_Data, h_mm_avg, h_cl_left, h_cl_right, angle_left,\
             angle_right, pressure, fit_coordinates, Test_Case)
+print(time.time()-start)

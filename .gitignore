@@ -1,7 +1,7 @@
 *.gif
 *.xlsx
 *.pyc
-*.pptx
+
 
 PIV_Campaign_Processing/pressure_ledar.txt
 PIV_Campaign_Processing/pressure_piv.txt

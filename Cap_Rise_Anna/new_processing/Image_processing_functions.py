@@ -17,6 +17,14 @@ from scipy.ndimage import gaussian_filter
 from numpy.linalg import inv
 import matplotlib.pyplot as plt
 
+def integrate_curvature(y):
+    x = np.linspace(-2.5,2.5,1000)
+    dydx = np.gradient(y, x)
+    ddyddx = np.gradient(dydx, x)
+    curvature = ddyddx / (1 + (dydx)**2)**1.5
+    ret = np.trapz(curvature, x)
+    return ret
+
 def create_folder(Fol_In):
     """
     Function to create a folder and return the name.
@@ -101,11 +109,11 @@ def load_image(name, crop_index, idx, load_idx, pressure, run, speed, cv2denoise
     # filtered image alone is not enough so we do a little denoising for the 
     # first 10 steps
     if cv2denoise == True:
-        img = cv2.fastNlMeansDenoising(img.astype('uint8'),2,2,7,21)
+        img = cv2.fastNlMeansDenoising(img.astype('uint8'),1,1,7,21)
     # convert the image to integer to avoid bound errors
     img = img.astype(np.int)
     # calculate the blurred image
-    blur = gaussian_filter(img, sigma = 7, mode = 'nearest', truncate = 3)
+    blur = gaussian_filter(img, sigma = 4, mode = 'nearest', truncate = 3)
     # subtract the blur yielding the interface
     img_hp = img - blur
     # subtract values below 3, this is still noise, so we kill it
@@ -113,7 +121,8 @@ def load_image(name, crop_index, idx, load_idx, pressure, run, speed, cv2denoise
     # return the image
     return img_hp, img
 
-def edge_detection_grad(crop_img, threshold_pos, wall_cut, threshold_outlier, kernel_threshold, do_mirror):
+def edge_detection_grad(crop_img, threshold_pos, wall_cut, threshold_outlier,\
+                        kernel_threshold, threshold_int, do_mirror):
     """
     Function to get the the edges of the interface
 
@@ -142,13 +151,12 @@ def edge_detection_grad(crop_img, threshold_pos, wall_cut, threshold_outlier, ke
     """
     grad_img = np.zeros(crop_img.shape)
     y_index  = (np.asarray([])) 
-    
     Profiles = crop_img[:,wall_cut:len(crop_img[1])-wall_cut] # analyse the region where no spots from the wall disturb detection
     # Profiles_s = savgol_filter(Profiles, 15, 2, axis =0)        # intensity profile smoothened
     Profiles_d = np.gradient(Profiles, axis = 0)              # calculate gradient of smoothend intensity along the vertical direction
     idx_maxima = np.zeros((Profiles.shape[1]),dtype = int)
     for i in range(0,Profiles_d.shape[1]):
-        # if i == 132:
+        # if i == 130:
         #     print('Stop')
         if np.max(Profiles_d[:,i]) <= threshold_pos:
             idx_maxima[i] = int(np.argmax(Profiles_d[5:,i]))+5
@@ -177,8 +185,10 @@ def edge_detection_grad(crop_img, threshold_pos, wall_cut, threshold_outlier, ke
         y_kernel=get_kernel(k, y_index,kernel_size)
         if np.abs(y_index[k]-np.median(y_kernel))/np.median(y_kernel) > kernel_threshold:
             grad_img[int(y_index[k]),x_index[k]] = 0
+            # print('Filtered by kernel')
         if np.abs(y_index[k]-y_average)/np.median(y_index)>threshold_outlier:
             grad_img[int(y_index[k]),x_index[k]] = 0
+            # print('Filtered by threshold')
     
     return grad_img, y_index, x_index
 
@@ -211,16 +221,17 @@ def mirror_right_side(array):
     # return the mirrored array
     return mirrored
 
-def saveTxt(fol_data, h_mm, h_cl_l, h_cl_r, angle_l, angle_r, pressure,\
-            fit_coordinates, test_case):                
-    Fol_txt = create_folder(os.path.join(fol_data,'data_files'))
+def saveTxt(fol_data, h_mm, h_cl_l, h_cl_r, angle_gauss, angle_cosh, pressure,\
+            fit_coordinates_gauss, fit_coordinates_exp, test_case):                
+    Fol_txt = create_folder(os.path.join(fol_data,'data_files_test'))
     np.savetxt(os.path.join(Fol_txt, test_case + '_h_avg.txt'), h_mm, fmt='%.6f')
     np.savetxt(os.path.join(Fol_txt, test_case + '_h_cl_r.txt'), h_cl_r, fmt='%.6f')
     np.savetxt(os.path.join(Fol_txt, test_case + '_h_cl_l.txt'), h_cl_l, fmt='%.6f')
-    np.savetxt(os.path.join(Fol_txt, test_case + '_ca_l.txt'), angle_l, fmt='%.6f')
-    np.savetxt(os.path.join(Fol_txt, test_case + '_ca_r.txt'), angle_r, fmt='%.6f')
+    np.savetxt(os.path.join(Fol_txt, test_case + '_ca_gauss.txt'), angle_gauss, fmt='%.6f')
+    np.savetxt(os.path.join(Fol_txt, test_case + '_ca_cosh.txt'), angle_cosh, fmt='%.6f')
     np.savetxt(os.path.join(Fol_txt, test_case + '_pressure.txt'), pressure, fmt='%.6f')
-    np.savetxt(os.path.join(Fol_txt, test_case + '_gaussfit.txt'), fit_coordinates, fmt='%.6f')
+    np.savetxt(os.path.join(Fol_txt, test_case + '_gauss_curvature.txt'), fit_coordinates_gauss, fmt='%.6f')
+    np.savetxt(os.path.join(Fol_txt, test_case + '_cosh_curvature.txt'), fit_coordinates_exp, fmt='%.6f')
 
 def get_kernel(k,y_index,kernel_size):
     """
@@ -298,16 +309,22 @@ def fitting_cosh2(x_data, y_data):
         Fitted y values of the detected interface, mean subtracted.
 
     """
+    if y_data[0] < y_data[y_data.shape[0]//2]:
+        inverted = True
+        shift = np.max(y_data)
+        y_fit = -(y_data-shift)
+    else:
+        inverted = False
+        shift = np.min(y_data)
+        y_fit = y_data-shift
     # define the help function
     def func(x_func,a,b):
         return (np.cosh(np.abs(x_func)**a/b)-1)
     # calculate the values of the fit
-    popt_cons, _ = curve_fit(func, x_data, y_data, p0 = [1.2, 2.34], maxfev=25000, bounds\
-                             = ([0.5,0],[10,20]))
-    # calculate the fitted data
-    y_fit = func(x_data, popt_cons[0], popt_cons[1])
+    popt_cons, _ = curve_fit(func, x_data, y_fit, p0 = [1.2, 2.34],\
+                             bounds = ([0.1, 0.1],[500, 500]), maxfev=1000)
     # return it
-    return y_fit
+    return popt_cons, shift, inverted
 
 def fitting_cosh3(x_data, y_data):
     # define the help function
@@ -315,7 +332,7 @@ def fitting_cosh3(x_data, y_data):
         return (np.cosh(np.abs(x_func)**a/b)-1)
     # calculate the values of the fit
     popt_cons, _ = curve_fit(func, x_data, y_data, maxfev=25000, bounds\
-                             = ([0.2,0],[10,20]))
+                             = ([0.2,0.1],[10,20]))
     # return it
     return popt_cons
 
@@ -339,6 +356,9 @@ def fitting_advanced(grad_img,pix2mm,l,sigma_f,sigma_y):
     """
     right_flip_img = np.flipud(grad_img) # flipping the image
     i_y, i_x = np.where(right_flip_img==1) # coordinates of the edge
+    i_x_index = i_x.argsort()
+    i_x = i_x[i_x_index[:]]
+    i_y = i_y[i_x_index[:]]
     # i_x = i_x-0.5
     i_y_mm = i_y*pix2mm # y coordinate of the edge in mm
     i_x_mm = i_x*pix2mm # x coordinate of the edge in mm

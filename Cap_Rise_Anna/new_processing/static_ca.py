@@ -30,6 +30,7 @@ Fps = 500
 """Interface Detection"""
 # threshold for the gradient 
 Threshold_Gradient = 6
+Threshold_Int = 8
 # threshold for outliers
 Threshold_Outlier = 0.2
 # threshold for the kernel filtering
@@ -38,7 +39,7 @@ Threshold_Kernel= 0.02
 Wall_Cut = 3 
 # whether to mirror the right side onto the left
 Do_Mirror = True
-
+Denoise = True
 """locate the images"""
 # letter of the current run
 Test_Case = 'middle_B'
@@ -64,13 +65,13 @@ for i in range(0,Img_Amount):
     MEX= 'Exporting Im '+ str(i+1)+' of ' + str(Img_Amount) # update on progress
     print(MEX) 
     # load the image and highpass filter it
-    img_hp, img = imp.load_image(Fol_Data, Crop_Index, Idx, Load_Idx, Pressure, Run, Speed)
+    img_hp, img = imp.load_image(Fol_Data, Crop_Index, Idx, Load_Idx, Pressure, Run, Speed, Denoise)
     # calculate the detected interface position
     grad_img,y_index, x_index = imp.edge_detection_grad(img_hp,\
            Threshold_Gradient, Wall_Cut, Threshold_Outlier, Threshold_Kernel,
-           do_mirror = Do_Mirror)
+           Threshold_Int, do_mirror = Do_Mirror)
     # fit a gaussian to the detected interface
-    mu_s,i_x,i_y,i_x_mm,i_y_mm,X,img_width_mm, cov = imp.fitting_advanced(\
+    mu_s,i_x,i_y,i_x_mm,i_y_mm,X,img_width_mm = imp.fitting_advanced(\
         grad_img ,Pix2mm, l=5, sigma_f=0.1, sigma_y=0.5e-6)
     imp.contact_angle(mu_s,X,0, Pix2mm)   
     X_c = X - 2.5 + 0.5*Pix2mm # shift the x values to be centered around 0

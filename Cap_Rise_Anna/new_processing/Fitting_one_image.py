@@ -30,7 +30,6 @@ Fps = 500
 # threshold for the gradient 
 Threshold_Gradient = 5
 # threshold for outliers
-Threshold_Int = 7
 Threshold_Outlier = 0.1
 # threshold for the kernel filtering
 Threshold_Kernel= 0.02
@@ -53,8 +52,6 @@ Pix2mm = Width/(Crop_Index[1]-Crop_Index[0])
 
 Idx = 1493-Frame0
 
-
-
 """gif setup"""
 images = [] # empty list to append into
 GIFNAME = 'Detected_interface.gif' # name of the gif
@@ -70,8 +67,8 @@ img_hp, img = imp.load_image(Fol_Data, Crop_Index, Idx, Load_Idx,\
                              Pressure, Run, Speed, Denoise)
 # calculate the detected interface position
 grad_img,y_index, x_index = imp.edge_detection_grad(img_hp,\
-       Threshold_Gradient, Wall_Cut, Threshold_Outlier, Threshold_Kernel,
-       Threshold_Int, do_mirror = Do_Mirror)
+       Threshold_Gradient, Wall_Cut, Threshold_Outlier, Threshold_Kernel,\
+           do_mirror = Do_Mirror)
 # fit a gaussian to the detected interface
 mu_s,i_x,i_y,i_x_mm,i_y_mm,X,img_width_mm = imp.fitting_advanced(\
     grad_img ,Pix2mm, l=5, sigma_f=0.1, sigma_y=5e-7)
@@ -82,19 +79,19 @@ i_y_fit = i_y_mm-Subt
 X_plot = (np.linspace(-2.5,2.5,1000))
 mu_s = mu_s/Pix2mm # convert back to pixels
 
-fit_val = imp.fitting_cosh2(i_x_fit, i_y_fit)
+fit_val, shift, inverted = imp.fitting_cosh2(i_x_fit, i_y_fit)
 y_cosh_fine = (func(X_plot, fit_val[0], fit_val[1])+Subt)/Pix2mm
 # plot the result
 fig, ax = plt.subplots() # create a figure
-ax.imshow(np.flip(img, axis = 0), cmap=plt.cm.gray) # show the image in greyscale
-ax.scatter(i_x, i_y, marker='x', s=(70./fig.dpi)**2, color = 'lime') # plot the detected gradient onto the image
-ax.plot((X_plot+2.5)/Pix2mm-0.5, y_cosh_fine, lw=0.5, color = 'yellow')
-ax.plot((X)/(Pix2mm), mu_s, 'r-', linewidth=0.5) # plot the interface fit
+ax.imshow(np.flip(img_hp, axis = 0), cmap=plt.cm.gray) # show the image in greyscale
+# ax.scatter(i_x, i_y, marker='x', s=(70./fig.dpi)**2, color = 'lime') # plot the detected gradient onto the image
+# ax.plot((X_plot+2.5)/Pix2mm-0.5, y_cosh_fine, lw=0.5, color = 'yellow')
+# ax.plot((X)/(Pix2mm), mu_s, 'r-', linewidth=0.5) # plot the interface fit
 ax.invert_yaxis()
 ax.set_aspect('equal')
 ax.axis('off') # disable the showing of the axis
 ax.set_ylim(mu_s[500]-20, mu_s[500]+65)
-ax.set_xlim(65,img.shape[1]+1)
+# ax.set_xlim(65,img.shape[1]+1)
 NAME_OUT = 'Stp_%05d.png' %(Idx+Frame0)
 fig.tight_layout()
 fig.savefig(NAME_OUT, dpi= 400) # save image

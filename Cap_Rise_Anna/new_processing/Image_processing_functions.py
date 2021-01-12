@@ -113,7 +113,11 @@ def load_image(name, crop_index, idx, load_idx, pressure, run, speed, cv2denoise
     # convert the image to integer to avoid bound errors
     img = img.astype(np.int)
     # calculate the blurred image
-    blur = gaussian_filter(img, sigma = 4, mode = 'nearest', truncate = 3)
+    if idx <= 50:
+        sigma = 7
+    else:
+        sigma = 4
+    blur = gaussian_filter(img, sigma = sigma, mode = 'nearest', truncate = 3)
     # subtract the blur yielding the interface
     img_hp = img - blur
     # subtract values below 3, this is still noise, so we kill it
@@ -122,7 +126,7 @@ def load_image(name, crop_index, idx, load_idx, pressure, run, speed, cv2denoise
     return img_hp, img
 
 def edge_detection_grad(crop_img, threshold_pos, wall_cut, threshold_outlier,\
-                        kernel_threshold, threshold_int, do_mirror):
+                        kernel_threshold, do_mirror):
     """
     Function to get the the edges of the interface
 
@@ -159,7 +163,7 @@ def edge_detection_grad(crop_img, threshold_pos, wall_cut, threshold_outlier,\
         # if i == 130:
         #     print('Stop')
         if np.max(Profiles_d[:,i]) <= threshold_pos:
-            idx_maxima[i] = int(np.argmax(Profiles_d[5:,i]))+5
+            idx_maxima[i] = int(np.argmax(Profiles_d[5:,i] > 1.8) )+5
         else:
             idx_maxima[i] = int(np.argmax(Profiles_d[5:,i] > threshold_pos))+5             # find positions of all the maxima in the gradient
     # idx_maxima = np.argmax(Profiles_d > 10, axis = 0)                # find positions of all the maxima in the gradient
@@ -223,7 +227,7 @@ def mirror_right_side(array):
 
 def saveTxt(fol_data, h_mm, h_cl_l, h_cl_r, angle_gauss, angle_cosh, pressure,\
             fit_coordinates_gauss, fit_coordinates_exp, test_case):                
-    Fol_txt = create_folder(os.path.join(fol_data,'data_files_test'))
+    Fol_txt = create_folder(os.path.join(fol_data,'data_files'))
     np.savetxt(os.path.join(Fol_txt, test_case + '_h_avg.txt'), h_mm, fmt='%.6f')
     np.savetxt(os.path.join(Fol_txt, test_case + '_h_cl_r.txt'), h_cl_r, fmt='%.6f')
     np.savetxt(os.path.join(Fol_txt, test_case + '_h_cl_l.txt'), h_cl_l, fmt='%.6f')
@@ -423,7 +427,7 @@ def contact_angle(y, x, side, pix2mm):
 
 def load_labview_files(fol_data, test_case):
     Fps = 500
-    abbrev = test_case[:-2]
+    # abbrev = test_case[:-2]
     def read_lvm(path):
     #path_cam = folder + 'test-THS-cam_001.lvm'
         header    = 12  # number of header rows

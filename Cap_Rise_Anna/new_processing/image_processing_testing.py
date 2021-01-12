@@ -30,7 +30,6 @@ Fps = 500
 """Interface Detection"""
 # threshold for the gradient 
 Threshold_Gradient = 7
-Threshold_Int = 7
 # threshold for outliers
 Threshold_Outlier = 0.15
 # threshold for the kernel filtering
@@ -53,7 +52,7 @@ N_T = Frame0+Img_Amount-1+plus
 Pix2mm = Width/(Crop_Index[1]-Crop_Index[0]) 
 # name of the output folder
 # Fol_Out = ppf.create_folder('Crop_Check')
-Fol_Images_Detected = ppf.create_folder(Fol_Data + os.sep + 'Images_Detected_test')
+Fol_Images_Detected = ppf.create_folder(Fol_Data + os.sep + 'Images_Detected')
 
 """initialize arrays"""
 h_mm_avg = np.zeros([N_T+1])*np.nan  
@@ -86,8 +85,8 @@ for i in range(0+plus,Img_Amount+plus):
                                  Pressure, Run, Speed, Denoise)
     # calculate the detected interface position
     grad_img, y_index, x_index = imp.edge_detection_grad(img_hp,\
-       Threshold_Gradient, Wall_Cut, Threshold_Outlier, Threshold_Kernel,
-       Threshold_Int, do_mirror = Do_Mirror)
+       Threshold_Gradient, Wall_Cut, Threshold_Outlier, Threshold_Kernel,\
+           do_mirror = Do_Mirror)
     # fit a gaussian to the detected interface
     mu_s,i_x,i_y,i_x_mm,i_y_mm,X,img_width_mm = imp.fitting_advanced(\
         grad_img, Pix2mm, l=5, sigma_f=0.1, sigma_y=0.5e-6)
@@ -127,15 +126,17 @@ for i in range(0+plus,Img_Amount+plus):
     NAME_OUT = Fol_Images_Detected + os.sep + 'Stp_%05d.png' %(Idx+Frame0)
     fig.tight_layout()
     fig.savefig(NAME_OUT, dpi= 80) # save image
-    # plt.close(fig) # disable or enable depending on whether you want to see image in the plot window
-#     images.append(imageio.imread(NAME_OUT))
-# imageio.mimsave(GIFNAME, images, duration = 0.10)
+    plt.close(fig) # disable or enable depending on whether you want to see image in the plot window
+    images.append(imageio.imread(NAME_OUT))
+imageio.mimsave(GIFNAME, images, duration = 0.10)
 
 pressure, f0 = imp.load_labview_files(Fol_Data, Test_Case)
 
-h_mm_avg = h_mm_avg[Frame0+plus:]+H_Final
-h_cl_left = h_cl_left[Frame0+plus:]+H_Final
-h_cl_right = h_cl_right[Frame0+plus:]+H_Final
+h_offset = np.mean(h_mm_avg[-50:])
+
+h_mm_avg = h_mm_avg[Frame0+plus:]+H_Final-h_offset
+h_cl_left = h_cl_left[Frame0+plus:]+H_Final-h_offset
+h_cl_right = h_cl_right[Frame0+plus:]+H_Final-h_offset
 angle_gauss = angle_gauss[Frame0+plus:]
 angle_cosh = angle_cosh[Frame0+plus:]
 curvature_gauss = curvature_gauss[Frame0+plus:]
@@ -147,8 +148,3 @@ imp.saveTxt(Fol_Data, h_mm_avg, h_cl_left, h_cl_right, angle_gauss,\
             angle_cosh, pressure, curvature_gauss, curvature_cosh,\
                 Test_Case)
 print(time.time()-start)
-
-plt.figure()
-plt.plot(X, mu_s)
-plt.plot(X, y_cosh_fine)
-plt.scatter(i_x_mm, i_y, marker='x', s=(70./fig.dpi)**2, color = 'lime')

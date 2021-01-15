@@ -42,7 +42,7 @@ Denoise = True
 
 """locate the images"""
 # letter of the current run
-Test_Case = 'P1500_C30_A'
+Test_Case = 'P1250_C30_A'
 Case = 'Rise'
 Fluid = 'Water'
 
@@ -67,8 +67,8 @@ def func(x_func,a,b):
     return (np.cosh(np.abs(x_func)**a/b)-1)
 
 """gif setup"""
-images = [] # empty list to append into
-GIFNAME = 'Detected_interface_hyperbolic_cosine.gif' # name of the gif
+# images = [] # empty list to append into
+# GIFNAME = 'Detected_interface_hyperbolic_cosine.gif' # name of the gif
 import time
 start = time.time()
 
@@ -127,8 +127,9 @@ for i in range(0+plus,Img_Amount+plus):
     fig.tight_layout()
     fig.savefig(NAME_OUT, dpi= 80) # save image
     plt.close(fig) # disable or enable depending on whether you want to see image in the plot window
-    images.append(imageio.imread(NAME_OUT))
-imageio.mimsave(GIFNAME, images, duration = 0.10)
+    # if (i%2) == 0:
+#         images.append(imageio.imread(NAME_OUT))
+# imageio.mimsave(GIFNAME, images, duration = 0.10)
 
 pressure, f0 = imp.load_labview_files(Fol_Data, Test_Case)
 

@@ -16,12 +16,12 @@ import post_processing_functions as ppf
 import os
 import numpy as np
 
-# Fol_Rise = 'C:\PIV_Processed\Images_Processed\Rise_64_16_peak2RMS'
-# Results = ppf.create_folder('C:\PIV_Processed\Fields_Smoothed')
-# runs = os.listdir(Fol_Rise)
+Fol_Rise = 'C:\PIV_Processed\Images_Processed\Rise_64_16_peak2RMS'
+Results = ppf.create_folder('C:\PIV_Processed\Fields_Smoothed')
+runs = os.listdir(Fol_Rise)
 
-# for i in range(0, len(runs)):
-# # for i in range(0, 1):
+# # for i in range(0, len(runs)):
+# for i in range(23, 24):
 #     Name_Cut = ppf.cut_processed_name(runs[i])
 #     print(Name_Cut)
 #     Fol_Out = ppf.create_folder(os.path.join(Results, 'Smoothed_'+Name_Cut))
@@ -38,8 +38,8 @@ Fol_Fall = 'C:\PIV_Processed\Images_Processed\Fall_24_24_peak2RMS'
 Results = ppf.create_folder('C:\PIV_Processed\Fields_Smoothed')
 runs = os.listdir(Fol_Fall)
 
-# for i in range(0, len(runs)):
-for i in range(1, len(runs)):
+for i in range(5, 6):
+# for i in range(1, len(runs)):
     Name_Cut = ppf.cut_processed_name(runs[i])
     print(Name_Cut)
     Fol_Out = ppf.create_folder(os.path.join(Results, 'Smoothed_'+Name_Cut))

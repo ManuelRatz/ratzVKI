@@ -37,9 +37,9 @@ settings.correlation_method = 'circular'  # 'circular' or 'linear'
 settings.iterations = 3 # select the number of PIV passes
 # base 2
 settings.window_height = (64, 32, 24)
-settings.overlap_height = (32, 16, 12)
+settings.overlap_height = (48, 24, 18)
 settings.window_width = (64, 32, 24)
-settings.overlap_width = (32, 16, 12)
+settings.overlap_width = (48, 24, 18)
 
 
 # sig2noise
@@ -74,9 +74,9 @@ settings.scale_plot = 200 # select a value to scale the quiver plot of the vecto
 
 observation_periods = np.genfromtxt('observation_fall.txt', dtype=str)
 
-# run = 9
-# for i in range(run, run+3):
-for i in range(0, observation_periods.shape[0]):
+run = 9
+for i in range(run, run+1):
+# for i in range(0, observation_periods.shape[0]):
     # Folder with the images to process
     settings.filepath_images = 'C:\PIV_Processed\Images_Preprocessed'+os.sep+observation_periods[i,0]
     
@@ -91,19 +91,3 @@ for i in range(0, observation_periods.shape[0]):
     settings.process_roi_shift = True
     settings.run = 1
     piv(settings)
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

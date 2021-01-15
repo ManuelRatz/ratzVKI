@@ -580,6 +580,8 @@ def multipass_img_deform(frame_a, frame_b, win_width, win_height, overlap_width,
     if do_sig2noise==True and current_iteration==iterations and iterations!=1:
         sig2noise_ratio=sig2noise_ratio_function(correlation, sig2noise_method=sig2noise_method, width=sig2noise_mask)
         sig2noise_ratio = sig2noise_ratio.reshape(shapes)
+        np.save('corr_map_valid.npy', correlation[423,:,:])
+        np.save('corr_map_invalid.npy', correlation[50,:,:])
     else:
         sig2noise_ratio=np.full_like(u,np.nan)
 

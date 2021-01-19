@@ -60,7 +60,7 @@ from functions_Miguel import POD, interp_Time, qfield, high_pass
 
 # number of POD modes
 R_u = 25
-R_v = 35
+R_v = 25
 # do the POD
 Phi_u, Sigma_u, Psi_u = POD(U_POD_load, R_u)
 Phi_v, Sigma_v, Psi_v = POD(V_POD_load, R_v)
@@ -311,7 +311,8 @@ clb = fig.colorbar(mappable = cont, fraction=0.185, pad=0.1, drawedges = True, a
 clb.set_label('Q Field [1/s$^2$]') # set the colorbar label
 ax.quiver(X_grid_old[::Stp_y,::Stp_x], Y_grid_old[::Stp_y,::Stp_x], u_old[::Stp_y,::Stp_x],\
           v_old[::Stp_y,::Stp_x], scale = 12000, color = 'k',\
-          scale_units = 'height', units = 'width', width = 0.002)
+          scale_units = 'height', headlength = 6, headaxislength = 6,\
+              units = 'width', width = 0.007)
 ax.set_xlabel('$x$[mm]')
 ax.set_xticks(np.linspace(12, 252, 6))
 ax.set_xticklabels(np.linspace(0, 5, 6, dtype = int))

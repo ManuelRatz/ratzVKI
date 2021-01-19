@@ -939,12 +939,12 @@ def smooth_frequency(profiles, N_T):
 
         """
         # select the windows
-        filter_poly = sci.firwin(tmp_prof.shape[0]//10, 0.01 , window='hamming', fs = 100)
+        filter_poly = sci.firwin(tmp_prof.shape[0]//20, 0.01 , window='hamming', fs = 100)
         # filter with filtfilt
         prof_filtered = sci.filtfilt(b = filter_poly, a = [1], x = tmp_prof, padlen = 10, padtype = 'odd')
-        returno, DUMMY, DUMMY, DUMMY = smoothn(prof_filtered, s = 0.5, isrobust = True)
+        
         # return the filtered profile
-        return returno
+        return prof_filtered
     def extract_profile(time_column):
         """
         Function to extract the longest velocity profile in time from the

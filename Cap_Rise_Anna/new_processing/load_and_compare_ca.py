@@ -148,7 +148,6 @@ def filter_signal(signal, cutoff_frequency):
     clip_index = signal.shape[0]
     clipped_signal = example_filtered[clip_index:2*clip_index]
     return clipped_signal
-    return example_filtered
 #%%
 pressure, h_avg, ca_gauss, ca_cosh, curv_gauss, curv_cosh = load_txt_files(Fol_In, Case)
 
@@ -159,27 +158,37 @@ curv_gauss_filtered = filter_signal(signal = curv_gauss, cutoff_frequency = 10)
 curv_cosh_filtered = filter_signal(signal = curv_cosh, cutoff_frequency = 10)
 h_avg_filtered = filter_signal(signal = h_avg, cutoff_frequency = 10)
 
+ca_gauss_const = np.ones(ca_gauss.shape)*0.35
+
+plt.plot(np.gradient(h_avg_filtered))
+plt.plot(np.gradient(np.gradient(h_avg_filtered)))
 
 """ Solutions with the different contact angles """
 solution_gauss_filt_ca = solve_equation(pressure_call = pressure, height_call = h_avg,\
                                      method = 'Angle', ca_call = ca_gauss_filtered)[:,1]
 solution_gauss_unfilt_ca = solve_equation(pressure_call = pressure, height_call = h_avg,\
                                      method = 'Angle', ca_call = ca_gauss)[:,1]
-solution_cosh_filt_ca = solve_equation(pressure_call = pressure, height_call = h_avg,\
-                                     method = 'Angle', ca_call = ca_cosh_filtered)[:,1]
-solution_cosh_unfilt_ca = solve_equation(pressure_call = pressure, height_call = h_avg,\
-                                     method = 'Angle', ca_call = ca_cosh)[:,1]
+sol_static_ca = solve_equation(pressure_call = pressure, height_call = h_avg,
+                               method = 'Angle', ca_call = ca_gauss_const)[:,1]
+# solution_cosh_filt_ca = solve_equation(pressure_call = pressure, height_call = h_avg,\
+#                                      method = 'Angle', ca_call = ca_cosh_filtered)[:,1]
+# solution_cosh_unfilt_ca = solve_equation(pressure_call = pressure, height_call = h_avg,\
+#                                      method = 'Angle', ca_call = ca_cosh)[:,1]
 
-""" Solutions with the different contact angles """
-solution_gauss_filt_curv = solve_equation(pressure_call = pressure, height_call = h_avg,\
-                                     method = 'Curvature', curv_call = curv_gauss_filtered)[:,1]
-solution_gauss_unfilt_curv = solve_equation(pressure_call = pressure, height_call = h_avg,\
-                                     method = 'Curvature', curv_call = curv_gauss)[:,1]
-solution_cosh_filt_curv = solve_equation(pressure_call = pressure, height_call = h_avg,\
-                                     method = 'Curvature', curv_call = curv_cosh_filtered)[:,1]
-solution_cosh_unfilt_curv = solve_equation(pressure_call = pressure, height_call = h_avg,\
-                                     method = 'Curvature', curv_call = curv_cosh)[:,1]
-    
+# """ Solutions with the different curvatures """
+# solution_gauss_filt_curv = solve_equation(pressure_call = pressure, height_call = h_avg,\
+#                                      method = 'Curvature', curv_call = curv_gauss_filtered)[:,1]
+# solution_gauss_unfilt_curv = solve_equation(pressure_call = pressure, height_call = h_avg,\
+#                                      method = 'Curvature', curv_call = curv_gauss)[:,1]
+# solution_cosh_filt_curv = solve_equation(pressure_call = pressure, height_call = h_avg,\
+#                                      method = 'Curvature', curv_call = curv_cosh_filtered)[:,1]
+# solution_cosh_unfilt_curv = solve_equation(pressure_call = pressure, height_call = h_avg,\
+#                                      method = 'Curvature', curv_call = curv_cosh)[:,1]
+
+#%%
+plt.plot(solution_gauss_filt_ca)
+plt.plot(sol_static_ca)
+
 #%%
 """Plots for the Miguel Presentation"""
 # plt.figure()
@@ -210,16 +219,16 @@ solution_cosh_unfilt_curv = solve_equation(pressure_call = pressure, height_call
 # plt.title('Cosh comparison')
 # plt.savefig('cosh_sol.png', dpi = 400)
 
-plt.figure()
-plt.plot(solution_cosh_filt_ca, label = 'Cosh, CA', lw = 0.75)
-plt.plot(solution_cosh_filt_curv, label = 'Cosh Curv', lw = 0.75)
-plt.plot(solution_gauss_filt_ca, label = 'Gauss, CA', lw = 0.75)
-plt.plot(solution_gauss_filt_curv, label = 'Gauss Curv', lw = 0.75)
-# plt.ylim(99, 108)
-# plt.xlim(1000, 1750)
-plt.title('Solution global all')
-plt.legend()
-plt.savefig('all_sol.png', dpi = 400)
+# plt.figure()
+# plt.plot(solution_cosh_filt_ca, label = 'Cosh, CA', lw = 0.75)
+# plt.plot(solution_cosh_filt_curv, label = 'Cosh Curv', lw = 0.75)
+# plt.plot(solution_gauss_filt_ca, label = 'Gauss, CA', lw = 0.75)
+# plt.plot(solution_gauss_filt_curv, label = 'Gauss Curv', lw = 0.75)
+# # plt.ylim(99, 108)
+# # plt.xlim(1000, 1750)
+# plt.title('Solution global all')
+# plt.legend()
+# plt.savefig('all_sol.png', dpi = 400)
 
 # plt.figure()
 # plt.plot(2*np.cos(ca_gauss_filtered), label = 'Contact angle')
@@ -251,12 +260,12 @@ plt.savefig('all_sol.png', dpi = 400)
 # plt.title('Curvature Comparison')
 # plt.savefig('curv.png', dpi = 400)
 
-plt.figure()
-plt.plot(ca_gauss_filtered*180/np.pi, label = 'Gauss')
-plt.plot(ca_cosh_filtered*180/np.pi, label = 'Cosh')
-plt.legend()
-plt.title('Contact angle comparison')
-plt.savefig('ca.png', dpi = 400)
+# plt.figure()
+# plt.plot(ca_gauss_filtered*180/np.pi, label = 'Gauss')
+# plt.plot(ca_cosh_filtered*180/np.pi, label = 'Cosh')
+# plt.legend()
+# plt.title('Contact angle comparison')
+# plt.savefig('ca.png', dpi = 400)
 
 # # plt.figure()
 # # plt.plot(ca_gauss)

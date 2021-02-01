@@ -22,6 +22,10 @@ plus = 0
 """General settings"""
 # amount of images to process
 Img_Amount = 2000
+if Img_Amount < 20:
+    dpi = 400
+else:
+    dpi = 80
 # width of the channel
 Width = 5
 # acquisition frequency of the camera
@@ -29,22 +33,24 @@ Fps = 500
 
 """Interface Detection"""
 # threshold for the gradient 
-Threshold_Gradient = 7
+Threshold_Gradient = 5
 # threshold for outliers
-Threshold_Outlier = 0.15
+Threshold_Outlier_out = 0.15 # 0.075
+Threshold_Outlier_in = 0.02 # 0.02
 # threshold for the kernel filtering
-Threshold_Kernel= 0.001
+Threshold_Kernel_out = 0.01 #0.01
+Threshold_Kernel_in = 0.001 #0.001
 # pixels to cut near the wall
-Wall_Cut = 3
+Wall_Cut = 2
 # whether to mirror the right side onto the left
 Do_Mirror = True
 Denoise = True
 
 """locate the images"""
 # letter of the current run
-Test_Case = 'P1250_C30_A'
+Test_Case = 'P1500_A'
 Case = 'Rise'
-Fluid = 'Water'
+Fluid = 'HFE'
 
 Fol_Data, Pressure, Run, H_Final, Frame0, Crop_Index, Speed =\
     imp.get_parameters(Test_Case, Case, Fluid)
@@ -67,7 +73,7 @@ def func(x_func,a,b):
     return (np.cosh(np.abs(x_func)**a/b)-1)
 
 """gif setup"""
-# images = [] # empty list to append into
+images = [] # empty list to append into
 # GIFNAME = 'Detected_interface_hyperbolic_cosine.gif' # name of the gif
 import time
 start = time.time()
@@ -82,14 +88,15 @@ for i in range(0+plus,Img_Amount+plus):
     print(MEX) 
     # load the image and highpass filter it
     img_hp, img = imp.load_image(Fol_Data, Crop_Index, Idx, Load_Idx,\
-                                 Pressure, Run, Speed, Denoise)
+                                 Pressure, Run, Speed, Denoise, Fluid)
     # calculate the detected interface position
     grad_img, y_index, x_index = imp.edge_detection_grad(img_hp,\
-       Threshold_Gradient, Wall_Cut, Threshold_Outlier, Threshold_Kernel,\
-           do_mirror = Do_Mirror)
+       Threshold_Gradient, Wall_Cut, Threshold_Outlier_in, Threshold_Outlier_out
+       , Threshold_Kernel_out, Threshold_Kernel_in,\
+           do_mirror = Do_Mirror, fluid = Fluid, idx = Idx)
     # fit a gaussian to the detected interface
     mu_s,i_x,i_y,i_x_mm,i_y_mm,X,img_width_mm = imp.fitting_advanced(\
-        grad_img, Pix2mm, l=5, sigma_f=0.1, sigma_y=0.5e-6)
+        grad_img, Pix2mm, l=5, sigma_f=1e-4, sigma_y=1e-9)
     
     # this is the part with the hyperbolic cosine fit
     i_x_fit = i_x_mm - 2.5
@@ -123,11 +130,12 @@ for i in range(0+plus,Img_Amount+plus):
     ax.set_aspect('equal')
     ax.axis('off') # disable the showing of the axis
     ax.set_ylim(mu_s[500]-20, mu_s[500]+65)
+    # ax.set_ylim(0,100)
     NAME_OUT = Fol_Images_Detected + os.sep + 'Stp_%05d.png' %(Idx+Frame0)
     fig.tight_layout()
-    fig.savefig(NAME_OUT, dpi= 80) # save image
+    fig.savefig(NAME_OUT, dpi= dpi) # save image
     plt.close(fig) # disable or enable depending on whether you want to see image in the plot window
-    # if (i%2) == 0:
+#     if (i%2) == 0:
 #         images.append(imageio.imread(NAME_OUT))
 # imageio.mimsave(GIFNAME, images, duration = 0.10)
 

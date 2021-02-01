@@ -17,6 +17,168 @@ from scipy.ndimage import gaussian_filter
 from numpy.linalg import inv
 import matplotlib.pyplot as plt
 
+def load_image(name, crop_index, idx, load_idx, pressure, run, speed, cv2denoise, fluid):
+    """
+    Function to load the image and highpass filter them for edge detection.
+
+    Parameters
+    ----------
+    name : str
+        Data path and prefix of the current run.
+    crop_index : tuple of int
+        4 coordinates to crop the images to.
+    idx : int
+        Current step counting from the beginning index.
+    load_idx : int
+        Current step counting from 0.
+
+    Returns
+    -------
+    img_hp : 2d np.array of int
+        Highpass filtered image.
+    img : 2d np.array of int
+        Raw Image.
+
+    """
+    if pressure is not None:
+        Image_name = name + os.sep + 'images' + os.sep + str(pressure) + '_' + run + '%05d' % load_idx + '.png'
+    elif speed is not None:
+        Image_name = name + os.sep + 'images' + os.sep + speed + '_' + run + '%04d' % load_idx + '.png'
+    else:
+        raise ValueError('No pressure or speed defined, can not identify case')
+    
+    # load the image
+    img=cv2.imread(Image_name,0)
+    # crop the image
+    img = img[:,crop_index[0]:crop_index[1]]
+    # at the beginning we need to cheat a little with cv2 because the highpass
+    # filtered image alone is not enough so we do a little denoising for the 
+    # first 10 steps
+    if cv2denoise == True:
+        img_den = cv2.fastNlMeansDenoising(img.astype('uint8'),1,1,7,21)
+    # convert the image to integer to avoid bound errors
+    img_den = img_den.astype(np.int)
+    # calculate the blurred image
+    if idx <= 50:
+        if fluid == 'Water':
+            sigma = 8
+        elif fluid == 'HFE':
+            sigma = 7
+        else:
+            raise ValueError('Wrong case, must be *Water* or *HFE*')
+    else:
+        sigma = 4
+    blur = gaussian_filter(img_den, sigma = sigma, mode = 'nearest', truncate = 3)
+    # subtract the blur yielding the interface
+    img_hp = img_den - blur
+    # subtract values below 3, this is still noise, so we kill it
+    img_hp[img_hp<4] = 0
+    # return the image
+    return img_hp, img
+
+def edge_detection_grad(crop_img, threshold_grad, wall_cut, threshold_outlier_in,
+                        threshold_outlier_out, kernel_threshold_out, kernel_threshold_in,
+                        do_mirror, fluid, idx):
+
+    grad_img = np.zeros(crop_img.shape)
+    y_index  = (np.asarray([])) 
+    Profiles = crop_img[:,wall_cut:len(crop_img[1])-wall_cut] 
+    Profiles_d = np.gradient(Profiles, axis = 0) 
+    idx_maxima = np.zeros((Profiles.shape[1]),dtype = int)
+    if fluid == 'HFE':
+        for i in range(0, Profiles_d.shape[1]):
+            if idx > 40 and idx < 160:
+                idx_maxima[i] = int(np.argmax(Profiles[5:,i] > 0.5*np.max(Profiles[:,i])))+5
+            else:
+                if np.max(Profiles_d[:,i]) <= threshold_grad:
+                    idx_maxima[i] = int(np.argmax(Profiles_d[5:,i]) )+5
+                else:
+                    idx_maxima[i] = int(np.argmax(Profiles_d[5:,i] ))+5
+    elif fluid == 'Water':
+        for i in range(0,Profiles_d.shape[1]):
+            if np.max(Profiles_d[:,i]) <= threshold_grad:
+                idx_maxima[i] = int(np.argmax(Profiles_d[5:,i]) )+5
+            else:
+                idx_maxima[i] = int(np.argmax(Profiles_d[5:,i] ))+5
+    else:
+        raise ValueError('Wrong fluid, must be *Water* or *HFE*')
+        
+    
+    for j in range(Profiles_d.shape[1]): 
+        grad_img[idx_maxima[j],j+wall_cut] = 1 # binarisation
+        # else:
+            # print('Below Threshold')
+    if do_mirror == True:
+        grad_img = mirror_right_side(grad_img)     
+    y_index, x_index = np.where(grad_img==1) # get coordinates of the interface
+    # sort both arrays to filter out outliers at the edges
+    x_sort_index = x_index.argsort()
+    y_index = y_index[x_sort_index[:]].astype(np.float64)
+    x_index = x_index[x_sort_index[:]]
+    
+    if idx < 20:
+        correction = 0.25
+    else:
+        correction = 1
+    
+    # filter out outliers
+    y_average  = np.median(y_index)
+    for k in range(0, y_index.shape[0]):
+        # if k == 133:
+        #     print('Hi')
+        if k > 0.15*y_index.shape[0] and k < 0.85*y_index.shape[0]:
+            kernel_size = 5
+            y_kernel = get_kernel(k, y_index,kernel_size)
+            if (np.abs(y_index[k]-np.nanmedian(y_kernel))/np.nanmedian(y_kernel)) > correction*kernel_threshold_in:
+                grad_img[int(y_index[k]),x_index[k]] = 0
+                y_index[k] = np.nan
+                continue
+            if np.abs(y_index[k]-y_average)/np.nanmedian(y_index) > correction*threshold_outlier_in:
+                grad_img[int(y_index[k]),x_index[k]] = 0
+                y_index[k] = np.nan
+        else:
+            kernel_size = 2 # amount of points to sample for median
+            y_kernel = get_kernel(k, y_index,kernel_size)
+            if (np.abs(y_index[k]-np.nanmedian(y_kernel))/np.nanmedian(y_kernel)) > correction*kernel_threshold_out:
+                grad_img[int(y_index[k]),x_index[k]] = 0
+                y_index[k] = np.nan
+                continue   
+            if np.abs(y_index[k]-y_average)/np.nanmedian(y_index) > correction*threshold_outlier_out:
+                grad_img[int(y_index[k]),x_index[k]] = 0
+                y_index[k] = np.nan     
+
+    
+    return grad_img, y_index, x_index
+
+def mirror_right_side(array):
+    """
+    Function to mirror the right side of the image
+
+    Parameters
+    ----------
+    array : 2d np.array
+        Image to be mirrored.
+
+    Returns
+    -------
+    mirrored : 2d np.array
+        Mirrored image.
+
+    """
+    # take the right side of the array
+    right = array[:,array.shape[1]//2+array.shape[1]%2:]
+    # check if the width in pixels is even, if yes return the mirror
+    if (array.shape[1]%2 == 0):
+        mirrored = np.hstack((np.fliplr(right), right))
+        # return the mirrored array
+        return mirrored
+    # if not we have to take the middle column
+    middle = np.expand_dims(array[:,array.shape[1]//2], 1)
+    # and add the right side to it, once normal and once flipped
+    mirrored = np.hstack((np.fliplr(right), middle,right))
+    # return the mirrored array
+    return mirrored
+
 def integrate_curvature(y):
     x = np.linspace(-2.5,2.5,1000)
     dydx = np.gradient(y, x)
@@ -71,159 +233,6 @@ def get_parameters(test_case, case, fluid):
     Crop = np.array([Matrix[i,3], Matrix[i,4]], dtype = int)
     return Fol_Data, Pressure, Run, H_Final, Frame0, Crop, Speed
 
-def load_image(name, crop_index, idx, load_idx, pressure, run, speed, cv2denoise):
-    """
-    Function to load the image and highpass filter them for edge detection.
-
-    Parameters
-    ----------
-    name : str
-        Data path and prefix of the current run.
-    crop_index : tuple of int
-        4 coordinates to crop the images to.
-    idx : int
-        Current step counting from the beginning index.
-    load_idx : int
-        Current step counting from 0.
-
-    Returns
-    -------
-    img_hp : 2d np.array of int
-        Highpass filtered image.
-    img : 2d np.array of int
-        Raw Image.
-
-    """
-    if pressure is not None:
-        Image_name = name + os.sep + 'images' + os.sep + str(pressure) + '_' + run + '%05d' % load_idx + '.png'
-    elif speed is not None:
-        Image_name = name + os.sep + 'images' + os.sep + speed + '_' + run + '%04d' % load_idx + '.png'
-    else:
-        raise ValueError('No pressure or speed defined, can not identify case')
-    
-    # load the image
-    img=cv2.imread(Image_name,0)
-    # crop the image
-    img = img[:,crop_index[0]:crop_index[1]]
-    # at the beginning we need to cheat a little with cv2 because the highpass
-    # filtered image alone is not enough so we do a little denoising for the 
-    # first 10 steps
-    if cv2denoise == True:
-        img = cv2.fastNlMeansDenoising(img.astype('uint8'),1,1,7,21)
-    # convert the image to integer to avoid bound errors
-    img = img.astype(np.int)
-    # calculate the blurred image
-    if idx <= 50:
-        sigma = 7
-    else:
-        sigma = 4
-    blur = gaussian_filter(img, sigma = sigma, mode = 'nearest', truncate = 3)
-    # subtract the blur yielding the interface
-    img_hp = img - blur
-    # subtract values below 3, this is still noise, so we kill it
-    img_hp[img_hp<3] = 0
-    # return the image
-    return img_hp, img
-
-def edge_detection_grad(crop_img, threshold_pos, wall_cut, threshold_outlier,\
-                        kernel_threshold, do_mirror):
-    """
-    Function to get the the edges of the interface
-
-    Parameters
-    ----------
-    crop_img : 2d np.array
-        Image as array in grayscale.
-    treshold_pos : float64
-        Required threshold for the gradient to be taken as a valid value.
-    wall_cut : int
-        How many pixels to cut near the wall.
-    threshold_outlier : float64
-        Percentage value indicating the relative difference between y and the mean at which to filter.
-    do_mirror : boolean
-        If True, the right side of the image will be mirrored because the gradient is stronger there.
-
-    Returns
-    -------
-    grad_img : 2d np.array
-        Image as a binary map indicating the edge as 1.
-    y_index : 1d np.array
-        Y-coordinates of the edge.
-    x_index : 1d np.array
-        X-coordinates of the edge.
-
-    """
-    grad_img = np.zeros(crop_img.shape)
-    y_index  = (np.asarray([])) 
-    Profiles = crop_img[:,wall_cut:len(crop_img[1])-wall_cut] # analyse the region where no spots from the wall disturb detection
-    # Profiles_s = savgol_filter(Profiles, 15, 2, axis =0)        # intensity profile smoothened
-    Profiles_d = np.gradient(Profiles, axis = 0)              # calculate gradient of smoothend intensity along the vertical direction
-    idx_maxima = np.zeros((Profiles.shape[1]),dtype = int)
-    for i in range(0,Profiles_d.shape[1]):
-        # if i == 130:
-        #     print('Stop')
-        if np.max(Profiles_d[:,i]) <= threshold_pos:
-            idx_maxima[i] = int(np.argmax(Profiles_d[5:,i] > 1.8) )+5
-        else:
-            idx_maxima[i] = int(np.argmax(Profiles_d[5:,i] > threshold_pos))+5             # find positions of all the maxima in the gradient
-    # idx_maxima = np.argmax(Profiles_d > 10, axis = 0)                # find positions of all the maxima in the gradient
-    #mean_a = np.mean(Profiles_s, axis=0)
-    for j in range(Profiles_d.shape[1]):
-        # accept only the gradient peaks that are above the threeshold (it avoids false detections lines where the interface is not visible)  
-        if Profiles_d[idx_maxima[j],j] > 1:
-            grad_img[idx_maxima[j],j+wall_cut] = 1 # binarisation
-        # else:
-            # print('Below Threshold')
-    if do_mirror == True:
-        grad_img = mirror_right_side(grad_img)     
-    y_index, x_index = np.where(grad_img==1) # get coordinates of the interface
-    # sort both arrays to filter out outliers at the edges
-    x_sort_index = x_index.argsort()
-    y_index = y_index[x_sort_index[:]]
-    x_index = x_index[x_sort_index[:]]
-
-    # filter out outliers
-    y_average  = np.median(y_index)
-    for k in range(len(y_index)):
-        kernel_size = 2 # amount of points to sample for median
-        y_kernel=get_kernel(k, y_index,kernel_size)
-        if np.abs(y_index[k]-np.median(y_kernel))/np.median(y_kernel) > kernel_threshold:
-            grad_img[int(y_index[k]),x_index[k]] = 0
-            # print('Filtered by kernel')
-        if np.abs(y_index[k]-y_average)/np.median(y_index)>threshold_outlier:
-            grad_img[int(y_index[k]),x_index[k]] = 0
-            # print('Filtered by threshold')
-    
-    return grad_img, y_index, x_index
-
-def mirror_right_side(array):
-    """
-    Function to mirror the right side of the image
-
-    Parameters
-    ----------
-    array : 2d np.array
-        Image to be mirrored.
-
-    Returns
-    -------
-    mirrored : 2d np.array
-        Mirrored image.
-
-    """
-    # take the right side of the array
-    right = array[:,array.shape[1]//2+array.shape[1]%2:]
-    # check if the width in pixels is even, if yes return the mirror
-    if (array.shape[1]%2 == 0):
-        mirrored = np.hstack((np.fliplr(right), right))
-        # return the mirrored array
-        return mirrored
-    # if not we have to take the middle column
-    middle = np.expand_dims(array[:,array.shape[1]//2], 1)
-    # and add the right side to it, once normal and once flipped
-    mirrored = np.hstack((np.fliplr(right), middle,right))
-    # return the mirrored array
-    return mirrored
 
 def saveTxt(fol_data, h_mm, h_cl_l, h_cl_r, angle_gauss, angle_cosh, pressure,\
             fit_coordinates_gauss, fit_coordinates_exp, test_case):                
@@ -494,7 +503,7 @@ def posterior_predictive(X_s, X_train, Y_train, l=1.0, sigma_f=1.0, sigma_y=1e-8
     '''
     K = kernel(X_train, X_train, l, sigma_f) + sigma_y**2 * np.eye(len(X_train))
     K_s = kernel(X_train, X_s, l, sigma_f)
-    K_ss = kernel(X_s, X_s, l, sigma_f) + 1e-8 * np.eye(len(X_s))
+    K_ss = kernel(X_s, X_s, l, sigma_f) + sigma_y * np.eye(len(X_s))
     K_inv = inv(K)
     
     # Equation (4)

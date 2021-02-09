@@ -36,15 +36,37 @@ def load_file(folder, case):
     return vel, vel_cl, acc, acc_cl, ca
 
 #%%
-Case = 'H_P2000_A'
+Case = 'W_P1500_C'
 vel, vel_cl, acc, acc_cl, ca = load_file(Fol_In, Case)
 
-plt.figure()
-plt.scatter(vel*mu_h/sigma_h, ca, c = acc, marker = 'o', s = 0.25)
-plt.title('Capillary vs Theta')
-plt.colorbar()
+# plt.figure()
+plt.scatter(vel_cl*mu_h/sigma_h, ca, c = acc, marker = 'o', s = 0.25)
+# plt.title('Capillary vs Theta')
+# plt.colorbar()
 
 # plt.figure()
 # plt.scatter(acc, ca, c = vel, marker = 'o', s = 0.25)
 # plt.colorbar()
 # plt.title('Acceleration vs Theta')
+
+import matplotlib as mpl
+from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
+import matplotlib.pyplot as plt
+
+mpl.rcParams['legend.fontsize'] = 10
+
+fig = plt.figure()
+ax = fig.gca(projection='3d')
+theta = np.linspace(-4 * np.pi, 4 * np.pi, 100)
+# z = np.linspace(-2, 2, 100)
+# r = z**2 + 1
+# x = r * np.sin(theta)
+# y = r * np.cos(theta)
+ax.scatter(acc, vel, ca, s=0.2, marker = 'o')
+ax.set_xlabel('acceleration')
+ax.set_ylabel('velocity')
+ax.set_zlabel('contact angle')
+# ax.legend()
+
+fig.tight_layout()

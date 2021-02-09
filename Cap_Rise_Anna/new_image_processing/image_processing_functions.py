@@ -205,6 +205,22 @@ def mirror_right_side(array):
     return mirrored
 
 def integrate_curvature(y):
+    """
+    Function to average the curvature over the interface
+    Important Note: This is not divided by the channel width, this is taken 
+    care of in the setup of the solution
+    
+    Parameters
+    ----------
+    y : 1d np.array
+        Array containing the vertical coordinates of the interface in mm.
+
+    Returns
+    -------
+    ret : float64
+        Integrated curvature over the channel width.
+
+    """
     # create the x points
     x = np.linspace(-2.5,2.5,1000)
     # calculate the first and second derivative
@@ -239,6 +255,36 @@ def create_folder(Fol_In):
     return Fol_In
 
 def get_parameters(test_case, case, fluid):
+    """
+    Function to load the properties of one test case
+
+    Parameters
+    ----------
+    test_case : str
+        Name of the Case. For Water: P1500_C30_A, for HFE: P2000_A for example
+    case : str
+        'Rise' or 'Fall'.
+    fluid : str
+        'Water' or 'HFE'.
+
+    Returns
+    -------
+    Fol_Data : str
+        Path to the data files of the test case.
+    Pressure : int
+        Initial pressure of the facility.
+    Run : str
+        'A', 'B' or 'C'.
+    H_Final : int
+        Equilibrium height in mm.
+    Frame0 : int
+        First frame with a valid interface to detect.
+    Crop : tuple of int
+        Crop coordinates for the image in px.
+    Speed : str
+        Release Speed: 'fast', 'middle' or 'slow'.
+
+    """
     # locate the file containing the test matrix and load it
     Path_Matrix = 'C:\Anna' + os.sep + case + os.sep + fluid
     Matrix = np.genfromtxt(Path_Matrix + os.sep + case + '_Matrix_' + fluid + '.txt', dtype = str)
@@ -572,4 +618,3 @@ def posterior_predictive(X_s, X_train, Y_train, l=1.0, sigma_f=1.0, sigma_y=1e-8
     # Equation (5)
     cov_s = K_ss - K_s.T.dot(K_inv).dot(K_s)
     return mu_s, cov_s
-

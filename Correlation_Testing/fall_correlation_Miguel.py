@@ -3,7 +3,7 @@
 Created on Tue Feb  2 10:34:51 2021
 
 @author: Manuel Ratz
-@description: Test Case for the descending interface to check the possiblity
+@description: Test Case for the DESCENDING interface to check the possiblity
     of a correlation from the acceleration and the velocity (both dimensionless)
     One test case is loaded and smoothed, then two fittings are being done:
         One using complex numbers and casting it to the real value
@@ -19,21 +19,15 @@ import scipy.signal as sci
 from scipy.optimize import minimize
 from scipy.optimize import curve_fit
 
-
-fontsize = 20
-plt.rc('text', usetex=True)   
-plt.rc('font', family='sans-serif')  
-plt.rc('axes', labelsize = fontsize+5)     # fontsize of the x and y labels
-plt.rc('xtick', labelsize = fontsize)    # fontsize of the tick labels
-plt.rc('ytick', labelsize = fontsize)    # fontsize of the tick labels
-plt.rc('legend', fontsize = fontsize-3)    # legend fontsize
-
+# these are the constants for water
 mu_w = 0.000948
 rho_w = 997.770
 sigma_w = 0.0724
 g = 9.81
-# theta_s = 34
 
+"""This is a function to filter the raw signals, because the contact angle is
+very noisy (see the plot later on). We use the contact angle from the gaussian
+process because it better represents the small contact angles."""
 def filter_signal(signal, cutoff_frequency):
     # we extend the right side
     right_attach = 2*signal[-1]-signal[::-1]
@@ -48,12 +42,17 @@ def filter_signal(signal, cutoff_frequency):
     clipped_signal = example_filtered[:clip_index]
     return clipped_signal
 
+"""This function prepares the data after giving a test case. Here the smoothing
+and velocity calculation is all taken care of. Velocities below a certain threshold
+are killed, to eliminate the static stuff from affecting the correlation"""
 def prepare_data(case, fluid, run, cutoff_frequency):
     # input folder
     fol = 'data_files'
     # case prefix
     prefix = case + '_' + run + '_'
     # amount of points to cut at the end
+    """ This parameter is very important, I will refer to it as cut_ending
+    in my descriptions. Changing this one has a large impact on the correlation"""
     cut_end = 10
     # load the files
     ca_cosh = np.genfromtxt(fol + os.sep + prefix + 'ca_cosh.txt')[:-cut_end]
@@ -79,8 +78,8 @@ def prepare_data(case, fluid, run, cutoff_frequency):
     theta_s = np.mean(ca_cosh[500:])
     # print(theta_s)
     
-    # clip the signals to only have velocities > 1 mm/s
-    valid_idx = np.argmax(np.abs(vel_clean) > 1)
+    # clip the signals to only have velocities > 3 mm/s
+    valid_idx = np.argmax(np.abs(vel_clean) > 3)
     vel_clean = vel_clean[valid_idx:]
     vel_cl_clean = vel_cl_clean[valid_idx:]
     ca_clean = ca_clean[valid_idx:]-theta_s
@@ -95,13 +94,16 @@ def prepare_data(case, fluid, run, cutoff_frequency):
     # return the data, the velocity is divided by 1000 to go from mm to m
     return ca_gauss, ca_cosh, ca_clean, vel_raw/1000, vel_clean/1000, theta_s
 
-# load the given test case
-Theta_gauss, Theta_cosh, Theta, Ca_raw, Ca, Theta_s = prepare_data('fast','Water','C', 6)
+""" Here the test case is loaded, I have put three test cases in the repository,
+so you can see how different each of them is. They are accessed by either
+'A', 'B' or 'C'"""
+Theta_gauss, Theta_cosh, Theta, Ca_raw, Ca, Theta_s = prepare_data('slow','Water','A', 6)
 # calculate the dimensionless acceleration
 G = np.gradient(Ca/mu_w*sigma_w, 0.002)/g
 
-# plot the raw vs filtered signal to compare the smoothing
 
+"""In these plots we can see just how messy the dynamic contact angle is"""
+# plot the raw vs filtered signal to compare the smoothing
 plt.plot(Theta_gauss)
 plt.plot(Theta)
 
@@ -112,54 +114,39 @@ plt.plot(Ca)
 plt.figure()
 plt.plot(G)
 
-#%%
+"""
+Now the thing that I have found to be problematic:
+    
+For a given test case, say 'C', I can run the code and I get a set of fitting points.
+If I now change the cut_ending parameter, the smoothing plots for Theta and Ca
+only change by a small amount. However, the correlation parameters change by
+quite a bit. I used a cut_ending of 20 and 10 to show this. The only way to
+improve this in my opinion is to have a more stable fit, that requires less filtering
+and can be trusted more. 
+
+Running test case 'B' again gives completely different fitting parameters, here 
+you can change cut_ending again to see how it affects the parameters.
+
+Keep in mind that these are the fast releases, the best ones, by a lot. For the
+slow and medium releases the results are much much worse, the fitting often even 
+fails. 
+
+Now that I am writing this, I have thought to put one additional case, a slow release
+for water, case A. The velocity and acceleration are absolutely weird and strange.
+My biggest problem is that I was not present for the experiments, so I don't know
+how they were conducted and cannot judge if this is plausible'
+
+I have not tried to look at a Rise so far, because the slow case is prove 
+enough for me, that we cannot get a correlation for this type of data.
+
+I am however, as always, ready to be proven wrong by you :D
 
 """
-This is the fitting function using complex values and casting it to the real
-value again
-"""
-skip = 0
-
-Ca_cmplx = Ca.astype(np.complex)
-G_cmplx = G.astype(np.complex)
-
-def fitting_function_cmplx(X, a, b, c):
-    velocity, acceleration = X
-    # print(np.power(velocity, b))
-    # print(np.power(acceleration, c))
-    theta = (a*(velocity**b)*(acceleration**c))
-    # print(theta.imag[-1])
-    # print(theta.real[-1])
-    theta = theta.real
-    return theta
-
-def cost_cmplx(fit_values, velocity, acceleration, Theta_exp):
-    theta_pred = fitting_function_cmplx((velocity, acceleration), fit_values[0],
-                                  fit_values[1], fit_values[2])
-    norm = np.linalg.norm(Theta_exp - theta_pred)
-    return norm
-
-x0 = np.array([170, 0.5, 0.5])
-
-# bounds = ((-300, 300), (0.00001, np.inf), (0.00001, np.inf))
-sol = minimize(cost_cmplx, x0, args = (Ca_cmplx, G_cmplx, Theta,),
-                method = 'Nelder-Mead')
-print(sol.x)
-values = sol.x
-theta_pred = fitting_function_cmplx((Ca_cmplx, G_cmplx), values[0], values[1], values[2])
-
-plt.figure()
-ax = plt.gca()
-plt.scatter(Theta+Theta_s, theta_pred+Theta_s, s = 3)
-ax.set_xlabel('$\Theta_\\textrm{exp}$')
-ax.set_ylabel('$\Theta_\\textrm{pred}$')
-ax.set_aspect(1)
-ax.plot(Theta+Theta_s, Theta+Theta_s, color = 'r')
 
 #%%
 """
 This is the fitting function using real values with the absolute value for the 
-power calculation
+power calculation.
 """
 
 # function for the fitting
@@ -199,3 +186,47 @@ ax.set_xlabel('$\Theta_\\textrm{exp}$')
 ax.set_ylabel('$\Theta_\\textrm{pred}$')
 ax.set_aspect(1)
 ax.plot(Theta+Theta_s, Theta+Theta_s, color = 'r')
+
+#%%
+
+"""
+This is the fitting function using complex values and casting it to the real
+value again. IGNORE this for now, it is not important.
+"""
+# skip = 0
+
+# Ca_cmplx = Ca.astype(np.complex)
+# G_cmplx = G.astype(np.complex)
+
+# def fitting_function_cmplx(X, a, b, c):
+#     velocity, acceleration = X
+#     # print(np.power(velocity, b))
+#     # print(np.power(acceleration, c))
+#     theta = (a*(velocity**b)*(acceleration**c))
+#     # print(theta.imag[-1])
+#     # print(theta.real[-1])
+#     theta = theta.real
+#     return theta
+
+# def cost_cmplx(fit_values, velocity, acceleration, Theta_exp):
+#     theta_pred = fitting_function_cmplx((velocity, acceleration), fit_values[0],
+#                                   fit_values[1], fit_values[2])
+#     norm = np.linalg.norm(Theta_exp - theta_pred)
+#     return norm
+
+# x0 = np.array([170, 0.5, 0.5])
+
+# # bounds = ((-300, 300), (0.00001, np.inf), (0.00001, np.inf))
+# sol = minimize(cost_cmplx, x0, args = (Ca_cmplx, G_cmplx, Theta,),
+#                 method = 'Nelder-Mead')
+# print(sol.x)
+# values = sol.x
+# theta_pred = fitting_function_cmplx((Ca_cmplx, G_cmplx), values[0], values[1], values[2])
+
+# plt.figure()
+# ax = plt.gca()
+# plt.scatter(Theta+Theta_s, theta_pred+Theta_s, s = 3)
+# ax.set_xlabel('$\Theta_\\textrm{exp}$')
+# ax.set_ylabel('$\Theta_\\textrm{pred}$')
+# ax.set_aspect(1)
+# ax.plot(Theta+Theta_s, Theta+Theta_s, color = 'r')

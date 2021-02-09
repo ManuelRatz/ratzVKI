@@ -54,7 +54,7 @@ def prepare_data(case, fluid, run, cutoff_frequency):
     # case prefix
     prefix = case + '_' + run + '_'
     # amount of points to cut at the end
-    cut_end = 1
+    cut_end = 10
     # load the files
     ca_cosh = np.genfromtxt(fol + os.sep + prefix + 'ca_cosh.txt')[:-cut_end]
     ca_gauss = np.genfromtxt(fol + os.sep + prefix + 'ca_gauss.txt')[:-cut_end]
@@ -96,7 +96,7 @@ def prepare_data(case, fluid, run, cutoff_frequency):
     return ca_gauss, ca_cosh, ca_clean, vel_raw/1000, vel_clean/1000, theta_s
 
 # load the given test case
-Theta_gauss, Theta_cosh, Theta, Ca_raw, Ca, Theta_s = prepare_data('fast','Water','B', 6)
+Theta_gauss, Theta_cosh, Theta, Ca_raw, Ca, Theta_s = prepare_data('fast','Water','C', 6)
 # calculate the dimensionless acceleration
 G = np.gradient(Ca/mu_w*sigma_w, 0.002)/g
 

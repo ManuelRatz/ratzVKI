@@ -94,7 +94,7 @@ mu_s,i_x,i_y,i_x_mm,i_y_mm,X,img_width_mm = imp.fitting_advanced(\
 i_x_fit = i_x_mm - 2.5
 X_plot = (np.linspace(-2.5,2.5,1000))
 
-fit_val, shift, inverted = imp.fitting_cosh2(i_x_fit, i_y)
+fit_val, shift, inverted = imp.fitting_cosh(i_x_fit, i_y)
 def func(x_func,a,b):
         return (np.cosh(np.abs(x_func)**a/b)-1)
 y_cosh_fine = (func(X_plot, fit_val[0], fit_val[1]))
@@ -121,7 +121,7 @@ y_to_fit = i_y_mm-delta_i_y
 for j in range(0, n_trials):
     # obtain training set
     xs, xss, ys, yss = train_test_split(x_to_fit, i_y_mm, test_size = 0.3)
-    fit_val, shift, inverted = imp.fitting_cosh2(xs, ys) # fit to a cosine    
+    fit_val, shift, inverted = imp.fitting_cosh(xs, ys) # fit to a cosine    
     # calculate the y values on the fine grid
     a[j] = fit_val[0]; b[j] = fit_val[1]
     y_reg[:,j] = func(X_c, fit_val[0], fit_val[1])

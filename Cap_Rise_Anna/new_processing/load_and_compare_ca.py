@@ -16,8 +16,12 @@ from scipy.integrate import odeint      # for solving the ode
 import os
 import scipy.signal as sci 
 
-Fol_In = 'C:\Anna\Rise\Water\P1250_C30\A'
-Case = 'P1250_C30_A'
+mu_w = 0.000948
+rho_w = 997.770
+sigma_w = 0.0724
+
+Fol_In = 'C:\Anna\Rise\Water\P1500_C30\A'
+Case = 'P1500_C30_A'
 
 def load_txt_files(Fol_In, Case):
     """
@@ -60,7 +64,7 @@ def load_txt_files(Fol_In, Case):
     return pressure, h_avg, ca_gauss, ca_cosh, fit_gauss, fit_exp
 
 def solve_equation(pressure_call, height_call, method = 'Angle', ca_call = None,\
-                   curv_call = None):
+                   curv_call = None, pressure_loss = 0):
     """
     Function to solve the governing ODE after giving each signal
 
@@ -91,9 +95,6 @@ def solve_equation(pressure_call, height_call, method = 'Angle', ca_call = None,
     """
     # set the constants (this is for water)
     g      = 9.81;          # gravity (m/s2)
-    rhoL   = 1000;          # fluid density (kg/m3)
-    mu     = 8.90*10**(-4); # fuid dynamic viscosity (Pa*s)
-    sigma  = 0.07197;       # surface tension (N/m)
     r      = 0.0025         # radius of the tube (m)
     delta  = 2* r           # channel width (m)
     l      = 100*r          # depth of the channel
@@ -115,14 +116,14 @@ def solve_equation(pressure_call, height_call, method = 'Angle', ca_call = None,
         
     def ode_ca(X, t):
         U, Y = X
-        dudt = (Y)**(-1)*(-g*Y - 12*(l+delta)*mu*U*Y/(rhoL*l*delta**2) + pres(t)/rhoL\
-                          + 2.0*(l+delta)*sigma*np.cos(ca(t))/(rhoL*l*delta) - U*abs(U))
+        dudt = (Y)**(-1)*(-g*Y - 12*(l+delta)*mu_w*U*Y/(rho_w*l*delta**2) + pres(t)/rho_w\
+                          + 2.0*(l+delta)*sigma_w*np.cos(ca(t))/(rho_w*l*delta) - (1+pressure_loss)*U*abs(U))
         dydt = U
         return [dudt, dydt]
     def ode_curv(X, t):
         U, Y = X
-        dudt = (Y)**(-1)*(-g*Y - 12*(l+delta)*mu*U*Y/(rhoL*l*delta**2) + pres(t)/rhoL\
-                          + l*sigma*curv(t)/(rhoL*l*delta) - U*abs(U))
+        dudt = (Y)**(-1)*(-g*Y - 12*(l+delta)*mu_w*U*Y/(rho_w*l*delta**2) + pres(t)/rho_w\
+                          + l*sigma_w*curv(t)/(rho_w*l*delta) - (1+pressure_loss)*U*abs(U))
         dydt = U
         return [dudt, dydt]
     h0 = height_call[0]/1000
@@ -158,18 +159,14 @@ curv_gauss_filtered = filter_signal(signal = curv_gauss, cutoff_frequency = 10)
 curv_cosh_filtered = filter_signal(signal = curv_cosh, cutoff_frequency = 10)
 h_avg_filtered = filter_signal(signal = h_avg, cutoff_frequency = 10)
 
-ca_gauss_const = np.ones(ca_gauss.shape)*0.35
-
-plt.plot(np.gradient(h_avg_filtered))
-plt.plot(np.gradient(np.gradient(h_avg_filtered)))
 
 """ Solutions with the different contact angles """
-solution_gauss_filt_ca = solve_equation(pressure_call = pressure, height_call = h_avg,\
+solution_gauss_filt_ca = solve_equation(pressure_call = pressure, height_call = h_avg, pressure_loss = 0,\
                                      method = 'Angle', ca_call = ca_gauss_filtered)[:,1]
-solution_gauss_unfilt_ca = solve_equation(pressure_call = pressure, height_call = h_avg,\
-                                     method = 'Angle', ca_call = ca_gauss)[:,1]
-sol_static_ca = solve_equation(pressure_call = pressure, height_call = h_avg,
-                               method = 'Angle', ca_call = ca_gauss_const)[:,1]
+solution_gauss_filt_ca_pres_loss = solve_equation(pressure_call = pressure, height_call = h_avg, pressure_loss = 1/3,\
+                                     method = 'Angle', ca_call = ca_gauss_filtered)[:,1]
+# solution_gauss_unfilt_ca = solve_equation(pressure_call = pressure, height_call = h_avg,\
+#                                      method = 'Angle', ca_call = ca_gauss)[:,1]
 # solution_cosh_filt_ca = solve_equation(pressure_call = pressure, height_call = h_avg,\
 #                                      method = 'Angle', ca_call = ca_cosh_filtered)[:,1]
 # solution_cosh_unfilt_ca = solve_equation(pressure_call = pressure, height_call = h_avg,\
@@ -184,10 +181,10 @@ sol_static_ca = solve_equation(pressure_call = pressure, height_call = h_avg,
 #                                      method = 'Curvature', curv_call = curv_cosh_filtered)[:,1]
 # solution_cosh_unfilt_curv = solve_equation(pressure_call = pressure, height_call = h_avg,\
 #                                      method = 'Curvature', curv_call = curv_cosh)[:,1]
-
 #%%
+plt.figure()
 plt.plot(solution_gauss_filt_ca)
-plt.plot(sol_static_ca)
+plt.plot(solution_gauss_filt_ca_pres_loss)
 
 #%%
 """Plots for the Miguel Presentation"""

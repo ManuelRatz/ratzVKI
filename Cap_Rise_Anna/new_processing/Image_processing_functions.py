@@ -59,15 +59,20 @@ def load_image(name, crop_index, idx, load_idx, pressure, run, speed, cv2denoise
     # convert the image to integer to avoid bound errors
     img_den = img_den.astype(np.int)
     # calculate the blurred image
-    if idx <= 50:
+    if pressure is not None and idx <= 50:
         if fluid == 'Water':
             sigma = 8
         elif fluid == 'HFE':
-            sigma = 7
+            sigma = 3
         else:
             raise ValueError('Wrong case, must be *Water* or *HFE*')
     else:
-        sigma = 4
+        sigma = 3
+    if speed is not None:
+        if fluid == 'Water':
+            sigma = 2
+        if fluid == 'HFE':
+            sigma = 2.5
     blur = gaussian_filter(img_den, sigma = sigma, mode = 'nearest', truncate = 3)
     # subtract the blur yielding the interface
     img_hp = img_den - blur
@@ -91,9 +96,9 @@ def edge_detection_grad(crop_img, threshold_grad, wall_cut, threshold_outlier_in
                 idx_maxima[i] = int(np.argmax(Profiles[5:,i] > 0.5*np.max(Profiles[:,i])))+5
             else:
                 if np.max(Profiles_d[:,i]) <= threshold_grad:
-                    idx_maxima[i] = int(np.argmax(Profiles_d[5:,i]) )+5
+                    idx_maxima[i] = int(np.argmax(Profiles_d[5:,i]))+5
                 else:
-                    idx_maxima[i] = int(np.argmax(Profiles_d[5:,i] ))+5
+                    idx_maxima[i] = int(np.argmax(Profiles_d[5:,i] > threshold_grad ))+5
     elif fluid == 'Water':
         for i in range(0,Profiles_d.shape[1]):
             if np.max(Profiles_d[:,i]) <= threshold_grad:
@@ -116,36 +121,41 @@ def edge_detection_grad(crop_img, threshold_grad, wall_cut, threshold_outlier_in
     y_index = y_index[x_sort_index[:]].astype(np.float64)
     x_index = x_index[x_sort_index[:]]
     
-    if idx < 20:
-        correction = 0.25
-    else:
-        correction = 1
+    # if idx < 20:
+    #     correction = 0.25
+    # else:
+    #     correction = 1
+    correction = 1
     
     # filter out outliers
     y_average  = np.median(y_index)
     for k in range(0, y_index.shape[0]):
         # if k == 133:
         #     print('Hi')
-        if k > 0.15*y_index.shape[0] and k < 0.85*y_index.shape[0]:
+        if k > 0.1*y_index.shape[0] and k < 0.9*y_index.shape[0]:
             kernel_size = 5
             y_kernel = get_kernel(k, y_index,kernel_size)
-            if (np.abs(y_index[k]-np.nanmedian(y_kernel))/np.nanmedian(y_kernel)) > correction*kernel_threshold_in:
+            if (np.abs(y_index[k]-np.nanmedian(y_kernel))) > correction*kernel_threshold_in:
                 grad_img[int(y_index[k]),x_index[k]] = 0
                 y_index[k] = np.nan
+                # print('Filtered')
                 continue
-            if np.abs(y_index[k]-y_average)/np.nanmedian(y_index) > correction*threshold_outlier_in:
+            if np.abs(y_index[k]-y_average) > correction*threshold_outlier_in:
                 grad_img[int(y_index[k]),x_index[k]] = 0
                 y_index[k] = np.nan
+                # print('Filtered')
         else:
             kernel_size = 2 # amount of points to sample for median
             y_kernel = get_kernel(k, y_index,kernel_size)
-            if (np.abs(y_index[k]-np.nanmedian(y_kernel))/np.nanmedian(y_kernel)) > correction*kernel_threshold_out:
+            if (np.abs(y_index[k]-np.nanmedian(y_kernel))) > correction*kernel_threshold_out:
                 grad_img[int(y_index[k]),x_index[k]] = 0
                 y_index[k] = np.nan
+                # print('Filtered')
                 continue   
-            if np.abs(y_index[k]-y_average)/np.nanmedian(y_index) > correction*threshold_outlier_out:
+            if np.abs(y_index[k]-y_average) > correction*threshold_outlier_out:
                 grad_img[int(y_index[k]),x_index[k]] = 0
                 y_index[k] = np.nan     
+                # print('Filtered')
 
     
     return grad_img, y_index, x_index
@@ -234,6 +244,13 @@ def get_parameters(test_case, case, fluid):
     return Fol_Data, Pressure, Run, H_Final, Frame0, Crop, Speed
 
 
+def saveTxt_fall(fol_data, h_mm, h_cl_r, angle_gauss, angle_cosh, test_case):                
+    Fol_txt = create_folder(os.path.join(fol_data,'data_files'))
+    np.savetxt(os.path.join(Fol_txt, test_case + '_h_avg.txt'), h_mm, fmt='%.6f')
+    np.savetxt(os.path.join(Fol_txt, test_case + '_h_cl_r.txt'), h_cl_r, fmt='%.6f')
+    np.savetxt(os.path.join(Fol_txt, test_case + '_ca_gauss.txt'), angle_gauss, fmt='%.6f')
+    np.savetxt(os.path.join(Fol_txt, test_case + '_ca_cosh.txt'), angle_cosh, fmt='%.6f')
+
 def saveTxt(fol_data, h_mm, h_cl_l, h_cl_r, angle_gauss, angle_cosh, pressure,\
             fit_coordinates_gauss, fit_coordinates_exp, test_case):                
     Fol_txt = create_folder(os.path.join(fol_data,'data_files'))
@@ -321,8 +338,11 @@ def fitting_cosh2(x_data, y_data):
     y_fit : 1d np.array
         Fitted y values of the detected interface, mean subtracted.
 
-    """
-    if y_data[0] < y_data[y_data.shape[0]//2]:
+    """    
+    x_sort_index = x_data.argsort()
+    y_index = y_data[x_sort_index[:]].astype(np.float64)
+    x_index = x_data[x_sort_index[:]]
+    if y_index[0] < y_index[y_data.shape[0]//2]:
         inverted = True
         shift = np.max(y_data)
         y_fit = -(y_data-shift)
@@ -388,13 +408,15 @@ def fitting_advanced(grad_img,pix2mm,l,sigma_f,sigma_y):
     # This is the Gaussian Fit
     mu_s, cov_s = posterior_predictive(X_test, X_train, Y_train, img_width_mm,sigma_f,sigma_y)
     
+
     # fig, ax = plt.subplots(figsize=(5, 3)) # This creates the figure
     # # plt.scatter(X_train,Y_train,c='white',
     # #             marker='o',edgecolor='black',
     # #             s=10,label='Data')
     # plot_gp(mu_s, cov_s, X_test)
+    # from gaussian_processes_util import plot_gp
+    # plot_gp(mu_s, cov_s, X_test)
     mu_s = mu_s[:,0] 
-    
     return mu_s,i_x,i_y,i_x_mm,i_y_mm,X,img_width_mm
 
 def vol_average(y,x,img_width_mm):
@@ -503,7 +525,7 @@ def posterior_predictive(X_s, X_train, Y_train, l=1.0, sigma_f=1.0, sigma_y=1e-8
     '''
     K = kernel(X_train, X_train, l, sigma_f) + sigma_y**2 * np.eye(len(X_train))
     K_s = kernel(X_train, X_s, l, sigma_f)
-    K_ss = kernel(X_s, X_s, l, sigma_f) + sigma_y * np.eye(len(X_s))
+    K_ss = kernel(X_s, X_s, l, sigma_f) + 1e-8 * np.eye(len(X_s))
     K_inv = inv(K)
     
     # Equation (4)

@@ -36,13 +36,16 @@ Fps = 500
 # threshold for the gradient 
 Threshold_Gradient = 5  
 # threshold for outliers
-Threshold_Outlier = 0.10
+Threshold_Outlier_out = 60 # 0.95
+Threshold_Outlier_in = 20 # 0.3
 # threshold for the kernel filtering
-Threshold_Kernel= 0.02
+Threshold_Kernel_out = 2 #0.05
+Threshold_Kernel_in = 2 #0.01
 # pixels to cut near the wall
 Wall_Cut = 3
 # whether to mirror the right side onto the left
 Do_Mirror = True
+Denoise = True
 
 """locate the images"""
 # letter of the current run
@@ -72,7 +75,8 @@ images = [] # empty list to append into
 GIFNAME = 'Detected_interface.gif' # name of the gif
 fit_val = [1,1,1,1]
 # loop over all the images
-for i in range(0,Img_Amount):
+# for i in range(0,Img_Amount):
+for i in range(180, 181):
     # get the index starting from N_T
     Idx = i
     # get the index starting from 0
@@ -81,11 +85,12 @@ for i in range(0,Img_Amount):
     print(MEX) 
     # load the image and highpass filter it
     img_hp, img = imp.load_image(Fol_Data, Crop_Index, Idx, Load_Idx,\
-                                 Pressure, Run, Speed)
+                                 Pressure, Run, Speed, Denoise, Fluid)
     # calculate the detected interface position
-    grad_img,y_index, x_index = imp.edge_detection_grad(img_hp,\
-           Threshold_Gradient, Wall_Cut, Threshold_Outlier, Threshold_Kernel,
-           do_mirror = Do_Mirror)
+    grad_img, y_index, x_index = imp.edge_detection_grad(img_hp,\
+              Threshold_Gradient, Wall_Cut, Threshold_Outlier_in, Threshold_Outlier_out,
+              Threshold_Kernel_out, Threshold_Kernel_in,
+              do_mirror = Do_Mirror, fluid = Fluid, idx = Idx)
     # fit a gaussian to the detected interface
     mu_s,i_x,i_y,i_x_mm,i_y_mm,X,img_width_mm = imp.fitting_advanced(\
         grad_img ,Pix2mm, l=5, sigma_f=0.1, sigma_y=0.5e-6)
@@ -95,7 +100,7 @@ for i in range(0,Img_Amount):
     Y_fit = imp.fitting_cosh2(X_c, Y_c)
     
     # number of simulations
-    n_trials = 500
+    n_trials = 100
     # matrix to store the y values
     y_reg = np.zeros((X_c.shape[0], n_trials))
     # vector to store the errors in
@@ -146,10 +151,10 @@ for i in range(0,Img_Amount):
         ax1.set_xlim(img.shape[1]//2, img.shape[1])
         NAME_OUT = Fol_Images_Detected + os.sep + 'Imageglob_%05d.png' %Idx
         fig.tight_layout()
-        fig.savefig(NAME_OUT, dpi= 80) # save image
-        images.append(imageio.imread(NAME_OUT))
-        plt.close(fig)
-imageio.mimsave(GIFNAME, images, duration = 0.10)
+#         fig.savefig(NAME_OUT, dpi= 80) # save image
+#         images.append(imageio.imread(NAME_OUT))
+#         plt.close(fig)
+# imageio.mimsave(GIFNAME, images, duration = 0.10)
 
 # pressure, f0 = imp.load_labview_files(Fol_Data, Test_Case)
 

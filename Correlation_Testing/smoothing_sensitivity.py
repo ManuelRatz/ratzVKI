@@ -47,19 +47,19 @@ def load_txt_files(Fol_In, Case):
     Folder = os.path.join(Fol_In, 'data_files')
     # load each file, convert the angles to radians
     pressure = np.genfromtxt(os.path.join(Folder, Case + '_pressure.txt'))
-    h_avg = np.genfromtxt(os.path.join(Folder, Case + '_h_avg.txt'))
+    h_avg = np.genfromtxt(os.path.join(Folder, Case + '_h_avg.txt'))/1000
     ca_gauss = np.genfromtxt(os.path.join(Folder, Case + '_ca_gauss.txt'))/180*np.pi
     ca_cosh = np.genfromtxt(os.path.join(Folder, Case + '_ca_cosh.txt'))/180*np.pi
     fit_gauss = np.genfromtxt(os.path.join(Folder, Case + '_gauss_curvature.txt'))
     fit_exp = np.genfromtxt(os.path.join(Folder, Case + '_cosh_curvature.txt'))
-    h_cl = np.genfromtxt(os.path.join(Folder, Case + '_h_cl_r.txt'))
+    h_cl = np.genfromtxt(os.path.join(Folder, Case + '_h_cl_r.txt'))/1000
     # return all the files
     return pressure, h_avg, ca_gauss, ca_cosh, fit_gauss, fit_exp, h_cl
 
 
 def save_data(file_name, dh, dhcl, ddh, ddhcl, theta):
-    save_array = np.vstack([m.ravel() for m in [dh/1000, dhcl/1000, ddh/1000, ddhcl/1000, theta*180/np.pi]]).T
-    np.savetxt(file_name, save_array, fmt = '%.5f', delimiter='\t')
+    save_array = np.vstack([m.ravel() for m in [dh, dhcl, ddh, ddhcl, theta*180/np.pi]]).T
+    np.savetxt(file_name, save_array, fmt = '%.4f', delimiter='\t')
 
 
 def filter_signal(signal, cutoff_frequency, double_mirror = True):
@@ -84,14 +84,15 @@ def filter_signal(signal, cutoff_frequency, double_mirror = True):
 
 def prepare_data(h_raw, h_cl_raw, ca_raw):
     vel_raw = np.gradient(h_raw, 0.002) 
-    acc_raw = np.gradient(vel_raw, 0.002)
-    vel_clean = filter_signal(vel_raw, 6)
-    acc_clean = filter_signal(acc_raw, 6)
+    vel_clean = filter_signal(vel_raw, 6, double_mirror = True)
+    acc_raw = np.gradient(vel_clean, 0.002)
+    acc_clean = filter_signal(acc_raw, 6, double_mirror = False)
+    
     
     vel_cl_raw = np.gradient(h_cl_raw, 0.002) 
-    acc_cl_raw = np.gradient(vel_cl_raw, 0.002)
-    vel_cl_clean = filter_signal(vel_cl_raw, 6)
-    acc_cl_clean = filter_signal(acc_cl_raw, 6)
+    vel_cl_clean = filter_signal(vel_cl_raw, 6, double_mirror = True)
+    acc_cl_raw = np.gradient(vel_cl_clean, 0.002)
+    acc_cl_clean = filter_signal(acc_cl_raw, 6, double_mirror = False)
     
     return vel_clean, vel_cl_clean, acc_clean, acc_cl_clean
 
@@ -117,41 +118,6 @@ pressures_water = np.array([1000, 1250, 1500])
 indices = np.array(['A', 'B', 'C'])
 pressures_hfe = np.array([1500, 1750, 2000])
 
-"""
-# for pres in pressures_water:
-#     Fol_Outer = 'C:\Anna\Rise\Water' + os.sep + 'P' + str(pres) + '_C30'
-#     fig, ax = plt.subplots(figsize = (8,5))
-#     for index in indices:
-#         FOL = Fol_Outer + os.sep + index
-#         Case = 'P' + str(pres) + '_C30_' + index
-#         pressure, h_avg, ca_gauss, ca_cosh, curv_gauss, curv_cosh, h_cl = load_txt_files(FOL, Case)
-#         ca_clean = filter_signal(ca_gauss, 10)
-#         ax.plot(t, ca_clean*180/np.pi)
-#         ax.grid(b = True)
-#         ax.set_xlim(0, 4)
-#         ax.set_xlabel('t')
-#         ax.set_ylabel('Theta')
-#         ax.set_title('Water comparison ' + str(pres) + ' Pa')
-#         Name_Out = 'water_' + str(pres)
-#         fig.savefig(Fol_Save + os.sep + Name_Out, dpi = 200)
-        
-# for pres in pressures_hfe:
-#     Fol_Outer = 'C:\Anna\Rise\HFE' + os.sep + 'P' + str(pres)
-#     fig, ax = plt.subplots(figsize = (8,5))
-#     for index in indices:
-#         FOL = Fol_Outer + os.sep + index
-#         Case = 'P' + str(pres) + '_' + index
-#         pressure, h_avg, ca_gauss, ca_cosh, curv_gauss, curv_cosh, h_cl = load_txt_files(FOL, Case)
-#         ca_clean = filter_signal(ca_gauss, 10)
-#         ax.plot(t, ca_clean*180/np.pi)
-#         ax.grid(b = True)
-#         ax.set_xlim(0, 4)
-#         ax.set_xlabel('t')
-#         ax.set_ylabel('Theta')
-#         ax.set_title('HFE comparison ' + str(pres) + ' Pa')
-#         Name_Out = 'hfe_' + str(pres)
-#         fig.savefig(Fol_Save + os.sep + Name_Out, dpi = 200)
-"""
 for pres in pressures_water:
     Fol_Outer = 'C:\Anna\Rise\Water' + os.sep + 'P' + str(pres) + '_C30'
     for index in indices:
@@ -186,11 +152,6 @@ for pres in pressures_hfe:
 #%%
 
 
-sig = np.linspace(0, 1, 101)
-sig_filter = filter_signal(sig, 8, double_mirror = True)
-plt.plot(sig)
-plt.plot(sig_filter)
-
 pres = 1500
 index = 'A'
 Fol_Outer = 'C:\Anna\Rise\Water' + os.sep + 'P' + str(pres) + '_C30'
@@ -198,36 +159,40 @@ FOL = Fol_Outer + os.sep + index
 Case = 'P' + str(pres) + '_C30' + '_' + index
 pressure, h_avg, ca_gauss, ca_cosh, curv_gauss, curv_cosh, h_cl = load_txt_files(FOL, Case)
 
-
-vel_raw = np.gradient(h_avg, 0.002) 
-vel_clean = filter_signal(vel_raw, 6)
-acc_raw = np.gradient(vel_clean, 0.002)
-acc_clean = filter_signal(acc_raw, 6)
+v, v_cl, a, a_cl = prepare_data(h_avg, h_cl, ca_gauss)
+plt.figure()
+plt.plot(v_cl)
 
 
+# vel_raw = np.gradient(h_avg, 0.002) 
+# vel_clean = filter_signal(vel_raw, 6, double_mirror = True)
+# acc_raw = np.gradient(vel_clean, 0.002)
+# acc_clean = filter_signal(acc_raw, 6, double_mirror = False)
 
-vel_cl_raw = np.gradient(h_cl, 0.002) 
-vel_cl_clean = filter_signal(vel_cl_raw, 6, double_mirror = False)
-acc_cl_raw = np.gradient(vel_cl_clean, 0.002)
-acc_cl_clean = filter_signal(acc_cl_raw, 6, double_mirror = False)
+
+
+# vel_cl_raw = np.gradient(h_cl, 0.002) 
+# vel_cl_clean = filter_signal(vel_cl_raw, 6, double_mirror = True)
+# acc_cl_raw = np.gradient(vel_cl_clean, 0.002)
+# acc_cl_clean = filter_signal(acc_cl_raw, 6, double_mirror = False)
 
 # plt.figure()
+# plt.plot(acc_cl_raw)
 # plt.plot(acc_cl_clean)
-# plt.plot(acc_clean)
 
-plt.figure()
-plt.plot(np.gradient(h_cl[:100]))
-plt.plot(np.gradient(h_avg[:100]))
+# plt.figure()
+# plt.plot(vel_cl_raw)
+# plt.plot(vel_cl_clean)
 
-plt.figure()
-plt.plot(vel_clean[:100])
-plt.plot(vel_cl_clean[:100])
+# plt.figure()
+# plt.plot(np.gradient(h_cl[:100]))
+# plt.plot(np.gradient(h_avg[:100]))
 
-plt.figure()
-plt.plot(np.gradient(vel_clean, 0.002))
-plt.plot(acc_clean)
-# # v, v_cl, a, a_cl = prepare_data(h_avg, h_cl, ca_gauss)
-ca = filter_signal(ca_gauss, 8, double_mirror = False)
+# plt.figure()
+# plt.plot(vel_clean[:100])
+# plt.plot(vel_cl_clean[:100])
+
+
 # start = 0
 # stop = start + 100
 # fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows = 2, ncols = 2, figsize = (8, 5))

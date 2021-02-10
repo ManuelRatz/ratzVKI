@@ -164,6 +164,8 @@ def imread(filename, flatten=0):
     >>> print image.shape 
         (1280, 1024)
     
+    Manuel: Using cv2 for the image loading, the other function did not work
+        in my case.
     
     """
     import cv2
@@ -221,9 +223,6 @@ class Multiprocesser():
         
         # number of images
         self.n_files = len(self.files_a)
-        # self.n_files = amount
-        # self.files_a = self.files_a[idx0:idx0+amount]
-        # self.files_b = self.files_b[idx0:idx0+amount]
         
         # check if everything was fine
         if not len(self.files_a) == len(self.files_b):
@@ -250,24 +249,23 @@ class Multiprocesser():
         n_cpus : int
             the number of processes to launch in parallel.
             For debugging purposes use n_cpus=1
-        
+            
+        Manuel: Added the calculation of the interface height and saving of it.
         """
 
         # create a list of tasks to be executed.
         image_pairs = [ (file_a, file_b, i) for file_a, file_b,\
                        i in zip( self.files_a[beginning_index:], self.files_b[beginning_index:], range(beginning_index,self.n_files) ) ]
+        # the maximum index is the number of files
         index_max = self.n_files
-        # index_max = beginning_index + 75
-        # create a dummy for the loop to fill
+        # create a dummy for the loop to fill for the height
         h_dum = np.zeros((index_max,1))
         # for debugging purposes always use n_cpus = 1,
         # since it is difficult to debug multiprocessing stuff.
         for image_pair in image_pairs:
-            # if (image_pair[2] > index_max):
-            #     print('Hi')
-                # break
             # save the calculated height in the array
             h_dum[image_pair[2]-1], continue_run = func( image_pair )
+            # check whether to break the loop
             if continue_run == False:
                 break
         # save the height data in a .txt file

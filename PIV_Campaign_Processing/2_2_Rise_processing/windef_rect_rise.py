@@ -8,6 +8,13 @@ Created on Fri Oct  4 14:04:04 2019
     ROI based on the mass flux. Another major difference is the
     possibility of rectangular windows. Run R_h1_f750_p15 should
     be skipped becauses the displacement is too large.
+    
+Summary of changes:
+    - dynamic shifting ROI for the rising interface
+    - saving of the current interface position
+    - rectangular interrogation windows
+    - normalization of the correlation map
+    - sig2noise can be done peak2RMS
 """
 
 
@@ -53,6 +60,13 @@ def piv(settings):
         if settings.plot_ROI == True:
             plot_shifted_ROI(frame_b, counter, settings.current_pos, save_path)
         #%%
+        """This is the part for the changing ROI, the new position of the interface
+        is calculated after the final pass to avoid having to load the txt file.
+        For the very first image pair we set the ROI to be the bottom 450 pixels.
+        Afterwards the script will calculate the current position of the interface
+        and then shift the ROI accordingly. If the Interface comes into view,
+        the ROI gets shifted
+        """
         settings.height_settings_call = np.array([settings.window_height[0], settings.overlap_height[0]])
         if (5*settings.height_settings_call[1] > (settings.ROI[1]-settings.ROI[0])):
             settings.height_settings_call = (settings.window_height[1], settings.overlap_height[1])
@@ -164,6 +178,8 @@ def piv(settings):
         os.makedirs(save_path_txts)       
     # save the settings of the processing
     save_settings(settings, save_path)
+    # set the initial ROI to be nothing, this is to avoid an error that results 
+    # from the ROI being set to 'full'
     settings.ROI = np.array([0,0,0,0])
     
     task = tools_patch_rise.Multiprocesser(
@@ -580,6 +596,8 @@ def multipass_img_deform(frame_a, frame_b, win_width, win_height, overlap_width,
     if do_sig2noise==True and current_iteration==iterations and iterations!=1:
         sig2noise_ratio=sig2noise_ratio_function(correlation, sig2noise_method=sig2noise_method, width=sig2noise_mask)
         sig2noise_ratio = sig2noise_ratio.reshape(shapes)
+        np.save('corr_map_valid.npy', correlation[423,:,:])
+        np.save('corr_map_invalid.npy', correlation[50,:,:])
     else:
         sig2noise_ratio=np.full_like(u,np.nan)
 
@@ -873,7 +891,8 @@ def sig2noise_ratio_function(corr, sig2noise_method='peak2peak', width=2):
         
     Manuel: 
         Implemented the possibility to do sig2RMS, which divides the maximum
-        by the standard deviation of the correlation map
+        by the standard deviation of the correlation map. Also changed the 
+        calculation for peak2mean, which makes it faster
     """
 
     corr_max1=np.zeros(corr.shape[0])

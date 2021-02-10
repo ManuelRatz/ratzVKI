@@ -165,6 +165,9 @@ def sig2noise_val( u, v, sig2noise, w=None, threshold_low = 1.3, threshold_high 
     ----------
     R. D. Keane and R. J. Adrian, Measurement Science & Technology,1990, 1, 1202-1215.
     
+    Manuel: Added a maximum sig2noise threshold, if it is extremely high, there
+        is an error in the correlation map, so they have to be filtered as well
+    
     """
     ind = (sig2noise < threshold_low) + (sig2noise > threshold_high)
     u[ind] = np.nan

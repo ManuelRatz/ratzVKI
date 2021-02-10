@@ -25,10 +25,10 @@ settings.subpixel_method = 'gaussian'
 settings.correlation_method = 'circular'  # 'circular' because it is faster
 settings.iterations = 3 
 
-settings.window_height = (128, 64, 32)
-settings.overlap_height = (64, 32, 16)
-settings.window_width = (64, 64, 32)
-settings.overlap_width = (32, 32, 16)
+settings.window_height = (256, 128, 64)
+settings.overlap_height = (128, 64, 32)
+settings.window_width = (64, 32, 16)
+settings.overlap_width = (32, 16, 8)
 # sig2noise
 settings.extract_sig2noise = True
 settings.sig2noise_method = 'peak2RMS'
@@ -38,7 +38,7 @@ settings.sig2noise_threshold = 6.5
 # validation
 settings.validation_first_pass = True
 settings.MinMax_U_disp = (-3, 3)
-settings.MinMax_V_disp = (-35, 35) # this has to be that large because of the 750 Hz runs
+settings.MinMax_V_disp = (-35, 35) 
 settings.std_threshold = 70 # threshold of the std validation, filter disabled
 settings.median_threshold = 50  # threshold of the median validation, filter disabled
 settings.median_size = 1 
@@ -65,12 +65,10 @@ settings.dynamic_masking_filter_size = 7
 # here we load the file containing the beginning index for every run
 observation_periods = np.genfromtxt('observation_rise.txt', dtype=str)
 
+# Pietro: this is the index of the test case that I have send to you
+run = 22
 
-# iterate over all cases
-run = 25
-
-for i in range(run, run+2):
-# for i in range(0, len(observation_periods)):
+for i in range(run, run+1):
     # set the folder in which the raw images are located
     settings.filepath_images = 'C:\PIV_Processed\Images_Preprocessed'+os.sep+observation_periods[i,0]
     # set the name to the output foler
@@ -81,19 +79,3 @@ for i in range(run, run+2):
     settings.beginning_index = int(observation_periods[i, 1])
     settings.init_ROI = int(observation_periods[i, 2])
     piv(settings)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -79,21 +79,50 @@ profile_smoothed, Psi = smooth_horizontal_sin(profile_unsmoothed, x_coordinates,
 # checking the rank of Psi to make sure the columns are linearly independet
 rank = np.linalg.matrix_rank(Psi)
 
-# plot the result
-fig, ax = plt.subplots()
-ax.plot(x_coordinates, profile_unsmoothed[50,20,:], label = 'Unsmoothed')
-ax.plot(x_coordinates, profile_smoothed[50,20,:], label = 'Smoothed')
-ax.set_xlim(0, x_coordinates[-1])
-ax.set_ylim(-80, 0)
-ax.grid(b=True)
-ax.legend(loc = 'upper center')
+# # plot the result
+# fig, ax = plt.subplots()
+# ax.plot(x_coordinates, profile_unsmoothed[50,20,:], label = 'Unsmoothed')
+# ax.plot(x_coordinates, profile_smoothed[50,20,:], label = 'Smoothed')
+# ax.set_xlim(0, x_coordinates[-1])
+# ax.set_ylim(-80, 0)
+# ax.grid(b=True)
+# ax.legend(loc = 'upper center')
 
-#%% POD Filter
-D=np.zeros()
+plt.contourf(profile_unsmoothed[300,:,:])
+plt.clim(-400,0)
+plt.colorbar()
 
 
+# #%% POD Filter
+D=np.zeros((104*23,325))
+for k in range(1,325):
+  D[:,k]=np.reshape(profile_unsmoothed[k,:,:],((104*23, ))) 
 
 
+# We do the POD easy pisy
+from functions_Miguel import POD,interp_Time
+R=15
+Phi,Sigma,Psi=POD(D,R)
+
+D_P=np.linalg.multi_dot([Phi,np.diag(Sigma),np.transpose(Psi)]) 
+Error=np.linalg.norm(D-D_P)/np.linalg.norm(D)
+print('Convergence Error: E_C='+"{:.2f}".format(Error/100)+' %')
+
+
+psi_test=Psi[:,2]
+dt_1=1/1000; n_t1=325 # Time discretization (guessing)
+t_1=dt_1*np.linspace(0,n_t1-1,n_t1);T=t_1.max() # Time axis
+# Finer grid
+t_2=np.linspace(0,T,n_t1*5) # Time axis
+
+psi_2=interp_Time(psi_test,t_1,t_2,500,0.01,2,alpha=0.1)
+
+plt.plot(t_1,psi_test)
+plt.plot(t_2,psi_2)
+
+# see spatial structures
+Phi_S_mode=Phi[:,1].reshape(104,23)
+plt.contourf(Phi_S_mode)
 
 
 
@@ -111,20 +140,20 @@ for r in range(1,N_V):
   Psi_S_Coarse[:,r-1]=psi/np.linalg.norm(psi)
 
 # Show the bases
-plt.plot(Psi_S_Coarse[:,0])
-plt.plot(Psi_S_Coarse[:,1])
-plt.plot(Psi_S_Coarse[:,2])
+# plt.plot(Psi_S_Coarse[:,0])
+# plt.plot(Psi_S_Coarse[:,1])
+# plt.plot(Psi_S_Coarse[:,2])
 
 # We orthonormalize it:
 q, r = np.linalg.qr(Psi_S_Coarse)
-plt.plot(q[:,0])
-plt.plot(q[:,1])
-plt.plot(q[:,2])
+# plt.plot(q[:,0])
+# plt.plot(q[:,1])
+# plt.plot(q[:,2])
 
 
 #%% We compute the coefficients of the projection,
 # based on an approximation
-q_tilde=q[:,0:20]
+q_tilde=q[:,0:5]
 
 U=profile_unsmoothed[50,20,:]
 check=np.matmul(q_tilde.T, q_tilde)

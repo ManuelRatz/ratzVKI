@@ -49,19 +49,20 @@ Denoise = True
 
 """locate the images"""
 # letter of the current run
-Test_Case = 'slow_C'
+Test_Case = 'slow_B'
 Case = 'Fall'
 Fluid = 'HFE'
-plus = 0 # offset in case we went to look at a certain image
 Fol_Data, Pressure, Run, H_Final, Frame0, Crop_Index, Speed =\
     imp.get_parameters(Test_Case, Case, Fluid)
   
 
 N_T = Img_Amount = Frame0 # set the image amount
 Frame0 = 0 # set frame0 to 0 for the falls
+# Img_Amount = 359 
+plus = 0 # offset in case we went to look at a certain image
 
 # size of the output files lower for large image amounts to save time
-if Img_Amount < 20:
+if Img_Amount < 60:
     dpi = 400
 else:
     dpi = 80
@@ -90,7 +91,7 @@ GIFNAME = Test_Case + '_' + Case + '_' + Fluid + '.gif' # name of the gif
 
 # loop over all the images
 for i in range(0+plus,Img_Amount+plus):
-    if (Img_Amount+plus-i)<30 and Fluid == 'HFE':
+    if (Img_Amount+plus-i)<150 and Fluid == 'HFE':
         Wall_Cut = 8
     else:
         # pixels to cut near the wall

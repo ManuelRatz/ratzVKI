@@ -150,7 +150,8 @@ def edge_detection_grad(crop_img, threshold_grad, wall_cut, threshold_outlier_in
     if they are filtered
     """
     y_average  = np.median(y_index)
-    for k in range(0, y_index.shape[0]):
+    for j in range(0, y_index.shape[0]):
+        k = y_index.shape[0]-j-1
         if k > 0.1*y_index.shape[0] and k < 0.9*y_index.shape[0]:
             kernel_size = 5 # amount of points to sample for median
             y_kernel = get_kernel(k, y_index,kernel_size)

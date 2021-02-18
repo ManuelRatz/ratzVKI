@@ -73,22 +73,24 @@ def prepare_data(case, fluid, run, cutoff_frequency):
     # vel_cl_clean = vel_cl_clean
     
     # filter the contact angle
-    ca_clean = filter_signal(ca_gauss, cutoff_frequency)
+    ca_clean = filter_signal(ca_gauss, 8)
     
     # calculate the static contact angle
     theta_s = np.mean(ca_cosh[:500])
     # print(theta_s)
-    theta_s = 0
+    theta_s = 33
     
     # clip the signals to only have velocities > 3 mm/s
     valid_idx = np.argmax(np.abs(vel_clean) > 3)
-    vel_clean = vel_clean[valid_idx:]
-    vel_cl_clean = vel_cl_clean[valid_idx:]
-    ca_clean = ca_clean[valid_idx:]-theta_s
-    vel_raw = vel_raw[valid_idx:]
-    h = h[valid_idx:]
-    ca_gauss = ca_gauss[valid_idx:]-theta_s
-    ca_cosh = ca_cosh[valid_idx:]-theta_s
+    valid_idx = 150
+    last = 1250
+    vel_clean = vel_clean[valid_idx:last]
+    vel_cl_clean = vel_cl_clean[valid_idx:last]
+    ca_clean = ca_clean[valid_idx:last]-theta_s
+    vel_raw = vel_raw[valid_idx:last]
+    h = h[valid_idx:last]
+    ca_gauss = ca_gauss[valid_idx:last]-theta_s
+    ca_cosh = ca_cosh[valid_idx:last]-theta_s
     
     # transform velocities to capillary numbers
     vel_raw = vel_raw * mu_w / sigma_w
@@ -101,20 +103,19 @@ def prepare_data(case, fluid, run, cutoff_frequency):
 so you can see how different each of them is. They are accessed by either
 'A', 'B' or 'C'"""
 Theta_gauss, Theta_cosh, Theta, Ca_raw, Ca, Theta_s, Height =\
-    prepare_data('fast','water','A', 10)
+    prepare_data('P1500_C30','water','A', 4)
 # calculate the dimensionless acceleration
 G = np.gradient(Ca/mu_w*sigma_w, 0.002)/g
 
 
 """In these plots we can see just how messy the dynamic contact angle is"""
-# # plot the raw vs filtered signal to compare the smoothing
-# fig = plt.figure(figsize = (8, 5))
-# ax = plt.gca()
-# ax.plot(Theta_gauss)
-# ax.plot(Theta_cosh)
-# ax.plot(Theta)
-# ax.set_xlabel('N')
-# ax.set_ylabel('$\Theta$')
+# plot the raw vs filtered signal to compare the smoothing
+fig = plt.figure(figsize = (8, 5))
+ax = plt.gca()
+plt.plot(Theta_gauss)
+plt.plot(Theta)
+ax.set_xlabel('N')
+ax.set_ylabel('$\Theta$')
 
 # fig = plt.figure(figsize = (8, 5))
 # ax = plt.gca()
@@ -135,8 +136,14 @@ ax.set_ylabel('$a/g$')
 
 # fig = plt.figure(figsize = (8, 5))
 # ax = plt.gca()
-# ax.scatter(Ca, Theta)
-# ax.set_xlim(1.1*np.min(Ca),0)
+# ax.scatter(Ca, Theta, s = 3)
+# ax.set_xlim(1.1*np.min(Ca),np.max(Ca))
+
+# fig = plt.figure(figsize = (8, 5))
+# ax = plt.gca()
+# ax.scatter(G, Theta, s = 3)
+# ax.set_xlim(1.1*np.min(G),np.max(G))
+
 
 """
 Now the thing that I have found to be problematic:
@@ -206,13 +213,15 @@ values = sol.x
 theta_pred = fitting_function((Ca, G), values[0], values[1], values[2])
 
 # plot the predicted vs original contact angle to compare
-plt.figure(figsize = (5, 5))
+plt.figure(figsize = (8, 5))
 ax = plt.gca()
-plt.scatter(Theta+Theta_s, theta_pred+Theta_s, s = 3)
+# ax.plot(Theta+Theta_s, Theta+Theta_s, color = 'r')
+# plt.scatter(Theta+Theta_s, theta_pred+Theta_s, s = 3)
+plt.plot(Theta + Theta_s)
+plt.plot(theta_pred + Theta_s)
 ax.set_xlabel('$\Theta_\\mathsf{exp}$')
 ax.set_ylabel('$\Theta_\\mathsf{pred}$')
-ax.set_aspect(1)
-ax.plot(Theta+Theta_s, Theta+Theta_s, color = 'r')
+# ax.set_aspect(1)
 
 #%%
 

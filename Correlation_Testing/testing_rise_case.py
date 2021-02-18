@@ -103,7 +103,7 @@ def prepare_data(case, fluid, run, cutoff_frequency):
 so you can see how different each of them is. They are accessed by either
 'A', 'B' or 'C'"""
 Theta_gauss, Theta_cosh, Theta, Ca_raw, Ca, Theta_s, Height =\
-    prepare_data('P1500_C30','water','A', 4)
+    prepare_data('P1000_C30','water','A', 4)
 # calculate the dimensionless acceleration
 G = np.gradient(Ca/mu_w*sigma_w, 0.002)/g
 

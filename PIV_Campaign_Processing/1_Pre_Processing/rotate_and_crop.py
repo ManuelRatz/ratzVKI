@@ -36,10 +36,10 @@ def get_angle(img_avg):
         Help function for the linear fit of the images
         """
         return a*x+b
-    x1 = 200
-    x2 = 400
+    x1 = 225
+    x2 = 350
     y1 = 500
-    y2 = 500+int(200*1280/800)
+    y2 = 500+int((x2-x1)*1280/800)
     # get a dummy for fitting purposes
     x = np.arange(1,img_avg.shape[0]+1,1)
     # get the left edge of the channel
@@ -58,24 +58,29 @@ def get_angle(img_avg):
     fig.add_axes(ax)
     ax.imshow(img_avg, cmap = plt.cm.gray, aspect='auto')
     ax.axis('off')
-    rect = Rectangle((x1, y1), width = (x2-x1), height = (y2-y1), fill = False, color = 'red')
+    rect = Rectangle((x1, y1), width = (x2-x1), height = (y2-y1), fill = False,
+                     color = 'white', ls = 'dashed')
     ax.add_patch(rect)
     plt.show()
-    fig.savefig('averaged_image.png', dpi = 400)
+    fig.savefig('averaged_image.png', dpi = 100)
     
     # the averaged image
     fig = plt.figure(frameon=False)
+    # ax = plt.gca()
     w = 4
     h = 6.4
     fig.set_size_inches(w,h)
     ax = plt.Axes(fig, [0., 0., 1., 1.])
     ax.set_axis_off()
     fig.add_axes(ax)
-    ax.imshow(img_avg[y1:y2,x1:x2], cmap = plt.cm.gray, aspect='auto')
-    ax.scatter(peak_left[y1:y2-2]-x1, x[y1:y2-2]-y1, marker='o', lw=0, s=(80./fig.dpi)**27, c = 'red')
+    ax.set_xlim(x1, x2)
+    ax.set_ylim(y2, y1)
+    ax.imshow(img_avg, cmap = plt.cm.gray, aspect='auto', alpha = 0.9)
+    ax.scatter(peak_left[::3], x[::3], marker='o', edgecolors = 'k', lw = 2,
+               s=25, c = 'white')
     ax.axis('off')
     plt.show()
-    fig.savefig('detected_peaks.png', dpi = 400)
+    fig.savefig('detected_peaks.png', dpi = 200)
     #%%
     
     # get the median for filtering
@@ -99,12 +104,17 @@ def get_angle(img_avg):
     ax = plt.Axes(fig, [0., 0., 1., 1.])
     ax.set_axis_off()
     fig.add_axes(ax)
-    ax.imshow(img_avg[y1:y2,x1:x2], cmap = plt.cm.gray, aspect='auto')
+    ax.set_xlim(x1, x2)
+    ax.set_ylim(y2, y1)
+    ax.imshow(img_avg, cmap = plt.cm.gray, aspect='auto', alpha = 0.5)
     # ax.scatter(peak_left[:-2], x[:-2], marker="x", s=(15./fig.dpi)**2, c = 'red')
-    ax.plot(linear(a, b, x)[y1:y2-2]-x1, x[y1:y2-2]-y1, lw = 2, c = 'red')
+    # ax.plot(linear(a, b, x)[y1:y2-2], x[y1:y2-2], lw = 6, c = 'w', 
+    #     dashes = (8/1.5, 3/1.5))
+    ax.plot(linear(a, b, x), x, lw = 4, c = 'k', 
+            dashes = (8, 3))
     ax.axis('off')
     plt.show()
-    fig.savefig('linear_fit.png', dpi = 400)
+    fig.savefig('linear_fit.png', dpi = 200)
     # 
     return angle_left
 
@@ -342,7 +352,7 @@ many images to process
 # set up the input and output folder  
 runs = ['F_h2_f1000_1_s', 'R_h1_f750_1_p10', 'R_h1_f1200_1_p14']
 run = runs[2]
-Fol_In = 'C:\PIV_Campaign' + os.sep + run + os.sep
+Fol_In = 'C:\PIV_Campaign\Rise' + os.sep + run + os.sep
 Fol_Out = 'C:\PIV_Processed\Images_Rotated' + os.sep + run + os.sep
 
 wallcut_file = np.genfromtxt('wallcuts.txt', dtype = str)

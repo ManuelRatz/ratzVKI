@@ -37,7 +37,7 @@ def filter_signal(signal, cutoff_frequency):
                          window='hamming', fs = 500)
     # filter the signal
     example_filtered = sci.filtfilt(b = windows, a = [1], x = continued_signal,
-                                    padlen = 10, padtype = 'even')
+                                    padlen = 5, padtype = 'odd')
     # get the index at which to clip again
     clip_index = signal.shape[0]
     clipped_signal = example_filtered[:clip_index]
@@ -78,7 +78,7 @@ def prepare_data(case, fluid, run, cutoff_frequency):
     # calculate the static contact angle
     theta_s = np.mean(ca_cosh[:500])
     # print(theta_s)
-    theta_s = 0
+    # theta_s = 33
     
     # clip the signals to only have velocities > 3 mm/s
     valid_idx = np.argmax(np.abs(vel_clean) > 3)
@@ -101,7 +101,7 @@ def prepare_data(case, fluid, run, cutoff_frequency):
 so you can see how different each of them is. They are accessed by either
 'A', 'B' or 'C'"""
 Theta_gauss, Theta_cosh, Theta, Ca_raw, Ca, Theta_s, Height =\
-    prepare_data('fast','water','A', 10)
+    prepare_data('slow','HFE','C', 10)
 # calculate the dimensionless acceleration
 G = np.gradient(Ca/mu_w*sigma_w, 0.002)/g
 
@@ -127,45 +127,16 @@ plt.plot(Ca)
 ax.set_xlabel('N')
 ax.set_ylabel('$Ca$')
 
-fig = plt.figure(figsize = (8, 5))
-ax = plt.gca()
-plt.plot(G)
-ax.set_xlabel('N')
-ax.set_ylabel('$a/g$')
+# fig = plt.figure(figsize = (8, 5))
+# ax = plt.gca()
+# plt.plot(G)
+# ax.set_xlabel('N')
+# ax.set_ylabel('$a/g$')
 
 # fig = plt.figure(figsize = (8, 5))
 # ax = plt.gca()
 # ax.scatter(Ca, Theta)
 # ax.set_xlim(1.1*np.min(Ca),0)
-
-"""
-Now the thing that I have found to be problematic:
-    
-For a given test case, say 'C', I can run the code and I get a set of fitting points.
-If I now change the cut_ending parameter, the smoothing plots for Theta and Ca
-only change by a small amount. However, the correlation parameters change by
-quite a bit. I used a cut_ending of 20 and 10 to show this. The only way to
-improve this in my opinion is to have a more stable fit, that requires less filtering
-and can be trusted more. 
-
-Running test case 'B' again gives completely different fitting parameters, here 
-you can change cut_ending again to see how it affects the parameters.
-
-Keep in mind that these are the fast releases, the best ones, by a lot. For the
-slow and medium releases the results are much much worse, the fitting often even 
-fails. 
-
-Now that I am writing this, I have thought to put one additional case, a slow release
-for water, case A. The velocity and acceleration are absolutely weird and strange.
-My biggest problem is that I was not present for the experiments, so I don't know
-how they were conducted and cannot judge if this is plausible'
-
-I have not tried to look at a Rise so far, because the slow case is prove 
-enough for me, that we cannot get a correlation for this type of data.
-
-I am however, as always, ready to be proven wrong by you :D
-
-"""
 
 #%%
 """
@@ -178,8 +149,7 @@ def fitting_function(X, a, b, c):
     # get velocity and acceleration
     velocity, acceleration = X
     # calculate theta
-    theta = a*np.sign(velocity)*(np.abs(velocity)**b)\
-        *np.sign(acceleration)*(np.abs(acceleration)**c)
+    theta = a*np.sign(velocity)*(np.abs(velocity)**b)+c*acceleration
     # return it
     return theta
 
@@ -196,9 +166,7 @@ def cost(fit_values, velocity, acceleration, Theta_exp):
 x0 = np.array([1, 0.33, 4])
 
 # calculate the solution with Nelder Mead
-sol = minimize(cost, x0, args = (Ca, G, Theta,), method = 'Nelder-Mead',
-               options={'maxiter' : 100000, 'adaptive' : True, 'fatol' : 1e-3,
-                        'xatol' : 1e-3})
+sol = minimize(cost, x0, args = (Ca, G, Theta,), method = 'Nelder-Mead')
 # print it
 print(sol.x)
 # calculate the predicted Theta
@@ -208,11 +176,13 @@ theta_pred = fitting_function((Ca, G), values[0], values[1], values[2])
 # plot the predicted vs original contact angle to compare
 plt.figure(figsize = (5, 5))
 ax = plt.gca()
-plt.scatter(Theta+Theta_s, theta_pred+Theta_s, s = 3)
+plt.plot(Theta + Theta_s, c = 'r')
+plt.plot(theta_pred + Theta_s, c = 'b')
+# plt.scatter(Theta+Theta_s, theta_pred+Theta_s, s = 3)
+# ax.plot(Theta+Theta_s, Theta+Theta_s, color = 'r')
 ax.set_xlabel('$\Theta_\\mathsf{exp}$')
 ax.set_ylabel('$\Theta_\\mathsf{pred}$')
-ax.set_aspect(1)
-ax.plot(Theta+Theta_s, Theta+Theta_s, color = 'r')
+# ax.set_aspect(1)
 
 #%%
 

@@ -1,7 +1,5 @@
 # This folder deals with the evaluation of the data taken by Anna Kovalcsik
 
-
-
 Important Folder:
 * new_image_processing - this folder contains the most important and most recent results from my work
 
